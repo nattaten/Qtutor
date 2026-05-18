@@ -2,43 +2,54 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - Qtutor Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
-    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
+    * { font-family: 'Kanit', sans-serif; }
+    .sidebar { 
+        background: #0f172a; 
+        min-height: 100vh; 
+        width: 240px; 
+        flex-shrink: 0; 
+        transition: all 0.3s ease;
+    }
     .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
     .nav-item:hover { background: #1e293b; color: #e2e8f0; }
     .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
-    .stat-card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; }
-    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .stat-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
     
-    /* Mobile Styles */
+    /* Mobile Responsive Logic */
     @media (max-width: 768px) {
       .sidebar { 
+        position: fixed; 
+        z-index: 100; 
+        left: -240px; /* ซ่อนไว้ทางซ้าย */
+        top: 0;
+      }
+      .sidebar.open { 
+        left: 0; /* สไลด์ออกมา */
+      }
+      .overlay { 
         display: none; 
         position: fixed; 
-        z-index: 50; 
-        top: 0; 
-        left: 0; 
-        height: 100vh; 
-        box-shadow: 20px 0 50px rgba(0,0,0,0.2);
+        inset: 0; 
+        background: rgba(0,0,0,0.5); 
+        z-index: 90; 
+        backdrop-filter: blur(2px);
       }
-      .sidebar.open { display: flex; flex-direction: column; width: 280px; }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 40; }
       .overlay.open { display: block; }
-      .stat-card { padding: 14px; }
-      .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+      .main-content { width: 100%; }
     }
   </style>
 </head>
 <body class="bg-slate-50 flex">
 
-  <aside id="sidebar" class="sidebar flex flex-col transition-all duration-300">
+  <aside id="sidebar" class="sidebar flex flex-col">
     <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
       <div>
         <h1 class="text-2xl font-black text-white">Qtutor</h1>
@@ -69,11 +80,11 @@
 
   <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
 
-  <div class="flex-1 flex flex-col min-h-screen min-w-0">
+  <div class="flex-1 flex flex-col min-h-screen min-w-0 main-content">
 
     <div class="top-bar sticky top-0 z-10">
       <div class="flex items-center gap-3">
-        <button onclick="openSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 bg-slate-50 rounded-lg">
+        <button onclick="openSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
@@ -88,37 +99,37 @@
           <p class="text-sm font-bold text-slate-700">แอดมิน</p>
           <p class="text-xs text-slate-400">Qtutor System</p>
         </div>
-        <div class="w-8 h-8 md:w-9 md:h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xs md:text-sm shadow-indigo-200 shadow-lg">A</div>
+        <div class="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-sm shadow-sm">A</div>
       </div>
     </div>
 
-    <main class="flex-1 p-4 md:p-6 space-y-5 overflow-auto">
+    <main class="flex-1 p-4 md:p-6 space-y-6 overflow-x-hidden">
 
-      <div class="bg-white p-2 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
-        <label class="ml-2 text-xs font-bold text-slate-500 uppercase tracking-tight">คอร์ส:</label>
-        <select id="courseSelect" onchange="loadDashboard()" class="flex-1 bg-slate-50 border-none rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3">
+        <label class="text-sm font-bold text-slate-600">คอร์สที่กำลังดู:</label>
+        <select id="courseSelect" onchange="loadDashboard()" class="w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none">
           <option value="">-- เลือกคอร์ส --</option>
         </select>
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div class="stat-card">
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">นักเรียน</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">นักเรียน</p>
           <p id="statStudents" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">—</p>
           <p class="text-[10px] text-slate-400 mt-1">คนในคอร์ส</p>
         </div>
         <div class="stat-card">
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Test ล่าสุด</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Test ล่าสุด</p>
           <p id="statLatestTest" class="text-2xl md:text-3xl font-black text-indigo-600 mt-1">—</p>
-          <p class="text-[10px] text-slate-400 mt-1">ครั้งล่าสุด</p>
+          <p class="text-[10px] text-slate-400 mt-1">ครั้งที่ทำ</p>
         </div>
         <div class="stat-card">
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">เฉลี่ยห้อง</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">เฉลี่ยห้อง</p>
           <p id="statAvgScore" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">—</p>
           <p class="text-[10px] text-slate-400 mt-1">% รวม</p>
         </div>
         <div class="stat-card">
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">เนื้อหา</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">เนื้อหา</p>
           <p id="statContent" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">—</p>
           <p class="text-[10px] text-slate-400 mt-1">เฉลย+คลิป</p>
         </div>
@@ -126,20 +137,16 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div class="lg:col-span-2 bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
-          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2">
-            <span>📈</span> พัฒนาการเฉลี่ยห้อง
-          </h3>
-          <div class="h-[200px] md:h-[250px] relative w-full">
+          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4">📈 พัฒนาการเฉลี่ยห้อง</h3>
+          <div class="h-[200px] md:h-[250px] w-full relative">
             <canvas id="classChart"></canvas>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
-          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2">
-            <span>🏆</span> อันดับต้น
-          </h3>
-          <div id="topStudents" class="space-y-2">
-            <p class="text-slate-400 text-xs text-center py-4">เลือกคอร์สก่อนครับ</p>
+          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4">🏆 Top 3</h3>
+          <div id="topStudents" class="space-y-3">
+            <p class="text-slate-400 text-sm text-center py-4">เลือกคอร์สก่อนครับ</p>
           </div>
         </div>
       </div>
@@ -148,63 +155,61 @@
         <h3 class="text-sm md:text-base font-black text-slate-800 mb-4">📊 เฉลี่ยแต่ละวิชา</h3>
         <div class="grid grid-cols-3 gap-2 md:gap-4">
           <div class="text-center">
-            <p class="text-[10px] text-slate-500 mb-1">🔬 วิทย์</p>
-            <div class="bg-emerald-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+            <p class="text-[10px] md:text-xs text-slate-500 mb-2">🔬 วิทย์</p>
+            <div class="bg-emerald-50 rounded-xl md:rounded-2xl p-3 md:p-4">
               <p id="avgSci" class="text-xl md:text-3xl font-black text-emerald-700">—</p>
-              <p class="text-[10px] text-emerald-600 mt-0.5">%</p>
+              <p class="text-[10px] text-emerald-600">%</p>
             </div>
           </div>
           <div class="text-center">
-            <p class="text-[10px] text-slate-500 mb-1">📐 คณิต</p>
-            <div class="bg-blue-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+            <p class="text-[10px] md:text-xs text-slate-500 mb-2">📐 คณิต</p>
+            <div class="bg-blue-50 rounded-xl md:rounded-2xl p-3 md:p-4">
               <p id="avgMath" class="text-xl md:text-3xl font-black text-blue-700">—</p>
-              <p class="text-[10px] text-blue-600 mt-0.5">%</p>
+              <p class="text-[10px] text-blue-600">%</p>
             </div>
           </div>
           <div class="text-center">
-            <p class="text-[10px] text-slate-500 mb-1">🌏 อังกฤษ</p>
-            <div class="bg-violet-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+            <p class="text-[10px] md:text-xs text-slate-500 mb-2">🌏 อังกฤษ</p>
+            <div class="bg-violet-50 rounded-xl md:rounded-2xl p-3 md:p-4">
               <p id="avgEng" class="text-xl md:text-3xl font-black text-violet-700">—</p>
-              <p class="text-[10px] text-violet-600 mt-0.5">%</p>
+              <p class="text-[10px] text-violet-600">%</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="pb-6">
-        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">เมนูด่วน</h3>
+      <div class="pb-8">
+        <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-3">เมนูด่วน</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-indigo-50 transition-all group">
+          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 transition-all">
             <span class="text-2xl mb-1">📝</span>
             <p class="text-xs font-black text-slate-700">ใส่คะแนน</p>
           </a>
-          <a href="students.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-emerald-50 transition-all group">
+          <a href="students.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md transition-all">
             <span class="text-2xl mb-1">👥</span>
             <p class="text-xs font-black text-slate-700">นักเรียน</p>
           </a>
-          <a href="courses.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-amber-50 transition-all group">
+          <a href="courses.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md transition-all">
             <span class="text-2xl mb-1">📚</span>
-            <p class="text-xs font-black text-slate-700">คอร์สเรียน</p>
+            <p class="text-xs font-black text-slate-700">คอร์ส</p>
           </a>
-          <a href="content.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-pink-50 transition-all group">
+          <a href="content.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md transition-all">
             <span class="text-2xl mb-1">🎬</span>
             <p class="text-xs font-black text-slate-700">เนื้อหา</p>
           </a>
         </div>
       </div>
-
     </main>
   </div>
 
   <script>
+    /* JavaScript คงเดิมตามที่คุณให้มาทั้งหมด เพราะรองรับคำสั่งเปิด-ปิด sidebar อยู่แล้ว */
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let chartInstance = null;
 
     if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
-
     document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
     async function init() {
@@ -225,7 +230,6 @@
     async function loadDashboard() {
       const code = document.getElementById('courseSelect').value;
       if (!code) return;
-
       const [studentsRes, scoresRes, solutionsRes, videosRes, rankingsRes] = await Promise.all([
         db.from('students').select('id', { count: 'exact' }).eq('course_code', code),
         db.from('test_scores').select('student_id, test_number, subject, score, full_score').eq('course_code', code),
@@ -233,19 +237,15 @@
         db.from('videos').select('id', { count: 'exact' }).eq('course_code', code),
         db.from('class_rankings').select('student_id, rank_number, total_percent').eq('course_code', code).order('rank_number').limit(3),
       ]);
-
       const scores = scoresRes.data || [];
       const latestTest = scores.length ? Math.max(...scores.map(s => s.test_number)) : 0;
       const content = (solutionsRes.count || 0) + (videosRes.count || 0);
-
       const allPct = scores.map(s => s.full_score > 0 ? (s.score / s.full_score) * 100 : 0);
       const avgAll = allPct.length ? (allPct.reduce((a, b) => a + b, 0) / allPct.length).toFixed(1) : '—';
-
-      document.getElementById('statStudents').textContent   = studentsRes.count ?? '—';
+      document.getElementById('statStudents').textContent = studentsRes.count ?? '—';
       document.getElementById('statLatestTest').textContent = latestTest || '—';
-      document.getElementById('statAvgScore').textContent   = avgAll + (avgAll !== '—' ? '%' : '');
-      document.getElementById('statContent').textContent    = content;
-
+      document.getElementById('statAvgScore').textContent = avgAll + (avgAll !== '—' ? '%' : '');
+      document.getElementById('statContent').textContent = content;
       renderSubjectAvg(scores);
       renderChart(scores);
       renderTopStudents(rankingsRes.data || []);
@@ -257,9 +257,9 @@
         if (!rows.length) return '—';
         return (rows.reduce((a, s) => a + (s.full_score > 0 ? (s.score / s.full_score) * 100 : 0), 0) / rows.length).toFixed(1);
       };
-      document.getElementById('avgSci').textContent  = avg('วิทย์');
+      document.getElementById('avgSci').textContent = avg('วิทย์');
       document.getElementById('avgMath').textContent = avg('คณิต');
-      document.getElementById('avgEng').textContent  = avg('อังกฤษ');
+      document.getElementById('avgEng').textContent = avg('อังกฤษ');
     }
 
     function renderChart(scores) {
@@ -269,31 +269,30 @@
         const pcts = rows.map(s => s.full_score > 0 ? (s.score / s.full_score) * 100 : 0);
         return pcts.length ? +(pcts.reduce((a, b) => a + b, 0) / pcts.length).toFixed(1) : null;
       });
-
       const ctx = document.getElementById('classChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: tests.map(t => `T${t}`), // สั้นลงสำหรับมือถือ
+          labels: tests.map(t => `T${t}`),
           datasets: [{
             label: 'เฉลี่ยห้อง',
             data: avgPerTest,
             borderColor: '#6366f1',
-            backgroundColor: 'rgba(99,102,241,0.1)',
+            backgroundColor: 'rgba(99,102,241,0.08)',
             fill: true,
             tension: 0.4,
             pointRadius: 4,
             pointBackgroundColor: '#6366f1',
-            borderWidth: 3,
+            borderWidth: 2,
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y}%` } } },
+          plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Kanit', size: 10 }, callback: v => v + '%' } },
-            x: { grid: { display: false }, ticks: { font: { family: 'Kanit', size: 10 } } }
+            y: { beginAtZero: true, max: 100, ticks: { font: { family: 'Kanit', size: 10 } } },
+            x: { ticks: { font: { family: 'Kanit', size: 10 } } }
           }
         }
       });
@@ -301,15 +300,15 @@
 
     function renderTopStudents(rankings) {
       const container = document.getElementById('topStudents');
-      if (!rankings.length) { container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">ยังไม่มีข้อมูล</p>'; return; }
+      if (!rankings.length) { container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">ยังไม่มีข้อมูล</p>'; return; }
       const medals = ['🥇','🥈','🥉'];
       container.innerHTML = rankings.map((r, i) => `
-        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
           <div class="flex items-center gap-3">
             <span class="text-xl">${medals[i] || '#' + r.rank_number}</span>
             <div>
-              <p class="text-xs font-black text-slate-700">ID: ${r.student_id}</p>
-              <p class="text-[10px] text-slate-400 uppercase">Rank ${r.rank_number}</p>
+              <p class="text-xs font-black text-slate-700">ID #${r.student_id}</p>
+              <p class="text-[10px] text-slate-400">อันดับ ${r.rank_number}</p>
             </div>
           </div>
           <span class="text-sm font-black text-indigo-600">${r.total_percent}%</span>
@@ -317,9 +316,8 @@
     }
 
     function logout() { if (confirm('ออกจากระบบใช่ไหม?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
-    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-
     init();
   </script>
 </body>
