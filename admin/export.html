@@ -11,45 +11,39 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { font-family: 'Kanit', sans-serif !important; -webkit-tap-highlight-color: transparent; }
-    body { background-color: #f8fafc; }
+    body { background-color: #f8fafc; overflow-x: hidden; }
     
-    .sidebar { background: #0f172a; width: 240px; position: fixed; height: 100vh; z-index: 100; transition: 0.3s; left: -240px; }
-    .sidebar.open { left: 0; }
-    @media (min-width: 1024px) { .sidebar { left: 0; } .content-area { margin-left: 240px; } }
+    /* Sidebar Mobile */
+    .sidebar { background: #0f172a; width: 240px; position: fixed; height: 100vh; z-index: 200; transition: 0.3s; left: -240px; }
+    .sidebar.open { left: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px); }
+    .sidebar.open + .overlay { display: block; }
     
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
-    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
-    
-    .test-strip-container { overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
-    .test-strip-container::-webkit-scrollbar { display: none; }
-    
-    .test-chip { 
-      flex: 0 0 auto; min-width: 55px; height: 48px; border-radius: 14px; 
-      background: #334155; color: #fff; display: flex; align-items: center; 
-      justify-content: center; font-weight: 800; font-size: 16px; cursor: pointer; 
-      transition: 0.2s; margin-right: 8px;
+    @media (min-width: 1024px) { 
+      .sidebar { left: 0; } 
+      .content-area { margin-left: 240px; } 
+      .overlay { display: none !important; }
     }
+
+    /* Test Chips Scroll */
+    .test-strip-container { overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; display: flex; gap: 8px; }
+    .test-strip-container::-webkit-scrollbar { display: none; }
+    .test-chip { flex: 0 0 auto; min-width: 55px; height: 48px; border-radius: 14px; background: #334155; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; }
     .test-chip.active { background: #ffffff; color: #0f172a; transform: scale(1.05); }
 
+    /* UI Components */
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
     .subject-btn { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; border: 1px solid #e2e8f0; transition: 0.2s; opacity: 0.4; }
     .subject-btn.active { opacity: 1; color: white; }
     .btn-total.active { background: #0f172a; }
     .btn-sci.active { background: #10b981; }
     .btn-math.active { background: #3b82f6; }
     .btn-eng.active { background: #a855f7; }
-
     .avg-card { background: #fff; border-radius: 24px; padding: 16px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
 
-    /* บังคับให้ข้อความชัดเจนและไม่ถูกบีบอัด */
-    #exportContent, [id^="capture-"] {
-      letter-spacing: 0.01rem !important;
-      -webkit-font-smoothing: subpixel-antialiased !important;
-    }
-
-    /* บังคับให้ Canvas รู้จักฟอนต์ Kanit โดยตรง */
-    canvas {
-      font-variant-ligatures: none !important;
-    }
+    /* Canvas Smoothing */
+    #exportContent { letter-spacing: 0.01rem !important; -webkit-font-smoothing: subpixel-antialiased !important; }
   </style>
 </head>
 <body class="flex">
@@ -82,12 +76,13 @@
       </button>
     </div>
   </aside>
+  <div class="overlay" onclick="toggleSidebar()"></div>
 
   <div class="content-area flex-1 flex flex-col min-w-0">
-    <header class="bg-white border-b p-3 flex flex-col gap-3 no-print">
+    <header class="bg-white border-b p-3 flex flex-col gap-3 sticky top-0 z-40 no-print">
       <div class="flex justify-between items-center">
-        <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="lg:hidden p-2 bg-slate-100 rounded-lg">☰</button>
-        <button onclick="saveImage()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-sm">📸 บันทึกรูป</button>
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 bg-slate-100 rounded-lg text-xl">☰</button>
+        <button onclick="saveImage()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg">📸 บันทึกรูป</button>
       </div>
       <div class="flex gap-2">
         <select id="courseSelect" onchange="loadData()" class="flex-1 bg-slate-100 rounded-xl px-3 py-2.5 font-bold text-sm outline-none"></select>
@@ -100,6 +95,7 @@
     </header>
 
     <main id="exportContent" class="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+      
       <div id="rankingView" class="space-y-6">
         <div class="bg-[#0f172a] rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
           <div class="flex flex-col gap-6 relative z-10">
@@ -112,32 +108,38 @@
             </div>
             <div>
               <p class="text-[11px] text-slate-400 uppercase font-black mb-3 ml-1">เลือกครั้งที่สอบ</p>
-              <div class="test-strip-container"><div id="testStrip" class="flex flex-nowrap"></div></div>
+              <div class="test-strip-container" id="testStrip"></div>
             </div>
           </div>
         </div>
+
         <div id="rankingTopicsArea"></div>
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="avg-card border-b-4 border-slate-800"><p class="text-[10px] font-black text-slate-400 uppercase">รวม</p><p id="avgTotal" class="text-2xl font-black text-slate-800">0%</p></div>
           <div class="avg-card border-b-4 border-emerald-500"><p class="text-[10px] font-black text-emerald-600 uppercase">วิทย์</p><p id="avgSci" class="text-2xl font-black text-emerald-700">-%</p></div>
           <div class="avg-card border-b-4 border-blue-500"><p class="text-[10px] font-black text-blue-600 uppercase">คณิต</p><p id="avgMath" class="text-2xl font-black text-blue-700">-%</p></div>
           <div class="avg-card border-b-4 border-purple-500"><p class="text-[10px] font-black text-purple-600 uppercase">อังกฤษ</p><p id="avgEng" class="text-2xl font-black text-purple-700">-%</p></div>
         </div>
+
         <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-          <div class="overflow-x-auto min-w-[500px]">
-            <div class="grid grid-cols-[60px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
-              <span>Rank</span><span>Student</span><span class="text-center">Sci %</span><span class="text-center">Math %</span><span class="text-center">Eng %</span><span class="text-right">Total %</span>
+          <div class="overflow-x-auto min-w-full">
+            <div style="min-width: 600px;">
+              <div class="grid grid-cols-[60px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
+                <span>Rank</span><span>Student</span><span class="text-center">Sci %</span><span class="text-center">Math %</span><span class="text-center">Eng %</span><span class="text-right">Total %</span>
+              </div>
+              <div id="rankingList" class="divide-y divide-slate-50"></div>
             </div>
-            <div id="rankingList" class="divide-y divide-slate-50"></div>
           </div>
         </div>
       </div>
 
       <div id="individualView" class="hidden space-y-6">
         <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-xl flex justify-between items-center">
-          <div><h2 id="iStudentName" class="text-3xl font-black italic">Student Name</h2><p id="iCourseLabel" class="opacity-80 text-sm font-bold"></p></div>
+          <div><h2 id="iStudentName" class="text-3xl font-black italic leading-tight">Student Name</h2><p id="iCourseLabel" class="opacity-80 text-sm font-bold"></p></div>
           <div class="bg-white/20 p-4 rounded-2xl text-center min-w-[120px]"><p class="text-[10px] font-bold uppercase">Average</p><p id="iTotalPct" class="text-4xl font-black">0%</p></div>
         </div>
+
         <div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
           <div class="flex justify-between items-center mb-6">
             <h3 class="font-black text-slate-800 italic">Performance Graph</h3>
@@ -161,6 +163,8 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allScores = [], students = [], activeTest = 0, chart = null;
+
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
     function getStatus(pct) {
       if (pct >= 80) return { text: 'ดีเยี่ยม', color: 'text-emerald-600' };
@@ -212,6 +216,7 @@
       document.getElementById('rankTestTitle').innerText = activeTest === 0 ? "Dashboard" : `Test #${activeTest}`;
       let filtered = activeTest === 0 ? allScores : allScores.filter(s => s.test_number === activeTest);
       const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
+      
       let topicHTML = '';
       if (activeTest !== 0) {
         topicHTML = `<div class="bg-white p-5 rounded-3xl mb-6 shadow-sm border border-slate-100"><p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">เนื้อหาที่สอบครั้งนี้</p><div class="grid grid-cols-3 gap-4">${subjects.map(sub => { const item = filtered.find(f => f.subject === sub && f.topic); return `<div><p class="text-[9px] font-bold text-slate-400 mb-0.5">${sub}</p><p class="text-sm font-bold text-slate-700 truncate">${item?.topic || '-'}</p></div>`; }).join('')}</div></div>`;
@@ -219,44 +224,50 @@
         topicHTML = `<div class="bg-slate-900 rounded-[2rem] mb-6 p-6 shadow-xl"><p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">ภาพรวมเนื้อหาการสอบทั้งหมด</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6">${subjects.map(sub => { const uniqueTopics = [...new Set(allScores.filter(f => f.subject === sub && f.topic).map(f => f.topic))]; return `<div class="space-y-2"><p class="text-xs font-black text-white flex items-center gap-2"><span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> ${sub}</p><div class="bg-slate-800/50 rounded-2xl p-3 border border-slate-700/50 min-h-[60px]">${uniqueTopics.length > 0 ? uniqueTopics.map((t, idx) => `<p class="text-[11px] text-slate-300 leading-relaxed mb-1 truncate font-medium">${idx+1}. ${t}</p>`).join('') : '<p class="text-[11px] text-slate-500 italic font-medium">ยังไม่มีข้อมูลเนื้อหา</p>'}</div></div>`; }).join('')}</div></div>`;
       }
       document.getElementById('rankingTopicsArea').innerHTML = topicHTML;
+      
       let rows = students.map(s => {
         const sc = filtered.filter(f => f.student_id === s.id);
         const getPct = (sub) => { const items = sc.filter(f => f.subject === sub); const sSum = items.reduce((a,b)=>a+b.score,0); const fSum = items.reduce((a,b)=>a+b.full_score,0); return fSum > 0 ? (sSum/fSum*100).toFixed(1) : null; };
         const sumS = sc.reduce((a,b)=>a+b.score,0); const sumF = sc.reduce((a,b)=>a+b.full_score,0);
         return { nickname: s.nickname, sci: getPct('วิทย์'), math: getPct('คณิต'), eng: getPct('อังกฤษ'), pct: sumF > 0 ? (sumS/sumF*100) : 0 };
       }).sort((a,b) => b.pct - a.pct);
+      
       const getAvg = (k) => { const v = rows.map(r => r[k]).filter(x => x !== null); return v.length ? (v.reduce((a,b)=>parseFloat(a)+parseFloat(b),0)/v.length).toFixed(1)+'%' : '-%'; };
       document.getElementById('avgTotal').innerText = getAvg('pct');
       document.getElementById('avgSci').innerText = getAvg('sci');
       document.getElementById('avgMath').innerText = getAvg('math');
       document.getElementById('avgEng').innerText = getAvg('eng');
+      
       document.getElementById('rankingList').innerHTML = rows.map((r, i) => `<div class="grid grid-cols-[60px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 items-center ${i==0?'bg-yellow-50/50':''}"><div class="font-black text-slate-400">#${i+1}</div><div class="font-bold text-slate-800 text-sm truncate">${r.nickname}</div><div class="text-center text-xs font-bold text-slate-500">${r.sci||'-'}</div><div class="text-center text-xs font-bold text-slate-500">${r.math||'-'}</div><div class="text-center text-xs font-bold text-slate-500">${r.eng||'-'}</div><div class="text-right font-black text-indigo-600">${r.pct.toFixed(1)}%</div></div>`).join('');
     }
 
     function renderIndividual() {
-      const sid = document.getElementById('studentSelect').value; if(!sid) return;
+      const sid = document.getElementById('studentSelect').value; 
+      if(!sid) return;
       const s = students.find(x => x.id == sid);
       const mySc = allScores.filter(sc => sc.student_id == sid);
       const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
       const tests = [...new Set(mySc.map(m => m.test_number))].sort((a,b)=>a-b);
       document.getElementById('iStudentName').innerText = s.nickname;
+      document.getElementById('iCourseLabel').innerText = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+      
       const scoreListEl = document.getElementById('iScoreList');
       scoreListEl.innerHTML = subjects.map(sub => {
         const subRows = mySc.filter(m => m.subject === sub).sort((a,b) => a.test_number - b.test_number);
         if (subRows.length === 0) return '';
         const colors = { 'วิทย์': 'emerald', 'คณิต': 'blue', 'อังกฤษ': 'purple' };
         const c = colors[sub] || 'indigo';
-        return `<div id="capture-${sub}" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden px-2 pb-2"><div class="px-6 py-5 flex justify-between items-center"><h3 class="text-xl font-black text-slate-800 italic flex items-center gap-3"><span class="w-3 h-8 bg-${c}-500 rounded-full"></span>วิชา${sub}</h3><button onclick="saveSubjectImage('${sub}', '${s.nickname}')" class="no-print flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"><span>📸</span> บันทึกเฉพาะวิชา</button></div><div class="overflow-hidden rounded-[1.5rem] border border-slate-100"><table class="w-full text-left border-collapse"><thead><tr class="bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider"><th class="px-6 py-4">เนื้อหาการสอบ</th><th class="px-4 py-4 text-center w-20">ได้</th><th class="px-4 py-4 text-center w-20">เต็ม</th><th class="px-4 py-4 text-center w-24">ร้อยละ</th><th class="px-6 py-4 text-right w-32">สถานะ</th></tr></thead><tbody class="divide-y divide-slate-100">${subRows.map((row, idx) => { const pct = (row.score/row.full_score*100); const status = getStatus(pct); return `<tr class="hover:bg-slate-50/50 transition-colors"><td class="px-6 py-4 font-bold text-slate-700"><span class="text-slate-300 font-black mr-2">${idx + 1}.</span>${row.topic || '-'}</td><td class="px-4 py-4 text-center font-bold text-slate-600">${row.score}</td><td class="px-4 py-4 text-center text-slate-400 font-bold">${row.full_score}</td><td class="px-4 py-4 text-center"><span class="text-indigo-600 font-black">${pct.toFixed(0)}%</span></td><td class="px-6 py-4 text-right whitespace-nowrap"><span class="inline-block px-3 py-1.5 rounded-lg font-black text-[11px] shadow-sm border ${status.color} bg-white">${status.text}</span></td></tr>`; }).join('')}</tbody></table></div></div>`;
+        return `<div id="capture-${sub}" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden px-2 pb-2"><div class="px-6 py-5 flex justify-between items-center"><h3 class="text-xl font-black text-slate-800 italic flex items-center gap-3"><span class="w-3 h-8 bg-${c}-500 rounded-full"></span>วิชา${sub}</h3><button onclick="saveSubjectImage('${sub}', '${s.nickname}')" class="no-print flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold"><span>📸</span> บันทึกเฉพาะวิชา</button></div><div class="overflow-x-auto rounded-[1.5rem] border border-slate-100"><table class="w-full text-left border-collapse min-w-[500px]"><thead><tr class="bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider"><th class="px-6 py-4">เนื้อหาการสอบ</th><th class="px-4 py-4 text-center w-20">ได้</th><th class="px-4 py-4 text-center w-20">เต็ม</th><th class="px-4 py-4 text-center w-24">ร้อยละ</th><th class="px-6 py-4 text-right w-32">สถานะ</th></tr></thead><tbody class="divide-y divide-slate-100">${subRows.map((row, idx) => { const pct = (row.score/row.full_score*100); const status = getStatus(pct); return `<tr><td class="px-6 py-4 font-bold text-slate-700"><span class="text-slate-300 font-black mr-2">${idx + 1}.</span>${row.topic || '-'}</td><td class="px-4 py-4 text-center font-bold text-slate-600">${row.score}</td><td class="px-4 py-4 text-center text-slate-400 font-bold">${row.full_score}</td><td class="px-4 py-4 text-center"><span class="text-indigo-600 font-black">${pct.toFixed(0)}%</span></td><td class="px-6 py-4 text-right"><span class="inline-block px-3 py-1.5 rounded-lg font-black text-[11px] border ${status.color} bg-white">${status.text}</span></td></tr>`; }).join('')}</tbody></table></div></div>`;
       }).join('');
+
       const ds = { labels: tests.map(t => 'T'+t), total: [], sci: [], math: [], eng: [] };
       tests.forEach(t => {
         const rows = mySc.filter(m => m.test_number === t);
         const getP = (sub) => { const f = rows.find(r => r.subject === sub); return f ? (f.score/f.full_score*100).toFixed(1) : null; };
         const sS = rows.reduce((a,b)=>a+b.score,0), sF = rows.reduce((a,b)=>a+b.full_score,0);
-        ds.total.push(sF > 0 ? (sS/sF*100).toFixed(1) : 0);
-        ds.sci.push(getP('วิทย์')); ds.math.push(getP('คณิต')); ds.eng.push(getP('อังกฤษ'));
+        ds.total.push(sF > 0 ? (sS/sF*100).toFixed(1) : 0); ds.sci.push(getP('วิทย์')); ds.math.push(getP('คณิต')); ds.eng.push(getP('อังกฤษ'));
       });
-      document.getElementById('iTotalPct').innerText = (ds.total.reduce((a,b)=>+a + +b,0)/ds.total.length).toFixed(1) + '%';
+      if(ds.total.length > 0) document.getElementById('iTotalPct').innerText = (ds.total.reduce((a,b)=>+a + +b,0)/ds.total.length).toFixed(1) + '%';
       if(chart) chart.destroy();
       chart = new Chart(document.getElementById('progressChart'), {
         type: 'line',
