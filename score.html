@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คะแนนรายบุคคล - Qtutor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { font-family: 'Kanit', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .card-shadow { box-shadow: 0 4px 24px rgba(99,102,241,0.10); }
+    .subject-sci { background: #ecfdf5; color: #059669; }
+    .subject-math { background: #eff6ff; color: #2563eb; }
+    .subject-eng { background: #fdf4ff; color: #9333ea; }
+    .badge-pct { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .save-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .save-btn:hover { background: linear-gradient(135deg, #4f46e5, #7c3aed); transform: scale(1.03); }
+    .save-btn:active { transform: scale(0.97); }
+    .progress-bar-track { background: rgba(255,255,255,0.5); height: 8px; border-radius: 99px; }
+    .progress-fill { height: 8px; border-radius: 99px; transition: width 0.8s ease; }
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen">
+
+  <!-- NAVBAR -->
+  <nav class="bg-white shadow-sm px-4 py-3 sticky top-0 z-20">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button onclick="location.href='dashboard.html'" class="text-slate-400 hover:text-slate-700 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-lg font-black text-slate-800 leading-tight">📊 คะแนนรายบุคคล</h1>
+          <p id="courseName" class="text-xs text-slate-400"></p>
+        </div>
+      </div>
+      <button onclick="saveScoreImage()" class="save-btn no-print text-white font-bold text-sm px-4 py-2 rounded-2xl shadow-lg transition-all flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        บันทึกรูป
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="mainContent" class="max-w-3xl mx-auto px-4 py-6 pb-16 space-y-6">
+
+    <!-- HERO CARD -->
+    <div class="gradient-bg rounded-3xl p-6 text-white card-shadow">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <p class="text-indigo-200 text-sm font-semibold">สวัสดี 👋</p>
+          <h2 id="studentName" class="text-3xl font-black mt-1">กำลังโหลด...</h2>
+          <p id="courseBadge" class="text-indigo-200 text-sm mt-1"></p>
+        </div>
+        <div class="text-right">
+          <p class="text-indigo-200 text-xs">คะแนนรวม</p>
+          <p id="overallPct" class="text-4xl font-black">—</p>
+          <p class="text-indigo-200 text-xs mt-1">เฉลี่ย 13 ครั้ง</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-2">
+        <div class="bg-white/15 rounded-2xl p-3 text-center">
+          <p class="text-indigo-200 text-xs">วิทย์ รวม</p>
+          <p id="totalSci" class="text-2xl font-black">—</p>
+        </div>
+        <div class="bg-white/15 rounded-2xl p-3 text-center">
+          <p class="text-indigo-200 text-xs">คณิต รวม</p>
+          <p id="totalMath" class="text-2xl font-black">—</p>
+        </div>
+        <div class="bg-white/15 rounded-2xl p-3 text-center">
+          <p class="text-indigo-200 text-xs">อังกฤษ รวม</p>
+          <p id="totalEng" class="text-2xl font-black">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS CHART -->
+    <div class="bg-white rounded-3xl p-5 card-shadow">
+      <h3 class="text-lg font-black text-slate-800 mb-3">📈 กราฟพัฒนาการ</h3>
+
+      <!-- TOGGLE BUTTONS -->
+      <div class="flex flex-wrap gap-2 mb-4" id="lineToggles">
+        <button data-idx="0" onclick="toggleLine(0)"
+          class="toggle-btn active flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
+          style="border-color:#10b981; background:#d1fae5; color:#065f46;">
+          <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#10b981;"></span>วิทย์
+        </button>
+        <button data-idx="1" onclick="toggleLine(1)"
+          class="toggle-btn active flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
+          style="border-color:#3b82f6; background:#dbeafe; color:#1e40af;">
+          <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#3b82f6;"></span>คณิต
+        </button>
+        <button data-idx="2" onclick="toggleLine(2)"
+          class="toggle-btn active flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
+          style="border-color:#a855f7; background:#ede9fe; color:#5b21b6;">
+          <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#a855f7;"></span>อังกฤษ
+        </button>
+        <button data-idx="3" onclick="toggleLine(3)"
+          class="toggle-btn active flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all"
+          style="border-color:#0f172a; background:#0f172a; color:#fff;">
+          <span class="w-2.5 h-2.5 rounded-full inline-block bg-white opacity-80"></span>รวม
+        </button>
+      </div>
+
+      <div class="relative" style="height:260px;">
+        <canvas id="progressChart"></canvas>
+      </div>
+      <div class="flex justify-end mt-3 no-print">
+        <button onclick="saveChartImage()" class="save-btn text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          บันทึกกราฟ
+        </button>
+      </div>
+    </div>
+
+    <!-- SCORES LIST -->
+    <div class="space-y-4" id="scoresList">
+      <div class="text-center py-12 text-slate-400 animate-pulse">กำลังโหลดคะแนน...</div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let chartInstance = null;
+    let allScores = [];
+
+    async function init() {
+      const userData = JSON.parse(sessionStorage.getItem('student_user'));
+      if (!userData) return (location.href = 'index.html');
+
+      document.getElementById('studentName').textContent = userData.nickname;
+      document.getElementById('courseName').textContent = userData.course_name;
+      document.getElementById('courseBadge').textContent = `คอร์ส: ${userData.course_name}`;
+
+      const { data: scores, error } = await db
+        .from('test_scores')
+        .select('*')
+        .eq('student_id', userData.id)
+        .eq('course_code', userData.course_code)
+        .order('test_number', { ascending: true });
+
+      if (error || !scores || scores.length === 0) {
+        document.getElementById('scoresList').innerHTML =
+          '<p class="text-center text-slate-400 py-8">ยังไม่มีข้อมูลคะแนน</p>';
+        return;
+      }
+
+      allScores = scores;
+      renderSummary(scores);
+      renderChart(scores);
+      renderScoreCards(scores);
+    }
+
+    function groupByTest(scores) {
+      return scores.reduce((acc, row) => {
+        if (!acc[row.test_number]) acc[row.test_number] = {};
+        acc[row.test_number][row.subject] = { score: row.score, full: row.full_score };
+        return acc;
+      }, {});
+    }
+
+    function renderSummary(scores) {
+      const grouped = groupByTest(scores);
+      let totSci = 0, totMath = 0, totEng = 0, fullSci = 0, fullMath = 0, fullEng = 0;
+
+      Object.values(grouped).forEach(t => {
+        totSci += t['วิทย์']?.score || 0;
+        totMath += t['คณิต']?.score || 0;
+        totEng += t['อังกฤษ']?.score || 0;
+        fullSci += t['วิทย์']?.full || 0;
+        fullMath += t['คณิต']?.full || 0;
+        fullEng += t['อังกฤษ']?.full || 0;
+      });
+
+      const totalFull = fullSci + fullMath + fullEng;
+      const totalScore = totSci + totMath + totEng;
+      const pct = totalFull > 0 ? ((totalScore / totalFull) * 100).toFixed(1) : 0;
+
+      document.getElementById('overallPct').textContent = `${pct}%`;
+      document.getElementById('totalSci').textContent = `${totSci}/${fullSci}`;
+      document.getElementById('totalMath').textContent = `${totMath}/${fullMath}`;
+      document.getElementById('totalEng').textContent = `${totEng}/${fullEng}`;
+    }
+
+    function renderChart(scores) {
+      const grouped = groupByTest(scores);
+      const tests = Object.keys(grouped).sort((a, b) => +a - +b);
+
+      const sciData = tests.map(t => {
+        const d = grouped[t]['วิทย์'];
+        return d ? +((d.score / d.full) * 100).toFixed(1) : null;
+      });
+      const mathData = tests.map(t => {
+        const d = grouped[t]['คณิต'];
+        return d ? +((d.score / d.full) * 100).toFixed(1) : null;
+      });
+      const engData = tests.map(t => {
+        const d = grouped[t]['อังกฤษ'];
+        return d ? +((d.score / d.full) * 100).toFixed(1) : null;
+      });
+      const totalData = tests.map((_, i) => {
+        const vals = [sciData[i], mathData[i], engData[i]].filter(v => v !== null);
+        return vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+      });
+
+      const ctx = document.getElementById('progressChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: tests.map(t => `ครั้งที่ ${t}`),
+          datasets: [
+            { label: 'วิทย์',   data: sciData,   borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)',  tension: 0.4, fill: false, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#10b981' },
+            { label: 'คณิต',   data: mathData,  borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)',  tension: 0.4, fill: false, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#3b82f6' },
+            { label: 'อังกฤษ', data: engData,   borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.08)', tension: 0.4, fill: false, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#a855f7' },
+            { label: 'รวม',    data: totalData, borderColor: '#0f172a', backgroundColor: 'rgba(15,23,42,0.05)',   tension: 0.4, fill: false, borderWidth: 3, pointRadius: 5, pointHoverRadius: 7, pointBackgroundColor: '#0f172a' },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%`
+              }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: { font: { family: 'Kanit' }, callback: v => v + '%' }
+            },
+            x: { grid: { display: false }, ticks: { font: { family: 'Kanit', size: 11 } } }
+          }
+        }
+      });
+    }
+
+    // toggle เส้นกราฟ
+    const TOGGLE_STYLES = [
+      { on: { border:'#10b981', bg:'#d1fae5', color:'#065f46' }, off: { border:'#cbd5e1', bg:'#f1f5f9', color:'#94a3b8' } },
+      { on: { border:'#3b82f6', bg:'#dbeafe', color:'#1e40af' }, off: { border:'#cbd5e1', bg:'#f1f5f9', color:'#94a3b8' } },
+      { on: { border:'#a855f7', bg:'#ede9fe', color:'#5b21b6' }, off: { border:'#cbd5e1', bg:'#f1f5f9', color:'#94a3b8' } },
+      { on: { border:'#0f172a', bg:'#0f172a', color:'#fff'    }, off: { border:'#cbd5e1', bg:'#f1f5f9', color:'#94a3b8' } },
+    ];
+
+    function toggleLine(idx) {
+      if (!chartInstance) return;
+      const meta = chartInstance.getDatasetMeta(idx);
+      meta.hidden = !meta.hidden;
+      chartInstance.update();
+
+      // ปรับ Y axis auto-scale ตามเส้นที่มองเห็น
+      recalcYAxis();
+
+      // ปรับสีปุ่ม
+      const btn = document.querySelector(`#lineToggles button[data-idx="${idx}"]`);
+      const style = TOGGLE_STYLES[idx];
+      const isOn = !meta.hidden;
+      btn.style.borderColor = isOn ? style.on.border : style.off.border;
+      btn.style.background  = isOn ? style.on.bg     : style.off.bg;
+      btn.style.color       = isOn ? style.on.color  : style.off.color;
+      btn.style.opacity     = isOn ? '1' : '0.5';
+    }
+
+    function recalcYAxis() {
+      if (!chartInstance) return;
+      const allVals = [];
+      chartInstance.data.datasets.forEach((ds, i) => {
+        const meta = chartInstance.getDatasetMeta(i);
+        if (!meta.hidden) ds.data.forEach(v => { if (v !== null) allVals.push(+v); });
+      });
+      if (!allVals.length) return;
+      const minVal = Math.min(...allVals);
+      const maxVal = Math.max(...allVals);
+      const pad = Math.max(5, Math.ceil((maxVal - minVal) * 0.15));
+      chartInstance.options.scales.y.min = Math.max(0,   Math.floor(minVal - pad));
+      chartInstance.options.scales.y.max = Math.min(100, Math.ceil(maxVal + pad));
+      chartInstance.update();
+    }
+
+    function renderScoreCards(scores) {
+      const grouped = groupByTest(scores);
+      const tests = Object.keys(grouped).sort((a, b) => +a - +b);
+      const container = document.getElementById('scoresList');
+      container.innerHTML = '';
+
+      tests.forEach(testNum => {
+        const t = grouped[testNum];
+        const sci = t['วิทย์'] || { score: 0, full: 50 };
+        const math = t['คณิต'] || { score: 0, full: 50 };
+        const eng = t['อังกฤษ'] || { score: 0, full: 50 };
+        const totalScore = sci.score + math.score + eng.score;
+        const totalFull = sci.full + math.full + eng.full;
+        const pct = totalFull > 0 ? Math.round((totalScore / totalFull) * 100) : 0;
+
+        container.innerHTML += `
+          <div class="bg-white rounded-3xl p-5 card-shadow">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="text-xl font-black text-slate-800">ครั้งที่ ${testNum}</h4>
+                <p class="text-xs text-slate-400">${testNum} จาก 13 ครั้ง</p>
+              </div>
+              <span class="badge-pct text-white font-black text-lg px-4 py-1.5 rounded-2xl shadow">${pct}%</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="subject-sci rounded-2xl p-3">
+                <p class="text-xs opacity-60">🔬 วิทย์</p>
+                <p class="text-2xl font-black mt-1">${sci.score}</p>
+                <p class="text-xs opacity-60">เต็ม ${sci.full}</p>
+              </div>
+              <div class="subject-math rounded-2xl p-3">
+                <p class="text-xs opacity-60">📐 คณิต</p>
+                <p class="text-2xl font-black mt-1">${math.score}</p>
+                <p class="text-xs opacity-60">เต็ม ${math.full}</p>
+              </div>
+              <div class="subject-eng rounded-2xl p-3">
+                <p class="text-xs opacity-60">🌏 อังกฤษ</p>
+                <p class="text-2xl font-black mt-1">${eng.score}</p>
+                <p class="text-xs opacity-60">เต็ม ${eng.full}</p>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    async function saveScoreImage() {
+      const btn = event.target.closest('button');
+      btn.textContent = '⏳ กำลังบันทึก...';
+      btn.disabled = true;
+      try {
+        const canvas = await html2canvas(document.getElementById('mainContent'), {
+          scale: 2, useCORS: true, backgroundColor: '#f8fafc',
+          ignoreElements: el => el.classList.contains('no-print')
+        });
+        const link = document.createElement('a');
+        link.download = `score-report-${new Date().toLocaleDateString('th')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (e) { alert('บันทึกไม่สำเร็จ: ' + e.message); }
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> บันทึกรูป`;
+      btn.disabled = false;
+    }
+
+    async function saveChartImage() {
+      const canvas = await html2canvas(document.querySelector('#progressChart').parentElement.parentElement, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff',
+        ignoreElements: el => el.classList.contains('no-print')
+      });
+      const link = document.createElement('a');
+      link.download = `progress-chart-${new Date().toLocaleDateString('th')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Qtutor Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { font-family: 'Kanit', sans-serif; }
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .nav-item:hover { background: #1e293b; color: #e2e8f0; }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .stat-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+    /* mobile sidebar */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .sidebar.open { display: flex; flex-direction: column; position: fixed; z-index: 50; top: 0; left: 0; height: 100vh; }
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+      .overlay.open { display: block; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 flex">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar flex flex-col">
+    <!-- Logo -->
+    <div class="px-5 py-6 border-b border-slate-800">
+      <h1 class="text-2xl font-black text-white">Qtutor</h1>
+      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="nav-item active">
+        <span>📊</span> ภาพรวม
+      </a>
+      <a href="scores.html" class="nav-item">
+        <span>📝</span> จัดการคะแนน
+      </a>
+      <a href="students.html" class="nav-item">
+        <span>👥</span> นักเรียน
+      </a>
+      <a href="courses.html" class="nav-item">
+        <span>📚</span> คอร์สเรียน
+      </a>
+      <a href="content.html" class="nav-item">
+        <span>🎬</span> เนื้อหา (เฉลย/คลิป)
+      </a>
+      <a href="export.html" class="nav-item">
+        <span>📤</span> Export รายงาน
+      </a>
+    </nav>
+
+    <!-- Logout -->
+    <div class="px-3 py-4 border-t border-slate-800">
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
+        <span>🚪</span> ออกจากระบบ
+      </button>
+    </div>
+  </aside>
+
+  <!-- OVERLAY (mobile) -->
+  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+
+  <!-- MAIN AREA -->
+  <div class="flex-1 flex flex-col min-h-screen min-w-0">
+
+    <!-- TOP BAR -->
+    <div class="top-bar sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="openSidebar()" class="md:hidden text-slate-500 hover:text-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <div>
+          <h2 class="text-lg font-black text-slate-800">ภาพรวม</h2>
+          <p class="text-xs text-slate-400" id="dateLabel"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-right hidden sm:block">
+          <p class="text-sm font-bold text-slate-700">แอดมิน</p>
+          <p class="text-xs text-slate-400">Qtutor System</p>
+        </div>
+        <div class="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-sm">A</div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="flex-1 p-5 md:p-6 space-y-6 overflow-auto">
+
+      <!-- COURSE SELECTOR -->
+      <div class="flex items-center gap-3">
+        <label class="text-sm font-bold text-slate-600">คอร์ส:</label>
+        <select id="courseSelect" onchange="loadDashboard()" class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-400">
+          <option value="">-- เลือกคอร์ส --</option>
+        </select>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat-card">
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">นักเรียน</p>
+          <p id="statStudents" class="text-3xl font-black text-slate-800 mt-1">—</p>
+          <p class="text-xs text-slate-400 mt-1">คนในคอร์ส</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Test ล่าสุด</p>
+          <p id="statLatestTest" class="text-3xl font-black text-indigo-600 mt-1">—</p>
+          <p class="text-xs text-slate-400 mt-1">ครั้งที่ทำล่าสุด</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">เฉลี่ยห้อง</p>
+          <p id="statAvgScore" class="text-3xl font-black text-emerald-600 mt-1">—</p>
+          <p class="text-xs text-slate-400 mt-1">% คะแนนรวม</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">เนื้อหา</p>
+          <p id="statContent" class="text-3xl font-black text-amber-600 mt-1">—</p>
+          <p class="text-xs text-slate-400 mt-1">เฉลย + คลิป</p>
+        </div>
+      </div>
+
+      <!-- CHART + TOP STUDENTS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- CLASS PROGRESS CHART -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+          <h3 class="text-base font-black text-slate-800 mb-4">📈 พัฒนาการเฉลี่ยห้อง</h3>
+          <div style="height:220px;" class="relative">
+            <canvas id="classChart"></canvas>
+          </div>
+        </div>
+
+        <!-- TOP 3 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+          <h3 class="text-base font-black text-slate-800 mb-4">🏆 อันดับต้น</h3>
+          <div id="topStudents" class="space-y-3">
+            <p class="text-slate-400 text-sm text-center py-4">เลือกคอร์สก่อนครับ</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBJECT AVERAGES -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h3 class="text-base font-black text-slate-800 mb-4">📊 เฉลี่ยแต่ละวิชา (ทุก test)</h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <p class="text-xs text-slate-500 mb-2">🔬 วิทย์</p>
+            <div class="bg-emerald-50 rounded-2xl p-4">
+              <p id="avgSci" class="text-3xl font-black text-emerald-700">—</p>
+              <p class="text-xs text-emerald-600 mt-1">%</p>
+            </div>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-slate-500 mb-2">📐 คณิต</p>
+            <div class="bg-blue-50 rounded-2xl p-4">
+              <p id="avgMath" class="text-3xl font-black text-blue-700">—</p>
+              <p class="text-xs text-blue-600 mt-1">%</p>
+            </div>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-slate-500 mb-2">🌏 อังกฤษ</p>
+            <div class="bg-violet-50 rounded-2xl p-4">
+              <p id="avgEng" class="text-3xl font-black text-violet-700">—</p>
+              <p class="text-xs text-violet-600 mt-1">%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div>
+        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-3">เมนูด่วน</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 transition-all group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</span>
+            <p class="text-sm font-black text-slate-700">ใส่คะแนน</p>
+          </a>
+          <a href="students.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-emerald-200 transition-all group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">👥</span>
+            <p class="text-sm font-black text-slate-700">นักเรียน</p>
+          </a>
+          <a href="courses.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-amber-200 transition-all group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">📚</span>
+            <p class="text-sm font-black text-slate-700">คอร์สเรียน</p>
+          </a>
+          <a href="content.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-pink-200 transition-all group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">🎬</span>
+            <p class="text-sm font-black text-slate-700">เนื้อหา</p>
+          </a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let chartInstance = null;
+
+    // Auth check
+    if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
+
+    // Date label
+    document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    async function init() {
+      const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
+      const sel = document.getElementById('courseSelect');
+      (courses || []).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.course_code;
+        opt.textContent = `${c.course_name} (${c.course_code})`;
+        sel.appendChild(opt);
+      });
+      if (courses && courses.length > 0) {
+        sel.value = courses[0].course_code;
+        loadDashboard();
+      }
+    }
+
+    async function loadDashboard() {
+      const code = document.getElementById('courseSelect').value;
+      if (!code) return;
+
+      const [studentsRes, scoresRes, solutionsRes, videosRes, rankingsRes] = await Promise.all([
+        db.from('students').select('id', { count: 'exact' }).eq('course_code', code),
+        db.from('test_scores').select('student_id, test_number, subject, score, full_score').eq('course_code', code),
+        db.from('solutions').select('id', { count: 'exact' }).eq('course_code', code),
+        db.from('videos').select('id', { count: 'exact' }).eq('course_code', code),
+        db.from('class_rankings').select('student_id, rank_number, total_percent').eq('course_code', code).order('rank_number').limit(3),
+      ]);
+
+      const scores = scoresRes.data || [];
+      const latestTest = scores.length ? Math.max(...scores.map(s => s.test_number)) : 0;
+      const content = (solutionsRes.count || 0) + (videosRes.count || 0);
+
+      // overall avg
+      const allPct = scores.map(s => s.full_score > 0 ? (s.score / s.full_score) * 100 : 0);
+      const avgAll = allPct.length ? (allPct.reduce((a, b) => a + b, 0) / allPct.length).toFixed(1) : '—';
+
+      document.getElementById('statStudents').textContent   = studentsRes.count ?? '—';
+      document.getElementById('statLatestTest').textContent = latestTest || '—';
+      document.getElementById('statAvgScore').textContent   = avgAll + (avgAll !== '—' ? '%' : '');
+      document.getElementById('statContent').textContent    = content;
+
+      renderSubjectAvg(scores);
+      renderChart(scores);
+      renderTopStudents(rankingsRes.data || []);
+    }
+
+    function renderSubjectAvg(scores) {
+      const avg = sub => {
+        const rows = scores.filter(s => s.subject === sub);
+        if (!rows.length) return '—';
+        return (rows.reduce((a, s) => a + (s.full_score > 0 ? (s.score / s.full_score) * 100 : 0), 0) / rows.length).toFixed(1);
+      };
+      document.getElementById('avgSci').textContent  = avg('วิทย์');
+      document.getElementById('avgMath').textContent = avg('คณิต');
+      document.getElementById('avgEng').textContent  = avg('อังกฤษ');
+    }
+
+    function renderChart(scores) {
+      const tests = [...new Set(scores.map(s => s.test_number))].sort((a, b) => a - b);
+      const avgPerTest = tests.map(t => {
+        const rows = scores.filter(s => s.test_number === t);
+        const pcts = rows.map(s => s.full_score > 0 ? (s.score / s.full_score) * 100 : 0);
+        return pcts.length ? +(pcts.reduce((a, b) => a + b, 0) / pcts.length).toFixed(1) : null;
+      });
+
+      const ctx = document.getElementById('classChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: tests.map(t => `ครั้งที่ ${t}`),
+          datasets: [{
+            label: 'เฉลี่ยห้อง',
+            data: avgPerTest,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.08)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: '#6366f1',
+            borderWidth: 2.5,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y}%` } } },
+          scales: {
+            y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Kanit' }, callback: v => v + '%' } },
+            x: { grid: { display: false }, ticks: { font: { family: 'Kanit', size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function renderTopStudents(rankings) {
+      const container = document.getElementById('topStudents');
+      if (!rankings.length) { container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">ยังไม่มีข้อมูล</p>'; return; }
+      const medals = ['🥇','🥈','🥉'];
+      container.innerHTML = rankings.map((r, i) => `
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">${medals[i] || '#' + r.rank_number}</span>
+            <div>
+              <p class="text-sm font-black text-slate-700">นักเรียน #${r.student_id}</p>
+              <p class="text-xs text-slate-400">อันดับ ${r.rank_number}</p>
+            </div>
+          </div>
+          <span class="text-base font-black text-indigo-600">${r.total_percent}%</span>
+        </div>`).join('');
+    }
+
+    function logout() {
+      if (confirm('ออกจากระบบใช่ไหม?')) {
+        sessionStorage.removeItem('admin_user');
+        location.href = 'index.html';
+      }
+    }
+
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+    init();
+  </script>
+</body>
+</html>

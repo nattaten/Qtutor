@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คอร์สเรียน - Qtutor Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { font-family: 'Kanit', sans-serif; }
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .nav-item:hover { background: #1e293b; color: #e2e8f0; }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .field-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
+    .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; font-family: 'Kanit', sans-serif; }
+    .input:focus { outline: none; border-color: #6366f1; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 10px 22px; transition: all 0.15s; border: none; cursor: pointer; font-family: 'Kanit', sans-serif; font-size: 14px; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-sm { font-weight: 700; border-radius: 10px; padding: 5px 12px; font-size: 13px; border: none; cursor: pointer; transition: all 0.15s; font-family: 'Kanit', sans-serif; }
+    .btn-edit   { background: #ede9fe; color: #6d28d9; }
+    .btn-edit:hover   { background: #ddd6fe; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-danger:hover { background: #fecaca; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 200; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; transform: translateY(80px); opacity: 0; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #d1fae5; color: #065f46; }
+    .toast.error   { background: #fee2e2; color: #991b1b; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: #fff; border-radius: 24px; padding: 28px; width: 100%; max-width: 460px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); }
+    @media (max-width: 768px) { .sidebar { display: none; } .sidebar.open { display: flex; flex-direction: column; position: fixed; z-index: 50; top: 0; left: 0; height: 100vh; } .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; } .overlay.open { display: block; } }
+  </style>
+</head>
+<body class="bg-slate-50 flex">
+
+  <aside id="sidebar" class="sidebar flex flex-col">
+    <div class="px-5 py-6 border-b border-slate-800">
+      <h1 class="text-2xl font-black text-white">Qtutor</h1>
+      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
+      <a href="scores.html"    class="nav-item"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html"  class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html"   class="nav-item active"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="export.html"    class="nav-item"><span>📤</span> Export รายงาน</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-800">
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
+        <span>🚪</span> ออกจากระบบ
+      </button>
+    </div>
+  </aside>
+
+  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+
+  <div class="flex-1 flex flex-col min-h-screen min-w-0">
+    <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <button onclick="openSidebar()" class="md:hidden text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <h2 class="text-lg font-black text-slate-800">📚 คอร์สเรียน</h2>
+      </div>
+      <button onclick="openModal()" class="btn-primary">+ สร้างคอร์ส</button>
+    </div>
+
+    <main class="flex-1 p-5 md:p-6 max-w-5xl">
+      <div id="courseGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="col-span-full text-center text-slate-400 py-16 animate-pulse text-sm">กำลังโหลด...</div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="modalTitle" class="text-xl font-black text-slate-800">สร้างคอร์ส</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+      </div>
+      <input type="hidden" id="editCode" />
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Course Code <span class="text-red-400">*</span></label>
+            <input id="modalCode" type="text" placeholder="s2m12569" class="input font-mono" />
+            <p class="text-xs text-slate-400 mt-1">ตัวอักษร+ตัวเลข ไม่มีเว้นวรรค</p>
+          </div>
+          <div>
+            <label class="field-label">ชื่อคอร์ส <span class="text-red-400">*</span></label>
+            <input id="modalName" type="text" placeholder="Pre-ม.1 รุ่น 25" class="input" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">ระดับชั้น</label>
+            <select id="modalLevel" class="input">
+              <option value="">-- เลือก --</option>
+              <option value="ม.1">ม.1</option>
+              <option value="ม.4">ม.4</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">สถานะ</label>
+            <select id="modalIsActive" class="input">
+              <option value="true">เปิดอยู่</option>
+              <option value="false">ปิดแล้ว</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">วันเริ่มเรียน</label>
+            <input id="modalStart" type="date" class="input" />
+          </div>
+          <div>
+            <label class="field-label">วันสิ้นสุด</label>
+            <input id="modalEnd" type="date" class="input" />
+          </div>
+        </div>
+        <div>
+          <label class="field-label">รายละเอียด</label>
+          <input id="modalDesc" type="text" placeholder="เพิ่มเติม..." class="input" />
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">ยกเลิก</button>
+        <button onclick="saveCourse()" id="modalSaveBtn" class="flex-1 btn-primary">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
+
+    async function init() { await loadCourses(); }
+
+    async function loadCourses() {
+      const { data: courses } = await db.from('courses').select('*').order('created_at', { ascending: false });
+      const { data: stuCounts } = await db.from('students').select('course_code');
+
+      const countMap = {};
+      (stuCounts || []).forEach(s => { countMap[s.course_code] = (countMap[s.course_code] || 0) + 1; });
+
+      const grid = document.getElementById('courseGrid');
+      if (!courses || !courses.length) {
+        grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-16 text-sm">ยังไม่มีคอร์ส — กด "สร้างคอร์ส" เพื่อเริ่มต้นครับ</div>';
+        return;
+      }
+
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      grid.innerHTML = courses.map(c => {
+        const stuCount  = countMap[c.course_code] || 0;
+        const expired   = c.end_date && new Date(c.end_date) < today;
+        const isActive  = c.is_active !== false && !expired;
+
+        const badgeClass = isActive  ? 'bg-emerald-100 text-emerald-700'
+                         : expired   ? 'bg-amber-100 text-amber-700'
+                                     : 'bg-slate-100 text-slate-500';
+        const badgeText  = isActive  ? 'เปิดอยู่'
+                         : expired   ? '⏰ หมดอายุ'
+                                     : 'ปิดแล้ว';
+
+        const fmt = d => d ? new Date(d).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' }) : '—';
+
+        return `
+          <div class="bg-white rounded-2xl p-5 shadow-sm border ${expired ? 'border-amber-100 opacity-75' : 'border-slate-100'} flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="font-black text-slate-800 text-base leading-tight">${c.course_name}</p>
+                <p class="text-xs font-mono text-indigo-500 mt-0.5">${c.course_code}</p>
+              </div>
+              <span class="badge ${badgeClass} flex-shrink-0">${badgeText}</span>
+            </div>
+            <div class="flex gap-4 text-sm">
+              <div><p class="text-xs text-slate-400 font-bold">ระดับ</p><p class="font-black text-slate-700">${c.level || '—'}</p></div>
+              <div><p class="text-xs text-slate-400 font-bold">นักเรียน</p><p class="font-black text-slate-700">${stuCount} คน</p></div>
+            </div>
+            <div class="text-xs text-slate-400">📅 ${fmt(c.start_date)} → ${fmt(c.end_date)}</div>
+            ${c.description ? `<p class="text-xs text-slate-500 border-t border-slate-50 pt-2">${c.description}</p>` : ''}
+            <div class="flex gap-2 mt-auto pt-2 border-t border-slate-50">
+              <button onclick='editCourse(${JSON.stringify(c)})' class="flex-1 btn-sm btn-edit text-center">แก้ไข</button>
+              <button onclick="deleteCourse('${c.course_code}', '${(c.course_name||'').replace(/'/g,"\\'")}', ${stuCount})" class="flex-1 btn-sm btn-danger text-center">ลบ</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function openModal(course = null) {
+      const isEdit = !!course;
+      document.getElementById('editCode').value    = isEdit ? course.course_code : '';
+      document.getElementById('modalCode').value   = isEdit ? course.course_code : '';
+      document.getElementById('modalCode').disabled = isEdit;
+      document.getElementById('modalName').value   = isEdit ? (course.course_name || '') : '';
+      document.getElementById('modalLevel').value    = isEdit ? (course.level || '') : '';
+      document.getElementById('modalIsActive').value = isEdit ? String(course.is_active !== false) : 'true';
+      document.getElementById('modalStart').value   = isEdit ? (course.start_date || '') : '';
+      document.getElementById('modalEnd').value     = isEdit ? (course.end_date   || '') : '';
+      document.getElementById('modalDesc').value    = isEdit ? (course.description || '') : '';
+      document.getElementById('modalTitle').textContent = isEdit ? 'แก้ไขคอร์ส' : 'สร้างคอร์ส';
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function editCourse(c) { openModal(c); }
+    function closeModal()  { document.getElementById('modal').classList.add('hidden'); }
+
+    async function saveCourse() {
+      const editCode = document.getElementById('editCode').value;
+      const code     = document.getElementById('modalCode').value.trim().replace(/\s+/g,'');
+      const name     = document.getElementById('modalName').value.trim();
+      const level    = document.getElementById('modalLevel').value;
+      const isActive = document.getElementById('modalIsActive').value === 'true';
+      const start    = document.getElementById('modalStart').value || null;
+      const end      = document.getElementById('modalEnd').value   || null;
+      const desc     = document.getElementById('modalDesc').value.trim();
+
+      if (!code) return showToast('กรุณากรอก Course Code', 'error');
+      if (!name) return showToast('กรุณากรอกชื่อคอร์ส', 'error');
+
+      const btn = document.getElementById('modalSaveBtn');
+      btn.textContent = '⏳...'; btn.disabled = true;
+
+      const payload = {
+        course_name: name,
+        is_active:   isActive,
+        level:       level   || null,
+        start_date:  start,
+        end_date:    end,
+        description: desc    || null,
+      };
+      let error;
+
+      if (editCode) {
+        ({ error } = await db.from('courses').update(payload).eq('course_code', editCode));
+      } else {
+        ({ error } = await db.from('courses').insert({ ...payload, course_code: code }));
+      }
+
+      btn.textContent = '💾 บันทึก'; btn.disabled = false;
+      if (error) { showToast('บันทึกไม่สำเร็จ: ' + error.message, 'error'); return; }
+      showToast(editCode ? '✅ แก้ไขคอร์สเรียบร้อย' : '✅ สร้างคอร์สเรียบร้อย', 'success');
+      closeModal();
+      await loadCourses();
+    }
+
+    async function deleteCourse(code, name, stuCount) {
+      const warn = stuCount > 0 ? `\n⚠️ มีนักเรียน ${stuCount} คนอยู่ในคอร์สนี้ จะถูกลบด้วย` : '';
+      if (!confirm(`ลบคอร์ส "${name}" ใช่ไหม?${warn}\nไม่สามารถย้อนกลับได้`)) return;
+      await db.from('test_scores').delete().in('student_id',
+        (await db.from('students').select('id').eq('course_code', code)).data?.map(s=>s.id) || []);
+      await db.from('class_rankings').delete().eq('course_code', code);
+      await db.from('students').delete().eq('course_code', code);
+      const { error } = await db.from('courses').delete().eq('course_code', code);
+      if (error) { showToast('ลบไม่สำเร็จ: ' + error.message, 'error'); return; }
+      showToast('✅ ลบคอร์สเรียบร้อย', 'success');
+      await loadCourses();
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('modal')) closeModal();
+    });
+
+    function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+    init();
+  </script>
+</body>
+</html>

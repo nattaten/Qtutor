@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qtutor - ล็อกอิน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        .loading { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-sm">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="text-6xl mb-3 animate-bounce">🎓</div>
+            <h1 class="text-4xl font-black text-blue-600 tracking-tighter">Qtutor</h1>
+            <p class="text-slate-500 text-sm mt-2">เลือกหลักสูตรและเข้าสู่ระบบ</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="bg-white p-8 rounded-3xl shadow-2xl shadow-blue-100">
+            <form id="loginForm" class="space-y-5">
+                <!-- Step 1: Select Course -->
+                <div id="courseStep">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        📚 เลือกหลักสูตร
+                    </label>
+                    <select id="courseSelect" required 
+                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                        <option value="">-- เลือกหลักสูตร --</option>
+                    </select>
+                    <p class="text-xs text-slate-400 mt-2">ระบบจะดึงข้อมูลนักเรียนตามหลักสูตรที่เลือก</p>
+                </div>
+
+                <!-- Step 2: Select Student -->
+                <div id="studentStep" class="hidden">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        👤 เลือกชื่อเล่นนักเรียน
+                    </label>
+                    <select id="studentSelect" required disabled
+                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                        <option value="">-- กรุณาเลือกหลักสูตรก่อน --</option>
+                    </select>
+                    <p class="text-xs text-slate-400 mt-2">ไม่พบชื่อของคุณ? ติดต่อครูผู้สอนครับ</p>
+                </div>
+
+                <!-- Step 3: Phone Number -->
+                <div id="phoneStep" class="hidden">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        📱 เบอร์โทรศัพท์
+                    </label>
+                    <input type="tel" id="phoneInput" placeholder="09xxxxxxxx" 
+                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                    <p class="text-xs text-slate-400 mt-2">เพื่อบันทึกข้อมูลติดต่อ (ไม่บังคับ)</p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorBox" class="hidden p-4 bg-red-50 border border-red-200 rounded-2xl">
+                    <p id="errorText" class="text-sm text-red-600 font-medium"></p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="loginBtn" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    ✓ เข้าสู่ระบบ
+                </button>
+
+                <!-- Info -->
+                <p class="text-xs text-center text-slate-400">
+                    ข้อมูลถูกเก็บในเบราว์เซอร์เท่านั้น
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // === CONFIG ===
+        const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // === STATE ===
+        let courses = [];
+        let selectedCourse = null;
+        let students = [];
+
+        // === INIT ===
+        async function init() {
+            try {
+                // ดึงข้อมูลหลักสูตร
+                const { data, error } = await db
+                    .from('courses')
+                    .select('id, course_code, course_name')
+                    .eq('is_active', true)
+                    .order('course_name');
+
+                if (error) throw error;
+                
+                courses = data || [];
+                renderCourses();
+            } catch (err) {
+                showError('ไม่สามารถโหลดข้อมูลหลักสูตร: ' + err.message);
+            }
+        }
+
+        // === RENDER COURSES ===
+        function renderCourses() {
+            const select = document.getElementById('courseSelect');
+            select.innerHTML = '<option value="">-- เลือกหลักสูตร --</option>';
+            
+            courses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.course_code;
+                option.textContent = course.course_name;
+                option.dataset.id = course.id;
+                select.appendChild(option);
+            });
+        }
+
+        // === EVENT: SELECT COURSE ===
+        document.getElementById('courseSelect').addEventListener('change', async (e) => {
+            const courseCode = e.target.value;
+            
+            if (!courseCode) {
+                document.getElementById('studentStep').classList.add('hidden');
+                document.getElementById('phoneStep').classList.add('hidden');
+                return;
+            }
+
+            selectedCourse = courses.find(c => c.course_code === courseCode);
+            document.getElementById('studentStep').classList.remove('hidden');
+            
+            // ดึงข้อมูลนักเรียนของหลักสูตรนี้
+            try {
+                const { data, error } = await db
+                    .from('students')
+                    .select('id, nickname, phone, course_code')
+                    .eq('course_code', courseCode)
+                    .order('nickname');
+
+                if (error) throw error;
+                
+                students = data || [];
+                renderStudents();
+            } catch (err) {
+                showError('ไม่สามารถโหลดข้อมูลนักเรียน: ' + err.message);
+            }
+        });
+
+        // === RENDER STUDENTS ===
+        function renderStudents() {
+            const select = document.getElementById('studentSelect');
+            select.innerHTML = '<option value="">-- เลือกชื่อเล่น --</option>';
+            select.disabled = false;
+            
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = student.nickname;
+                option.dataset.phone = student.phone || '';
+                select.appendChild(option);
+            });
+        }
+
+        // === EVENT: SELECT STUDENT ===
+        document.getElementById('studentSelect').addEventListener('change', (e) => {
+            const studentId = e.target.value;
+            
+            if (!studentId) {
+                document.getElementById('phoneStep').classList.add('hidden');
+                return;
+            }
+
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const phone = selectedOption.dataset.phone;
+            
+            document.getElementById('phoneStep').classList.remove('hidden');
+            document.getElementById('phoneInput').value = phone || '';
+        });
+
+        // === SUBMIT LOGIN ===
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const courseCode = document.getElementById('courseSelect').value;
+            const studentId = document.getElementById('studentSelect').value;
+            const phone = document.getElementById('phoneInput').value.trim();
+
+            if (!courseCode || !studentId) {
+                showError('กรุณาเลือกหลักสูตรและชื่อเล่นครับ');
+                return;
+            }
+
+            // ล็อกปุ่มส่ง
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
+
+            try {
+                // ดึงข้อมูลนักเรียน
+                const selectedStudent = students.find(s => s.id == studentId);
+                
+                // บันทึกลงใน sessionStorage
+                const userData = {
+                    id: studentId,
+                    nickname: selectedStudent.nickname,
+                    phone: phone || selectedStudent.phone,
+                    course_code: courseCode,
+                    course_name: selectedCourse.course_name,
+                    login_time: new Date().toISOString()
+                };
+
+                sessionStorage.setItem('student_user', JSON.stringify(userData));
+                
+                // ดีเลย์เล็กน้อย เพื่อให้ดูดีๆ
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+
+            } catch (err) {
+                showError('เกิดข้อผิดพลาด: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = '✓ เข้าสู่ระบบ';
+            }
+        });
+
+        // === HELPER: SHOW ERROR ===
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            document.getElementById('errorText').textContent = message;
+            errorBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorBox.classList.add('hidden');
+            }, 5000);
+        }
+
+        // === START ===
+        init();
+    </script>
+</body>
+</html>

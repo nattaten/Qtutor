@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Export รายงาน - Qtutor Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { font-family: 'Kanit', sans-serif; }
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .nav-item:hover { background: #1e293b; color: #e2e8f0; }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .field-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
+    .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; font-family: 'Kanit', sans-serif; }
+    .input:focus { outline: none; border-color: #6366f1; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 11px 22px; transition: all 0.15s; border: none; cursor: pointer; font-family: 'Kanit', sans-serif; font-size: 14px; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .export-card { background: #fff; border-radius: 20px; padding: 20px 24px; border: 2px solid #e2e8f0; transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer; }
+    .export-card:hover { border-color: #a5b4fc; box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+    .export-card.selected { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.2); }
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 200; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; transform: translateY(80px); opacity: 0; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #d1fae5; color: #065f46; }
+    .toast.error   { background: #fee2e2; color: #991b1b; }
+    @media (max-width: 768px) { .sidebar { display: none; } .sidebar.open { display: flex; flex-direction: column; position: fixed; z-index: 50; top: 0; left: 0; height: 100vh; } .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; } .overlay.open { display: block; } }
+  </style>
+</head>
+<body class="bg-slate-50 flex">
+
+  <aside id="sidebar" class="sidebar flex flex-col">
+    <div class="px-5 py-6 border-b border-slate-800">
+      <h1 class="text-2xl font-black text-white">Qtutor</h1>
+      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
+      <a href="scores.html"    class="nav-item"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html"  class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html"   class="nav-item"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="export.html"    class="nav-item active"><span>📤</span> Export รายงาน</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-800">
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
+        <span>🚪</span> ออกจากระบบ
+      </button>
+    </div>
+  </aside>
+
+  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+
+  <div class="flex-1 flex flex-col min-h-screen min-w-0">
+    <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center gap-3 sticky top-0 z-10">
+      <button onclick="openSidebar()" class="md:hidden text-slate-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h2 class="text-lg font-black text-slate-800">📤 Export รายงาน</h2>
+    </div>
+
+    <main class="flex-1 p-5 md:p-6 space-y-6 max-w-3xl">
+
+      <!-- FILTER -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h3 class="font-black text-slate-700 mb-4">⚙️ ตั้งค่าก่อน Export</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="field-label">คอร์ส <span class="text-red-400">*</span></label>
+            <select id="expCourse" onchange="onCourseChange()" class="input">
+              <option value="">-- เลือกคอร์ส --</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">ครั้งที่สอบ</label>
+            <select id="expTest" class="input">
+              <option value="">ทุกครั้ง</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPORT OPTIONS -->
+      <div>
+        <h3 class="font-black text-slate-700 mb-3">เลือกรูปแบบที่ต้องการ Export</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <div class="export-card selected" id="card-scores" onclick="selectCard('scores')">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl">📊</span>
+              <div>
+                <p class="font-black text-slate-800">คะแนนรายคน</p>
+                <p class="text-xs text-slate-500 mt-0.5">นักเรียน × ครั้งสอบ × วิชา พร้อมคะแนนเต็มและ %</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="export-card" id="card-ranking" onclick="selectCard('ranking')">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl">🏆</span>
+              <div>
+                <p class="font-black text-slate-800">อันดับห้อง</p>
+                <p class="text-xs text-slate-500 mt-0.5">อันดับ นักเรียน คะแนนเฉลี่ย % รวม</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="export-card" id="card-students" onclick="selectCard('students')">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl">👥</span>
+              <div>
+                <p class="font-black text-slate-800">รายชื่อนักเรียน</p>
+                <p class="text-xs text-slate-500 mt-0.5">ชื่อ ชื่อเล่น โรงเรียน เบอร์โทร</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="export-card" id="card-summary" onclick="selectCard('summary')">
+            <div class="flex items-start gap-3">
+              <span class="text-3xl">📋</span>
+              <div>
+                <p class="font-black text-slate-800">สรุปภาพรวมรายคน</p>
+                <p class="text-xs text-slate-500 mt-0.5">คะแนนเฉลี่ย % แต่ละวิชา และ % รวม</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PREVIEW + EXPORT -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-slate-700">ตัวอย่างข้อมูล <span id="previewCount" class="text-slate-400 font-normal text-sm"></span></h3>
+          <div class="flex gap-2">
+            <button onclick="preview()" class="bg-slate-100 text-slate-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-slate-200 transition-colors">🔍 Preview</button>
+            <button onclick="exportCSV()" id="exportBtn" class="btn-primary text-sm px-5 py-2.5">⬇️ Download CSV</button>
+          </div>
+        </div>
+        <div id="previewArea" class="overflow-x-auto rounded-xl border border-slate-100 min-h-16">
+          <p class="text-center text-slate-400 py-6 text-sm">กด Preview เพื่อดูตัวอย่างครับ</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
+
+    let selectedCard = 'scores';
+    let lastData = [];
+    let lastHeaders = [];
+
+    async function init() {
+      const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
+      const sel = document.getElementById('expCourse');
+      (courses || []).forEach(c => {
+        sel.innerHTML += `<option value="${c.course_code}">${c.course_name} (${c.course_code})</option>`;
+      });
+    }
+
+    function onCourseChange() {
+      const testSel = document.getElementById('expTest');
+      testSel.innerHTML = '<option value="">ทุกครั้ง</option>';
+      for (let i = 1; i <= 13; i++) testSel.innerHTML += `<option value="${i}">ครั้งที่ ${i}</option>`;
+    }
+
+    function selectCard(name) {
+      selectedCard = name;
+      ['scores','ranking','students','summary'].forEach(n => {
+        document.getElementById('card-' + n).classList.toggle('selected', n === name);
+      });
+    }
+
+    async function fetchData() {
+      const course = document.getElementById('expCourse').value;
+      const test   = document.getElementById('expTest').value;
+      if (!course) { showToast('กรุณาเลือกคอร์สก่อนครับ', 'error'); return null; }
+
+      if (selectedCard === 'scores') {
+        let q = db.from('test_scores').select('*, students(nickname, full_name)').eq('course_code', course).order('test_number').order('student_id');
+        if (test) q = q.eq('test_number', +test);
+        const { data } = await q;
+        const headers = ['nickname', 'full_name', 'test_number', 'subject', 'score', 'full_score', 'percent'];
+        const rows = (data || []).map(r => ({
+          nickname: r.students?.nickname || '',
+          full_name: r.students?.full_name || '',
+          test_number: r.test_number,
+          subject: r.subject,
+          score: r.score,
+          full_score: r.full_score,
+          percent: r.full_score > 0 ? ((r.score / r.full_score) * 100).toFixed(1) : '0',
+        }));
+        return { headers, rows };
+      }
+
+      if (selectedCard === 'ranking') {
+        const { data } = await db.from('class_rankings').select('*, students(nickname, full_name)').eq('course_code', course).order('rank_number');
+        const headers = ['rank_number', 'nickname', 'full_name', 'total_percent'];
+        const rows = (data || []).map(r => ({
+          rank_number: r.rank_number,
+          nickname: r.students?.nickname || '',
+          full_name: r.students?.full_name || '',
+          total_percent: r.total_percent,
+        }));
+        return { headers, rows };
+      }
+
+      if (selectedCard === 'students') {
+        const { data } = await db.from('students').select('*').eq('course_code', course).order('nickname');
+        const headers = ['nickname', 'full_name', 'school', 'phone', 'note'];
+        const rows = (data || []).map(r => ({
+          nickname: r.nickname || '',
+          full_name: r.full_name || '',
+          school: r.school || '',
+          phone: r.phone || '',
+          note: r.note || '',
+        }));
+        return { headers, rows };
+      }
+
+      if (selectedCard === 'summary') {
+        let q = db.from('test_scores').select('*, students(nickname, full_name)').eq('course_code', course);
+        if (test) q = q.eq('test_number', +test);
+        const { data } = await q;
+        const map = {};
+        (data || []).forEach(r => {
+          const key = r.student_id;
+          if (!map[key]) map[key] = { nickname: r.students?.nickname || '', full_name: r.students?.full_name || '', sci: [], math: [], eng: [] };
+          const pct = r.full_score > 0 ? (r.score / r.full_score) * 100 : 0;
+          if (r.subject === 'วิทย์')  map[key].sci.push(pct);
+          if (r.subject === 'คณิต')  map[key].math.push(pct);
+          if (r.subject === 'อังกฤษ') map[key].eng.push(pct);
+        });
+        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '—';
+        const headers = ['nickname', 'full_name', 'sci_avg%', 'math_avg%', 'eng_avg%', 'total_avg%'];
+        const rows = Object.values(map).map(s => {
+          const all = [...s.sci, ...s.math, ...s.eng];
+          return {
+            nickname: s.nickname, full_name: s.full_name,
+            'sci_avg%': avg(s.sci), 'math_avg%': avg(s.math), 'eng_avg%': avg(s.eng),
+            'total_avg%': avg(all),
+          };
+        });
+        return { headers, rows };
+      }
+
+      return null;
+    }
+
+    async function preview() {
+      const result = await fetchData();
+      if (!result) return;
+      lastData = result.rows; lastHeaders = result.headers;
+      document.getElementById('previewCount').textContent = `(${result.rows.length} แถว)`;
+
+      if (!result.rows.length) {
+        document.getElementById('previewArea').innerHTML = '<p class="text-center text-slate-400 py-6 text-sm">ไม่มีข้อมูลครับ</p>';
+        return;
+      }
+
+      const th = result.headers.map(h => `<th class="px-3 py-2 text-xs font-black text-slate-500 text-left uppercase whitespace-nowrap">${h}</th>`).join('');
+      const preview10 = result.rows.slice(0, 10);
+      const trs = preview10.map(r =>
+        `<tr class="hover:bg-slate-50">${result.headers.map(h => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${r[h] ?? ''}</td>`).join('')}</tr>`
+      ).join('');
+      const more = result.rows.length > 10 ? `<tr><td colspan="${result.headers.length}" class="px-3 py-2 text-xs text-slate-400 text-center">...และอีก ${result.rows.length - 10} แถว</td></tr>` : '';
+
+      document.getElementById('previewArea').innerHTML = `
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-slate-100"><tr>${th}</tr></thead>
+          <tbody class="divide-y divide-slate-50">${trs}${more}</tbody>
+        </table>`;
+    }
+
+    async function exportCSV() {
+      if (!lastData.length) {
+        await preview();
+        if (!lastData.length) return;
+      }
+
+      const course = document.getElementById('expCourse').value || 'export';
+      const cardNames = { scores:'คะแนนรายคน', ranking:'อันดับห้อง', students:'รายชื่อนักเรียน', summary:'สรุปภาพรวม' };
+      const filename = `${course}_${cardNames[selectedCard]}_${new Date().toISOString().slice(0,10)}.csv`;
+
+      const header = lastHeaders.join(',');
+      const csvRows = lastData.map(r => lastHeaders.map(h => {
+        const v = String(r[h] ?? '');
+        return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g,'""')}"` : v;
+      }).join(','));
+
+      const csv = '\uFEFF' + [header, ...csvRows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      showToast(`✅ Download "${filename}" เรียบร้อย`, 'success');
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+    init();
+  </script>
+</body>
+</html>

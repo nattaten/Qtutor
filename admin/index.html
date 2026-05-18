@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login - Qtutor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Kanit', sans-serif; }
+    .bg-pattern {
+      background-color: #0f172a;
+      background-image: radial-gradient(circle at 20% 20%, rgba(99,102,241,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139,92,246,0.12) 0%, transparent 50%);
+    }
+    .input-field {
+      background: #1e293b;
+      border: 2px solid #334155;
+      color: #f1f5f9;
+      transition: border-color 0.2s;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #6366f1;
+      background: #1e293b;
+    }
+    .input-field::placeholder { color: #475569; }
+    .login-btn {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      transition: all 0.2s;
+    }
+    .login-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
+    .login-btn:active { transform: translateY(0); }
+    .shake { animation: shake 0.4s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-8px); }
+      40%,80%  { transform: translateX(8px); }
+    }
+  </style>
+</head>
+<body class="bg-pattern min-h-screen flex items-center justify-center px-4">
+
+  <div class="w-full max-w-sm">
+
+    <!-- LOGO -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-black text-white tracking-tight">Qtutor</h1>
+      <p class="text-slate-400 text-sm mt-1">ระบบจัดการแอดมิน</p>
+    </div>
+
+    <!-- CARD -->
+    <div class="bg-slate-800/60 backdrop-blur-md border border-slate-700 rounded-3xl p-8 shadow-2xl">
+      <h2 class="text-xl font-black text-white mb-6">🔐 เข้าสู่ระบบ</h2>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" novalidate class="space-y-4">
+
+        <!-- USERNAME -->
+        <div>
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">ชื่อผู้ใช้</label>
+          <input id="username" type="text" placeholder="admin"
+            class="input-field w-full rounded-2xl px-4 py-3 text-sm font-semibold" autocomplete="username" />
+        </div>
+
+        <!-- PASSWORD -->
+        <div>
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">รหัสผ่าน</label>
+          <div class="relative">
+            <input id="password" type="password" placeholder="••••••••"
+              class="input-field w-full rounded-2xl px-4 py-3 text-sm font-semibold pr-12" autocomplete="current-password" />
+            <button type="button" onclick="togglePwd()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+              <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ERROR MSG -->
+        <p id="errorMsg" class="hidden text-red-400 text-xs font-semibold text-center py-2 bg-red-400/10 rounded-xl">
+          ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+        </p>
+
+        <!-- SUBMIT -->
+        <button type="submit" id="loginBtn"
+          class="login-btn w-full text-white font-black text-base py-3.5 rounded-2xl mt-2 shadow-lg">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+    </div>
+
+    <!-- BACK -->
+    <p class="text-center mt-6">
+      <a href="../dashboard.html" class="text-slate-500 hover:text-slate-300 text-xs transition-colors">
+        ← กลับหน้านักเรียน
+      </a>
+    </p>
+  </div>
+
+  <script>
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASS = '11223345';
+
+    // ถ้า login อยู่แล้วให้ข้ามไป dashboard
+    if (sessionStorage.getItem('admin_user')) {
+      location.href = 'dashboard.html';
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+      const btn  = document.getElementById('loginBtn');
+      const err  = document.getElementById('errorMsg');
+
+      btn.textContent = 'กำลังตรวจสอบ...';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+          sessionStorage.setItem('admin_user', JSON.stringify({ username: user, loginAt: Date.now() }));
+          location.href = 'dashboard.html';
+        } else {
+          err.classList.remove('hidden');
+          document.getElementById('loginForm').classList.add('shake');
+          setTimeout(() => document.getElementById('loginForm').classList.remove('shake'), 400);
+          btn.textContent = 'เข้าสู่ระบบ';
+          btn.disabled = false;
+          document.getElementById('password').value = '';
+        }
+      }, 600);
+    }
+
+    function togglePwd() {
+      const inp = document.getElementById('password');
+      const icon = document.getElementById('eyeIcon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />`;
+      } else {
+        inp.type = 'password';
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+      }
+    }
+  </script>
+</body>
+</html>
