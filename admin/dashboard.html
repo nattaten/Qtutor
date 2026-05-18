@@ -2,62 +2,64 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Dashboard - Qtutor Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * { font-family: 'Kanit', sans-serif; }
+    * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
     .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
     .nav-item:hover { background: #1e293b; color: #e2e8f0; }
     .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
-    .stat-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
-    /* mobile sidebar */
+    .stat-card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; }
+    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Mobile Styles */
     @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .sidebar.open { display: flex; flex-direction: column; position: fixed; z-index: 50; top: 0; left: 0; height: 100vh; }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+      .sidebar { 
+        display: none; 
+        position: fixed; 
+        z-index: 50; 
+        top: 0; 
+        left: 0; 
+        height: 100vh; 
+        box-shadow: 20px 0 50px rgba(0,0,0,0.2);
+      }
+      .sidebar.open { display: flex; flex-direction: column; width: 280px; }
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 40; }
       .overlay.open { display: block; }
+      .stat-card { padding: 14px; }
+      .text-3xl { font-size: 1.5rem; line-height: 2rem; }
     }
   </style>
 </head>
 <body class="bg-slate-50 flex">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="sidebar flex flex-col">
-    <!-- Logo -->
-    <div class="px-5 py-6 border-b border-slate-800">
-      <h1 class="text-2xl font-black text-white">Qtutor</h1>
-      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+  <aside id="sidebar" class="sidebar flex flex-col transition-all duration-300">
+    <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-black text-white">Qtutor</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+      </div>
+      <button onclick="closeSidebar()" class="md:hidden text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
-    <!-- Nav -->
     <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item active">
-        <span>📊</span> ภาพรวม
-      </a>
-      <a href="scores.html" class="nav-item">
-        <span>📝</span> จัดการคะแนน
-      </a>
-      <a href="students.html" class="nav-item">
-        <span>👥</span> นักเรียน
-      </a>
-      <a href="courses.html" class="nav-item">
-        <span>📚</span> คอร์สเรียน
-      </a>
-      <a href="content.html" class="nav-item">
-        <span>🎬</span> เนื้อหา (เฉลย/คลิป)
-      </a>
-      <a href="export.html" class="nav-item">
-        <span>📤</span> Export รายงาน
-      </a>
+      <a href="dashboard.html" class="nav-item active"><span>📊</span> ภาพรวม</a>
+      <a href="scores.html" class="nav-item"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html" class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html" class="nav-item"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html" class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="export.html" class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
 
-    <!-- Logout -->
     <div class="px-3 py-4 border-t border-slate-800">
       <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
         <span>🚪</span> ออกจากระบบ
@@ -65,23 +67,20 @@
     </div>
   </aside>
 
-  <!-- OVERLAY (mobile) -->
   <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
 
-  <!-- MAIN AREA -->
   <div class="flex-1 flex flex-col min-h-screen min-w-0">
 
-    <!-- TOP BAR -->
     <div class="top-bar sticky top-0 z-10">
       <div class="flex items-center gap-3">
-        <button onclick="openSidebar()" class="md:hidden text-slate-500 hover:text-slate-800">
+        <button onclick="openSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 bg-slate-50 rounded-lg">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
         <div>
-          <h2 class="text-lg font-black text-slate-800">ภาพรวม</h2>
-          <p class="text-xs text-slate-400" id="dateLabel"></p>
+          <h2 class="text-base md:text-lg font-black text-slate-800">ภาพรวม</h2>
+          <p class="hidden xs:block text-[10px] md:text-xs text-slate-400" id="dateLabel"></p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -89,112 +88,107 @@
           <p class="text-sm font-bold text-slate-700">แอดมิน</p>
           <p class="text-xs text-slate-400">Qtutor System</p>
         </div>
-        <div class="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-sm">A</div>
+        <div class="w-8 h-8 md:w-9 md:h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xs md:text-sm shadow-indigo-200 shadow-lg">A</div>
       </div>
     </div>
 
-    <!-- CONTENT -->
-    <main class="flex-1 p-5 md:p-6 space-y-6 overflow-auto">
+    <main class="flex-1 p-4 md:p-6 space-y-5 overflow-auto">
 
-      <!-- COURSE SELECTOR -->
-      <div class="flex items-center gap-3">
-        <label class="text-sm font-bold text-slate-600">คอร์ส:</label>
-        <select id="courseSelect" onchange="loadDashboard()" class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:border-indigo-400">
+      <div class="bg-white p-2 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+        <label class="ml-2 text-xs font-bold text-slate-500 uppercase tracking-tight">คอร์ส:</label>
+        <select id="courseSelect" onchange="loadDashboard()" class="flex-1 bg-slate-50 border-none rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500">
           <option value="">-- เลือกคอร์ส --</option>
         </select>
       </div>
 
-      <!-- STAT CARDS -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div class="stat-card">
-          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">นักเรียน</p>
-          <p id="statStudents" class="text-3xl font-black text-slate-800 mt-1">—</p>
-          <p class="text-xs text-slate-400 mt-1">คนในคอร์ส</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">นักเรียน</p>
+          <p id="statStudents" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">—</p>
+          <p class="text-[10px] text-slate-400 mt-1">คนในคอร์ส</p>
         </div>
         <div class="stat-card">
-          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Test ล่าสุด</p>
-          <p id="statLatestTest" class="text-3xl font-black text-indigo-600 mt-1">—</p>
-          <p class="text-xs text-slate-400 mt-1">ครั้งที่ทำล่าสุด</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Test ล่าสุด</p>
+          <p id="statLatestTest" class="text-2xl md:text-3xl font-black text-indigo-600 mt-1">—</p>
+          <p class="text-[10px] text-slate-400 mt-1">ครั้งล่าสุด</p>
         </div>
         <div class="stat-card">
-          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">เฉลี่ยห้อง</p>
-          <p id="statAvgScore" class="text-3xl font-black text-emerald-600 mt-1">—</p>
-          <p class="text-xs text-slate-400 mt-1">% คะแนนรวม</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">เฉลี่ยห้อง</p>
+          <p id="statAvgScore" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">—</p>
+          <p class="text-[10px] text-slate-400 mt-1">% รวม</p>
         </div>
         <div class="stat-card">
-          <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">เนื้อหา</p>
-          <p id="statContent" class="text-3xl font-black text-amber-600 mt-1">—</p>
-          <p class="text-xs text-slate-400 mt-1">เฉลย + คลิป</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">เนื้อหา</p>
+          <p id="statContent" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">—</p>
+          <p class="text-[10px] text-slate-400 mt-1">เฉลย+คลิป</p>
         </div>
       </div>
 
-      <!-- CHART + TOP STUDENTS -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        <!-- CLASS PROGRESS CHART -->
-        <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <h3 class="text-base font-black text-slate-800 mb-4">📈 พัฒนาการเฉลี่ยห้อง</h3>
-          <div style="height:220px;" class="relative">
+        <div class="lg:col-span-2 bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
+          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2">
+            <span>📈</span> พัฒนาการเฉลี่ยห้อง
+          </h3>
+          <div class="h-[200px] md:h-[250px] relative w-full">
             <canvas id="classChart"></canvas>
           </div>
         </div>
 
-        <!-- TOP 3 -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <h3 class="text-base font-black text-slate-800 mb-4">🏆 อันดับต้น</h3>
-          <div id="topStudents" class="space-y-3">
-            <p class="text-slate-400 text-sm text-center py-4">เลือกคอร์สก่อนครับ</p>
+        <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
+          <h3 class="text-sm md:text-base font-black text-slate-800 mb-4 flex items-center gap-2">
+            <span>🏆</span> อันดับต้น
+          </h3>
+          <div id="topStudents" class="space-y-2">
+            <p class="text-slate-400 text-xs text-center py-4">เลือกคอร์สก่อนครับ</p>
           </div>
         </div>
       </div>
 
-      <!-- SUBJECT AVERAGES -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h3 class="text-base font-black text-slate-800 mb-4">📊 เฉลี่ยแต่ละวิชา (ทุก test)</h3>
-        <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
+        <h3 class="text-sm md:text-base font-black text-slate-800 mb-4">📊 เฉลี่ยแต่ละวิชา</h3>
+        <div class="grid grid-cols-3 gap-2 md:gap-4">
           <div class="text-center">
-            <p class="text-xs text-slate-500 mb-2">🔬 วิทย์</p>
-            <div class="bg-emerald-50 rounded-2xl p-4">
-              <p id="avgSci" class="text-3xl font-black text-emerald-700">—</p>
-              <p class="text-xs text-emerald-600 mt-1">%</p>
+            <p class="text-[10px] text-slate-500 mb-1">🔬 วิทย์</p>
+            <div class="bg-emerald-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+              <p id="avgSci" class="text-xl md:text-3xl font-black text-emerald-700">—</p>
+              <p class="text-[10px] text-emerald-600 mt-0.5">%</p>
             </div>
           </div>
           <div class="text-center">
-            <p class="text-xs text-slate-500 mb-2">📐 คณิต</p>
-            <div class="bg-blue-50 rounded-2xl p-4">
-              <p id="avgMath" class="text-3xl font-black text-blue-700">—</p>
-              <p class="text-xs text-blue-600 mt-1">%</p>
+            <p class="text-[10px] text-slate-500 mb-1">📐 คณิต</p>
+            <div class="bg-blue-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+              <p id="avgMath" class="text-xl md:text-3xl font-black text-blue-700">—</p>
+              <p class="text-[10px] text-blue-600 mt-0.5">%</p>
             </div>
           </div>
           <div class="text-center">
-            <p class="text-xs text-slate-500 mb-2">🌏 อังกฤษ</p>
-            <div class="bg-violet-50 rounded-2xl p-4">
-              <p id="avgEng" class="text-3xl font-black text-violet-700">—</p>
-              <p class="text-xs text-violet-600 mt-1">%</p>
+            <p class="text-[10px] text-slate-500 mb-1">🌏 อังกฤษ</p>
+            <div class="bg-violet-50 rounded-xl md:rounded-2xl p-2 md:p-4">
+              <p id="avgEng" class="text-xl md:text-3xl font-black text-violet-700">—</p>
+              <p class="text-[10px] text-violet-600 mt-0.5">%</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- QUICK ACTIONS -->
-      <div>
-        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-3">เมนูด่วน</h3>
+      <div class="pb-6">
+        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">เมนูด่วน</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 transition-all group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</span>
-            <p class="text-sm font-black text-slate-700">ใส่คะแนน</p>
+          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-indigo-50 transition-all group">
+            <span class="text-2xl mb-1">📝</span>
+            <p class="text-xs font-black text-slate-700">ใส่คะแนน</p>
           </a>
-          <a href="students.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-emerald-200 transition-all group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">👥</span>
-            <p class="text-sm font-black text-slate-700">นักเรียน</p>
+          <a href="students.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-emerald-50 transition-all group">
+            <span class="text-2xl mb-1">👥</span>
+            <p class="text-xs font-black text-slate-700">นักเรียน</p>
           </a>
-          <a href="courses.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-amber-200 transition-all group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">📚</span>
-            <p class="text-sm font-black text-slate-700">คอร์สเรียน</p>
+          <a href="courses.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-amber-50 transition-all group">
+            <span class="text-2xl mb-1">📚</span>
+            <p class="text-xs font-black text-slate-700">คอร์สเรียน</p>
           </a>
-          <a href="content.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-pink-200 transition-all group">
-            <span class="text-3xl mb-2 group-hover:scale-110 transition-transform">🎬</span>
-            <p class="text-sm font-black text-slate-700">เนื้อหา</p>
+          <a href="content.html" class="bg-white border border-slate-100 rounded-2xl p-3 md:p-4 flex flex-col items-center text-center hover:bg-pink-50 transition-all group">
+            <span class="text-2xl mb-1">🎬</span>
+            <p class="text-xs font-black text-slate-700">เนื้อหา</p>
           </a>
         </div>
       </div>
@@ -209,10 +203,8 @@
 
     let chartInstance = null;
 
-    // Auth check
     if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
 
-    // Date label
     document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
     async function init() {
@@ -246,7 +238,6 @@
       const latestTest = scores.length ? Math.max(...scores.map(s => s.test_number)) : 0;
       const content = (solutionsRes.count || 0) + (videosRes.count || 0);
 
-      // overall avg
       const allPct = scores.map(s => s.full_score > 0 ? (s.score / s.full_score) * 100 : 0);
       const avgAll = allPct.length ? (allPct.reduce((a, b) => a + b, 0) / allPct.length).toFixed(1) : '—';
 
@@ -284,25 +275,25 @@
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: tests.map(t => `ครั้งที่ ${t}`),
+          labels: tests.map(t => `T${t}`), // สั้นลงสำหรับมือถือ
           datasets: [{
             label: 'เฉลี่ยห้อง',
             data: avgPerTest,
             borderColor: '#6366f1',
-            backgroundColor: 'rgba(99,102,241,0.08)',
+            backgroundColor: 'rgba(99,102,241,0.1)',
             fill: true,
             tension: 0.4,
-            pointRadius: 5,
+            pointRadius: 4,
             pointBackgroundColor: '#6366f1',
-            borderWidth: 2.5,
+            borderWidth: 3,
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y}%` } } },
           scales: {
-            y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Kanit' }, callback: v => v + '%' } },
-            x: { grid: { display: false }, ticks: { font: { family: 'Kanit', size: 11 } } }
+            y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Kanit', size: 10 }, callback: v => v + '%' } },
+            x: { grid: { display: false }, ticks: { font: { family: 'Kanit', size: 10 } } }
           }
         }
       });
@@ -310,28 +301,22 @@
 
     function renderTopStudents(rankings) {
       const container = document.getElementById('topStudents');
-      if (!rankings.length) { container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">ยังไม่มีข้อมูล</p>'; return; }
+      if (!rankings.length) { container.innerHTML = '<p class="text-slate-400 text-xs text-center py-4">ยังไม่มีข้อมูล</p>'; return; }
       const medals = ['🥇','🥈','🥉'];
       container.innerHTML = rankings.map((r, i) => `
-        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
           <div class="flex items-center gap-3">
             <span class="text-xl">${medals[i] || '#' + r.rank_number}</span>
             <div>
-              <p class="text-sm font-black text-slate-700">นักเรียน #${r.student_id}</p>
-              <p class="text-xs text-slate-400">อันดับ ${r.rank_number}</p>
+              <p class="text-xs font-black text-slate-700">ID: ${r.student_id}</p>
+              <p class="text-[10px] text-slate-400 uppercase">Rank ${r.rank_number}</p>
             </div>
           </div>
-          <span class="text-base font-black text-indigo-600">${r.total_percent}%</span>
+          <span class="text-sm font-black text-indigo-600">${r.total_percent}%</span>
         </div>`).join('');
     }
 
-    function logout() {
-      if (confirm('ออกจากระบบใช่ไหม?')) {
-        sessionStorage.removeItem('admin_user');
-        location.href = 'index.html';
-      }
-    }
-
+    function logout() { if (confirm('ออกจากระบบใช่ไหม?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 

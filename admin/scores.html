@@ -24,6 +24,8 @@
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-danger { background: #fee2e2; color: #dc2626; font-weight: 700; border-radius: 10px; padding: 6px 14px; font-size: 13px; border: none; cursor: pointer; transition: all 0.15s; }
     .btn-danger:hover { background: #fecaca; }
+    .btn-secondary { background: #10b981; color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 16px; font-size: 12px; border: none; cursor: pointer; transition: all 0.15s; }
+    .btn-secondary:hover { background: #059669; }
     .toast { position: fixed; bottom: 24px; right: 24px; z-index: 100; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; transform: translateY(80px); opacity: 0; }
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.success { background: #d1fae5; color: #065f46; }
@@ -60,7 +62,6 @@
 
   <div class="flex-1 flex flex-col min-h-screen min-w-0">
 
-    <!-- TOP BAR -->
     <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center gap-3 sticky top-0 z-10">
       <button onclick="openSidebar()" class="md:hidden text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <h2 class="text-lg font-black text-slate-800">📝 จัดการคะแนน</h2>
@@ -68,21 +69,21 @@
 
     <main class="flex-1 p-5 md:p-6 space-y-5 max-w-4xl">
 
-      <!-- TABS -->
       <div class="flex gap-2">
         <button class="tab-btn active" onclick="switchTab('enter', this)">✏️ กรอกคะแนน</button>
         <button class="tab-btn" onclick="switchTab('view', this)">📋 ดู/แก้ไขคะแนน</button>
         <button class="tab-btn" onclick="switchTab('import', this)">📥 Import CSV</button>
       </div>
 
-      <!-- ===== TAB: ENTER ===== -->
       <div id="tab-enter" class="space-y-4">
 
-        <!-- STEP 1: คะแนนเต็ม (ระดับคอร์ส + ครั้งที่) -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <div class="flex items-center gap-2 mb-4">
-            <span class="bg-indigo-600 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">1</span>
-            <h3 class="font-black text-slate-800">ตั้งคะแนนเต็ม <span class="text-slate-400 font-normal text-sm">(ใช้ร่วมกันทุกคนในครั้งนี้)</span></h3>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span class="bg-indigo-600 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">1</span>
+              <h3 class="font-black text-slate-800">ตั้งคะแนนเต็ม <span class="text-slate-400 font-normal text-sm">(อัปเดตทุกคน)</span></h3>
+            </div>
+            <button id="updateAllFullBtn" onclick="updateAllFullScores()" class="btn-secondary hidden">⚡ อัปเดตเต็มให้ทุกคนในครั้งนี้</button>
           </div>
 
           <div class="grid grid-cols-2 gap-4 mb-4">
@@ -115,17 +116,15 @@
                 <input id="engFullInput" type="number" value="50" min="1" class="input text-center text-lg font-black" />
               </div>
             </div>
-            <p class="text-xs text-slate-400">💡 คะแนนเต็มนี้จะใช้เมื่อกรอกคะแนนนักเรียนในขั้นตอนที่ 2</p>
+            <p class="text-xs text-slate-400">💡 แก้ไขเลขข้างบนแล้วกดปุ่ม "อัปเดตเต็มให้ทุกคน" เพื่อเปลี่ยนคะแนนเต็มของทุกคนในครั้งนี้พร้อมกัน</p>
           </div>
-
           <p id="fullScoreHint" class="text-slate-400 text-sm py-2">เลือกคอร์สและครั้งที่ก่อนครับ</p>
         </div>
 
-        <!-- STEP 2: กรอกคะแนนนักเรียน -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
           <div class="flex items-center gap-2 mb-4">
             <span class="bg-indigo-600 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">2</span>
-            <h3 class="font-black text-slate-800">กรอกคะแนนนักเรียน <span class="text-slate-400 font-normal text-sm">(กรอกแค่วิชาเดียวก็บันทึกได้)</span></h3>
+            <h3 class="font-black text-slate-800">กรอกคะแนนนักเรียน <span class="text-slate-400 font-normal text-sm">(บันทึกรายคน)</span></h3>
           </div>
 
           <div class="mb-4">
@@ -135,7 +134,6 @@
             </select>
           </div>
 
-          <!-- SCORE INPUTS -->
           <div id="scoreInputArea" class="hidden">
             <div class="grid grid-cols-3 gap-4 mb-5">
               <div>
@@ -156,7 +154,7 @@
             </div>
 
             <div class="flex items-center justify-between">
-              <p class="text-xs text-slate-400">ช่องที่ว่างจะไม่ถูกบันทึก</p>
+              <p class="text-xs text-slate-400 italic">*คะแนนเต็มจะใช้ตามขั้นตอนที่ 1</p>
               <button onclick="saveScore()" id="saveBtn" class="btn-primary">
                 💾 บันทึกคะแนน
               </button>
@@ -167,7 +165,6 @@
         </div>
       </div>
 
-      <!-- ===== TAB: VIEW ===== -->
       <div id="tab-view" class="hidden space-y-4">
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -192,7 +189,6 @@
         </div>
       </div>
 
-      <!-- ===== TAB: IMPORT ===== -->
       <div id="tab-import" class="hidden space-y-4">
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
           <h3 class="font-black text-slate-800 mb-2">📥 Import คะแนนจาก CSV</h3>
@@ -221,7 +217,6 @@
           </div>
         </div>
 
-        <!-- TEMPLATE DOWNLOAD -->
         <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between">
           <div>
             <p class="font-bold text-indigo-800 text-sm">ยังไม่มี template?</p>
@@ -235,7 +230,6 @@
     </main>
   </div>
 
-  <!-- TOAST -->
   <div id="toast" class="toast"></div>
 
   <script>
@@ -261,7 +255,6 @@
         });
       });
 
-      // test selector
       const testSel = document.getElementById('enterTest');
       testSel.innerHTML = '<option value="">-- เลือกครั้งที่ --</option>';
       for (let i = 1; i <= 13; i++) {
@@ -269,19 +262,23 @@
       }
 
       document.getElementById('enterStudent').addEventListener('change', checkShowScoreArea);
+      
+      ['sciFullInput','mathFullInput','engFullInput'].forEach(id => {
+          document.getElementById(id).addEventListener('input', updateFullLabels);
+      });
     }
 
-    // เมื่อเลือกคอร์สหรือครั้งที่ → โหลดนักเรียน + แสดง full score area
     async function onCourseTestChange() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
-
       const fullArea  = document.getElementById('fullScoreArea');
       const fullHint  = document.getElementById('fullScoreHint');
+      const updateBtn = document.getElementById('updateAllFullBtn');
       const stuSel    = document.getElementById('enterStudent');
 
       if (!code || !test) {
         fullArea.classList.add('hidden');
+        updateBtn.classList.add('hidden');
         fullHint.classList.remove('hidden');
         stuSel.innerHTML = '<option value="">-- เลือกนักเรียน --</option>';
         checkShowScoreArea();
@@ -290,15 +287,9 @@
 
       fullHint.classList.add('hidden');
       fullArea.classList.remove('hidden');
+      updateBtn.classList.remove('hidden');
 
-      // ดึง full_score ที่มีอยู่ใน DB สำหรับ course+test นี้ (ถ้ามี)
-      const { data: existing } = await db
-        .from('test_scores')
-        .select('subject, full_score')
-        .eq('course_code', code)
-        .eq('test_number', +test)
-        .limit(3);
-
+      const { data: existing } = await db.from('test_scores').select('subject, full_score').eq('course_code', code).eq('test_number', +test).limit(5);
       if (existing && existing.length > 0) {
         existing.forEach(r => {
           if (r.subject === 'วิทย์')  document.getElementById('sciFullInput').value  = r.full_score;
@@ -307,64 +298,71 @@
         });
       }
 
-      // อัพเดต label คะแนนเต็มในช่องกรอก
       updateFullLabels();
+      loadStudents('enterCourse', 'enterStudent');
+    }
 
-      // โหลดนักเรียน
-      stuSel.innerHTML = '<option value="">-- เลือกนักเรียน --</option>';
-      const { data: students } = await db.from('students').select('id, nickname').eq('course_code', code).order('nickname');
-      (students || []).forEach(s => {
-        const o = document.createElement('option');
-        o.value = s.id;
-        o.textContent = `${s.nickname}`;
-        stuSel.appendChild(o);
-      });
+    async function updateAllFullScores() {
+        const code = document.getElementById('enterCourse').value;
+        const test = document.getElementById('enterTest').value;
+        if(!code || !test) return;
 
-      checkShowScoreArea();
+        const sciF = +document.getElementById('sciFullInput').value || 50;
+        const mathF = +document.getElementById('mathFullInput').value || 50;
+        const engF = +document.getElementById('engFullInput').value || 50;
+
+        if(!confirm(`ยืนยันการอัปเดตคะแนนเต็ม (วิทย์:${sciF}, คณิต:${mathF}, อังกฤษ:${engF}) ให้กับทุกคนที่เคยบันทึกคะแนนใน Test ครั้งที่ ${test} หรือไม่?`)) return;
+
+        const btn = document.getElementById('updateAllFullBtn');
+        btn.textContent = '⏳ กำลังอัปเดต...';
+        btn.disabled = true;
+
+        try {
+            const subs = [{n:'วิทย์', f:sciF}, {n:'คณิต', f:mathF}, {n:'อังกฤษ', f:engF}];
+            for (const s of subs) {
+                await db.from('test_scores').update({ full_score: s.f }).eq('course_code', code).eq('test_number', +test).eq('subject', s.n);
+            }
+            showToast('✅ อัปเดตคะแนนเต็มของทุกคนในครั้งนี้เรียบร้อย', 'success');
+            if(document.getElementById('tab-view').style.display !== 'none') loadScoreTable();
+        } catch (e) {
+            showToast('เกิดข้อผิดพลาดในการอัปเดต', 'error');
+        } finally {
+            btn.textContent = '⚡ อัปเดตเต็มให้ทุกคนในครั้งนี้';
+            btn.disabled = false;
+        }
     }
 
     function updateFullLabels() {
-      const sciF  = document.getElementById('sciFullInput').value  || 50;
+      const sciF = document.getElementById('sciFullInput').value || 50;
       const mathF = document.getElementById('mathFullInput').value || 50;
-      const engF  = document.getElementById('engFullInput').value  || 50;
-      document.getElementById('sciFullLabel').textContent  = `เต็ม ${sciF}`;
+      const engF = document.getElementById('engFullInput').value || 50;
+      document.getElementById('sciFullLabel').textContent = `เต็ม ${sciF}`;
       document.getElementById('mathFullLabel').textContent = `เต็ม ${mathF}`;
-      document.getElementById('engFullLabel').textContent  = `เต็ม ${engF}`;
+      document.getElementById('engFullLabel').textContent = `เต็ม ${engF}`;
     }
-
-    ['sciFullInput','mathFullInput','engFullInput'].forEach(id => {
-      document.addEventListener('DOMContentLoaded', () => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', updateFullLabels);
-      });
-    });
 
     async function loadStudents(courseSelId, studentSelId) {
       const code = document.getElementById(courseSelId).value;
-      const sel  = document.getElementById(studentSelId);
-      sel.innerHTML = '<option value="">-- ทั้งหมด --</option>';
+      const sel = document.getElementById(studentSelId);
+      sel.innerHTML = '<option value="">-- เลือกนักเรียน --</option>';
       if (!code) return;
       const { data } = await db.from('students').select('id, nickname').eq('course_code', code).order('nickname');
       (data || []).forEach(s => {
         const o = document.createElement('option');
-        o.value = s.id;
-        o.textContent = `${s.nickname}`;
+        o.value = s.id; o.textContent = s.nickname;
         sel.appendChild(o);
       });
+      checkShowScoreArea();
     }
 
     function checkShowScoreArea() {
-      const stu  = document.getElementById('enterStudent').value;
-      const code = document.getElementById('enterCourse').value;
-      const test = document.getElementById('enterTest').value;
+      const stu = document.getElementById('enterStudent').value;
       const area = document.getElementById('scoreInputArea');
       const hint = document.getElementById('enterHint');
-      if (stu && code && test) {
+      if (stu) {
         area.classList.remove('hidden');
         hint.classList.add('hidden');
-        updateFullLabels();
-        // โหลดคะแนนเดิมถ้ามี
-        loadExistingScore(code, stu, test);
+        loadExistingScore(document.getElementById('enterCourse').value, stu, document.getElementById('enterTest').value);
       } else {
         area.classList.add('hidden');
         hint.classList.remove('hidden');
@@ -372,58 +370,45 @@
     }
 
     async function loadExistingScore(courseCode, studentId, testNum) {
-      const { data } = await db.from('test_scores')
-        .select('subject, score')
-        .eq('course_code', courseCode)
-        .eq('student_id', +studentId)
-        .eq('test_number', +testNum);
-      // clear ก่อน
+      const { data } = await db.from('test_scores').select('subject, score').eq('course_code', courseCode).eq('student_id', +studentId).eq('test_number', +testNum);
       ['sciScore','mathScore','engScore'].forEach(id => document.getElementById(id).value = '');
-      if (!data) return;
-      data.forEach(r => {
-        if (r.subject === 'วิทย์')  document.getElementById('sciScore').value  = r.score;
+      if (data) data.forEach(r => {
+        if (r.subject === 'วิทย์')  document.getElementById('sciScore').value = r.score;
         if (r.subject === 'คณิต')  document.getElementById('mathScore').value = r.score;
-        if (r.subject === 'อังกฤษ') document.getElementById('engScore').value  = r.score;
+        if (r.subject === 'อังกฤษ') document.getElementById('engScore').value = r.score;
       });
     }
 
     async function saveScore() {
-      const courseCode = document.getElementById('enterCourse').value;
-      const studentId  = document.getElementById('enterStudent').value;
-      const testNum    = document.getElementById('enterTest').value;
+      const code = document.getElementById('enterCourse').value;
+      const sid = document.getElementById('enterStudent').value;
+      const test = document.getElementById('enterTest').value;
+      const sciF = +document.getElementById('sciFullInput').value;
+      const mathF = +document.getElementById('mathFullInput').value;
+      const engF = +document.getElementById('engFullInput').value;
 
-      if (!courseCode || !studentId || !testNum) return showToast('กรุณาเลือกคอร์ส ครั้งที่ และนักเรียนให้ครบ', 'error');
-
-      const sciVal  = document.getElementById('sciScore').value;
+      const sciVal = document.getElementById('sciScore').value;
       const mathVal = document.getElementById('mathScore').value;
-      const engVal  = document.getElementById('engScore').value;
+      const engVal = document.getElementById('engScore').value;
 
-      const sciF  = +document.getElementById('sciFullInput').value  || 50;
-      const mathF = +document.getElementById('mathFullInput').value || 50;
-      const engF  = +document.getElementById('engFullInput').value  || 50;
-
-      // บันทึกเฉพาะวิชาที่กรอก (ไม่ว่าง)
       const rows = [];
-      if (sciVal  !== '') rows.push({ course_code: courseCode, student_id: +studentId, test_number: +testNum, subject: 'วิทย์',   score: +sciVal,  full_score: sciF  });
-      if (mathVal !== '') rows.push({ course_code: courseCode, student_id: +studentId, test_number: +testNum, subject: 'คณิต',   score: +mathVal, full_score: mathF });
-      if (engVal  !== '') rows.push({ course_code: courseCode, student_id: +studentId, test_number: +testNum, subject: 'อังกฤษ', score: +engVal,  full_score: engF  });
+      if (sciVal !== '')  rows.push({ course_code: code, student_id: +sid, test_number: +test, subject: 'วิทย์', score: +sciVal, full_score: sciF });
+      if (mathVal !== '') rows.push({ course_code: code, student_id: +sid, test_number: +test, subject: 'คณิต', score: +mathVal, full_score: mathF });
+      if (engVal !== '')  rows.push({ course_code: code, student_id: +sid, test_number: +test, subject: 'อังกฤษ', score: +engVal, full_score: engF });
 
       if (!rows.length) return showToast('กรุณากรอกคะแนนอย่างน้อย 1 วิชา', 'error');
 
       const btn = document.getElementById('saveBtn');
-      btn.textContent = '⏳ กำลังบันทึก...';
-      btn.disabled = true;
+      btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
 
       const { error } = await db.from('test_scores').upsert(rows, { onConflict: 'student_id,test_number,subject' });
-
       if (error) {
         showToast('บันทึกไม่สำเร็จ: ' + error.message, 'error');
       } else {
-        await refreshRankings(courseCode);
-        showToast(`✅ บันทึก ${rows.length} วิชา + อัพเดตอันดับแล้ว`, 'success');
+        await refreshRankings(code);
+        showToast(`✅ บันทึกเรียบร้อย + อัปเดตอันดับแล้ว`, 'success');
       }
-      btn.textContent = '💾 บันทึกคะแนน';
-      btn.disabled = false;
+      btn.disabled = false; btn.textContent = '💾 บันทึกคะแนน';
     }
 
     async function refreshRankings(courseCode) {
@@ -432,12 +417,12 @@
       const map = {};
       scores.forEach(s => {
         if (!map[s.student_id]) map[s.student_id] = { sum: 0, count: 0 };
-        map[s.student_id].sum   += s.full_score > 0 ? (s.score / s.full_score) * 100 : 0;
+        map[s.student_id].sum += s.full_score > 0 ? (s.score / s.full_score) * 100 : 0;
         map[s.student_id].count += 1;
       });
-      const rows = Object.entries(map).map(([sid, d]) => ({ student_id: +sid, pct: d.sum / d.count }))
-        .sort((a, b) => b.pct - a.pct)
-        .map((r, i) => ({ course_code: courseCode, student_id: r.student_id, rank_number: i + 1, total_percent: Math.round(r.pct * 100) / 100 }));
+      const rows = Object.entries(map).map(([sid, d]) => ({ 
+        course_code: courseCode, student_id: +sid, total_percent: Math.round(d.sum / d.count * 100) / 100 
+      })).sort((a, b) => b.total_percent - a.total_percent).map((r, i) => ({ ...r, rank_number: i + 1 }));
 
       await db.from('class_rankings').upsert(rows, { onConflict: 'course_code,student_id' });
     }
@@ -448,95 +433,59 @@
       if (!code) return;
 
       const container = document.getElementById('scoreTable');
-      container.innerHTML = '<p class="text-center text-slate-400 py-8 text-sm animate-pulse">กำลังโหลด...</p>';
+      container.innerHTML = '<p class="text-center text-slate-400 py-10 text-sm animate-pulse">กำลังโหลด...</p>';
 
       let q = db.from('test_scores').select('*, students(nickname)').eq('course_code', code).order('test_number').order('student_id');
       if (sid) q = q.eq('student_id', sid);
       const { data } = await q;
 
-      if (!data || !data.length) { container.innerHTML = '<p class="text-center text-slate-400 py-8 text-sm">ยังไม่มีข้อมูล</p>'; return; }
+      if (!data || !data.length) { container.innerHTML = '<p class="text-center text-slate-400 py-10 text-sm">ยังไม่มีข้อมูล</p>'; return; }
 
-      container.innerHTML = `
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-100">
-            <tr>
-              <th class="text-left px-4 py-3 font-black text-slate-500 text-xs uppercase">นักเรียน</th>
-              <th class="text-center px-3 py-3 font-black text-slate-500 text-xs uppercase">ครั้งที่</th>
-              <th class="text-center px-3 py-3 font-black text-emerald-600 text-xs uppercase">วิทย์</th>
-              <th class="text-center px-3 py-3 font-black text-blue-600 text-xs uppercase">คณิต</th>
-              <th class="text-center px-3 py-3 font-black text-violet-600 text-xs uppercase">อังกฤษ</th>
-              <th class="px-3 py-3"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-50" id="scoreRows"></tbody>
-        </table>`;
-
-      // group by student + test
       const grouped = {};
       data.forEach(r => {
         const key = `${r.student_id}_${r.test_number}`;
         if (!grouped[key]) grouped[key] = { nickname: r.students?.nickname || r.student_id, student_id: r.student_id, test_number: r.test_number };
-        grouped[key][r.subject] = { score: r.score, full: r.full_score, id: r.id };
+        grouped[key][r.subject] = { score: r.score, full: r.full_score };
       });
 
-      const tbody = document.getElementById('scoreRows');
+      let html = `<table class="w-full text-sm"><thead class="bg-slate-50 border-b border-slate-100"><tr>
+        <th class="text-left px-4 py-3 font-black text-slate-500 text-xs uppercase">นักเรียน</th>
+        <th class="text-center px-3 py-3 font-black text-slate-500 text-xs uppercase">ครั้งที่</th>
+        <th class="text-center px-3 py-3 font-black text-emerald-600 text-xs uppercase">วิทย์</th>
+        <th class="text-center px-3 py-3 font-black text-blue-600 text-xs uppercase">คณิต</th>
+        <th class="text-center px-3 py-3 font-black text-violet-600 text-xs uppercase">อังกฤษ</th>
+        <th class="px-3 py-3"></th></tr></thead><tbody class="divide-y divide-slate-50">`;
+
       Object.values(grouped).forEach(g => {
-        const sci  = g['วิทย์']  || {};
-        const math = g['คณิต']  || {};
-        const eng  = g['อังกฤษ'] || {};
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50 transition-colors">
-            <td class="px-4 py-3 font-bold text-slate-700">${g.nickname}</td>
-            <td class="px-3 py-3 text-center font-black text-slate-500">${g.test_number}</td>
-            <td class="px-3 py-3 text-center">
-              <span class="font-black text-emerald-700">${sci.score ?? '—'}</span>
-              <span class="text-xs text-slate-400">/${sci.full ?? 50}</span>
-            </td>
-            <td class="px-3 py-3 text-center">
-              <span class="font-black text-blue-700">${math.score ?? '—'}</span>
-              <span class="text-xs text-slate-400">/${math.full ?? 50}</span>
-            </td>
-            <td class="px-3 py-3 text-center">
-              <span class="font-black text-violet-700">${eng.score ?? '—'}</span>
-              <span class="text-xs text-slate-400">/${eng.full ?? 50}</span>
-            </td>
-            <td class="px-3 py-3 text-right">
-              <button onclick="editRow(${g.student_id}, ${g.test_number}, '${code}')"
-                class="bg-indigo-50 text-indigo-600 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors">
-                แก้ไข
-              </button>
-              <button onclick="deleteRow(${g.student_id}, ${g.test_number}, '${code}')"
-                class="btn-danger ml-1">
-                ลบ
-              </button>
-            </td>
-          </tr>`;
+        const sci = g['วิทย์'] || {}; const math = g['คณิต'] || {}; const eng = g['อังกฤษ'] || {};
+        html += `<tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-4 py-3 font-bold text-slate-700">${g.nickname}</td>
+          <td class="px-3 py-3 text-center font-black text-slate-500">${g.test_number}</td>
+          <td class="px-3 py-3 text-center"><span class="font-black text-emerald-700">${sci.score ?? '-'}</span><span class="text-xs text-slate-400">/${sci.full ?? 50}</span></td>
+          <td class="px-3 py-3 text-center"><span class="font-black text-blue-700">${math.score ?? '-'}</span><span class="text-xs text-slate-400">/${math.full ?? 50}</span></td>
+          <td class="px-3 py-3 text-center"><span class="font-black text-violet-700">${eng.score ?? '-'}</span><span class="text-xs text-slate-400">/${eng.full ?? 50}</span></td>
+          <td class="px-3 py-3 text-right">
+            <button onclick="editRow(${g.student_id}, ${g.test_number}, '${code}')" class="text-indigo-600 font-bold text-xs mr-2">แก้ไข</button>
+            <button onclick="deleteRow(${g.student_id}, ${g.test_number}, '${code}')" class="text-red-500 font-bold text-xs">ลบ</button>
+          </td></tr>`;
       });
+      container.innerHTML = html + '</tbody></table>';
     }
 
-    function editRow(studentId, testNum, courseCode) {
-      // Switch to enter tab and pre-fill
-      document.getElementById('enterCourse').value = courseCode;
-      loadStudents('enterCourse', 'enterStudent').then(() => {
-        document.getElementById('enterStudent').value = studentId;
-        document.getElementById('enterTest').value = testNum;
-        checkShowScoreArea();
-        switchTab('enter', document.querySelector('.tab-btn'));
-        showToast('แก้ไขครั้งที่ ' + testNum + ' — กรอกคะแนนใหม่แล้วบันทึก', 'success');
-      });
+    function editRow(sid, test, code) {
+        document.getElementById('enterCourse').value = code;
+        document.getElementById('enterTest').value = test;
+        onCourseTestChange().then(() => {
+            document.getElementById('enterStudent').value = sid;
+            checkShowScoreArea();
+            switchTab('enter', document.querySelector('.tab-btn'));
+        });
     }
 
-    async function deleteRow(studentId, testNum, courseCode) {
-      if (!confirm(`ลบคะแนนครั้งที่ ${testNum} ของนักเรียน id ${studentId} ใช่ไหม?`)) return;
-      const { error } = await db.from('test_scores')
-        .delete()
-        .eq('student_id', studentId)
-        .eq('test_number', testNum)
-        .eq('course_code', courseCode);
-      if (error) { showToast('ลบไม่สำเร็จ', 'error'); return; }
-      await refreshRankings(courseCode);
-      showToast('✅ ลบเรียบร้อย', 'success');
-      loadScoreTable();
+    async function deleteRow(sid, test, code) {
+        if(!confirm(`ลบคะแนนครั้งที่ ${test} หรือไม่?`)) return;
+        await db.from('test_scores').delete().eq('student_id', sid).eq('test_number', test).eq('course_code', code);
+        loadScoreTable(); refreshRankings(code);
     }
 
     function previewCSV(e) {
@@ -550,18 +499,12 @@
           const vals = line.split(',').map(v => v.trim());
           return Object.fromEntries(headers.map((h, i) => [h, vals[i]]));
         }).filter(r => r.course_code);
-
         document.getElementById('csvSummary').textContent = `พบ ${csvData.length} แถว — ตรวจสอบก่อน Import`;
         document.getElementById('csvPreview').classList.remove('hidden');
-
-        const head = document.getElementById('csvHead');
-        head.innerHTML = headers.map(h => `<th class="text-left px-3 py-2 text-xs font-black text-slate-500 uppercase">${h}</th>`).join('');
-
-        const body = document.getElementById('csvBody');
-        body.innerHTML = csvData.slice(0, 10).map(row =>
+        document.getElementById('csvHead').innerHTML = headers.map(h => `<th class="text-left px-3 py-2 text-xs font-black text-slate-500 uppercase">${h}</th>`).join('');
+        document.getElementById('csvBody').innerHTML = csvData.slice(0, 10).map(row =>
           `<tr class="hover:bg-slate-50">${headers.map(h => `<td class="px-3 py-2 text-xs text-slate-700">${row[h] ?? ''}</td>`).join('')}</tr>`
         ).join('');
-        if (csvData.length > 10) body.innerHTML += `<tr><td colspan="${headers.length}" class="px-3 py-2 text-xs text-slate-400 text-center">...และอีก ${csvData.length - 10} แถว</td></tr>`;
       };
       reader.readAsText(file, 'UTF-8');
     }
@@ -569,30 +512,18 @@
     async function importCSV() {
       if (!csvData.length) return;
       const btn = document.getElementById('importBtn');
-      btn.textContent = '⏳ กำลัง Import...';
-      btn.disabled = true;
-
-      const rows = csvData.map(r => ({
-        course_code: r.course_code,
-        student_id:  +r.student_id,
-        test_number: +r.test_number,
-        subject:     r.subject,
-        score:       +r.score,
-        full_score:  +r.full_score,
-      }));
-
+      btn.disabled = true; btn.textContent = '⏳ กำลัง Import...';
+      const rows = csvData.map(r => ({ course_code: r.course_code, student_id: +r.student_id, test_number: +r.test_number, subject: r.subject, score: +r.score, full_score: +r.full_score }));
       const { error } = await db.from('test_scores').upsert(rows, { onConflict: 'student_id,test_number,subject' });
-      if (error) { showToast('Import ไม่สำเร็จ: ' + error.message, 'error'); }
-      else {
-        const courses = [...new Set(rows.map(r => r.course_code))];
-        for (const c of courses) await refreshRankings(c);
-        showToast(`✅ Import ${rows.length} แถวเรียบร้อย + อัพเดตอันดับแล้ว`, 'success');
-        csvData = [];
+      if (!error) {
+        const codes = [...new Set(rows.map(r => r.course_code))];
+        for (const c of codes) await refreshRankings(c);
+        showToast(`✅ Import ${rows.length} แถวเรียบร้อย`, 'success');
         document.getElementById('csvPreview').classList.add('hidden');
-        document.getElementById('csvFile').value = '';
+      } else {
+        showToast('Import ผิดพลาด', 'error');
       }
-      btn.textContent = '⬆️ Import เลย';
-      btn.disabled = false;
+      btn.disabled = false; btn.textContent = '⬆️ Import เลย';
     }
 
     function downloadTemplate() {
@@ -600,8 +531,7 @@
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'score-template.csv';
-      a.click();
+      a.download = 'score-template.csv'; a.click();
     }
 
     function switchTab(name, btn) {
@@ -613,13 +543,12 @@
 
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = `toast ${type} show`;
+      t.textContent = msg; t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
     function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
-    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
     init();

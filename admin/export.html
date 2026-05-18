@@ -3,320 +3,387 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Export รายงาน - Qtutor Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <title>Admin Report - Qtutor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { font-family: 'Kanit', sans-serif; }
-    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; position: sticky; top: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
     .nav-item:hover { background: #1e293b; color: #e2e8f0; }
-    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
-    .field-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
-    .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; font-family: 'Kanit', sans-serif; }
-    .input:focus { outline: none; border-color: #6366f1; }
-    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 11px 22px; transition: all 0.15s; border: none; cursor: pointer; font-family: 'Kanit', sans-serif; font-size: 14px; }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .export-card { background: #fff; border-radius: 20px; padding: 20px 24px; border: 2px solid #e2e8f0; transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer; }
-    .export-card:hover { border-color: #a5b4fc; box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
-    .export-card.selected { border-color: #6366f1; box-shadow: 0 4px 20px rgba(99,102,241,0.2); }
-    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 200; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; transform: translateY(80px); opacity: 0; }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { background: #d1fae5; color: #065f46; }
-    .toast.error   { background: #fee2e2; color: #991b1b; }
-    @media (max-width: 768px) { .sidebar { display: none; } .sidebar.open { display: flex; flex-direction: column; position: fixed; z-index: 50; top: 0; left: 0; height: 100vh; } .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; } .overlay.open { display: block; } }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
+    
+    /* แก้ไขปุ่มเลือกครั้งที่สอบให้เห็นเลขชัดเจน */
+    .test-chip { 
+      flex: 0 0 55px; height: 45px; border-radius: 12px; 
+      background: #e2e8f0; color: #475569; /* สีเทาเข้มเห็นเลขชัด */
+      display: flex; align-items: center; justify-content: center; 
+      font-weight: 800; font-size: 14px; cursor: pointer; 
+      border: 2px solid transparent; transition: 0.2s; 
+    }
+    .test-chip.active { background: #0f172a; color: #ffffff; transform: scale(1.05); }
+
+    .row-gold { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .row-silver { background: #f8fafc; border-left: 4px solid #94a3b8; }
+    .row-bronze { background: #fff7ed; border-left: 4px solid #f97316; }
+
+    .subject-btn { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; border: 1px solid #e2e8f0; transition: 0.2s; }
+    .subject-btn.active.total { background: #0f172a; color: white; }
+    .subject-btn.active.sci { background: #10b981; color: white; }
+    .subject-btn.active.math { background: #3b82f6; color: white; }
+    .subject-btn.active.eng { background: #a855f7; color: white; }
+
+    .avg-card { background: #fff; border-radius: 20px; padding: 15px; border: 1px solid #f1f5f9; text-align: center; }
+    
+    @media (max-width: 768px) { .sidebar { display: none; } }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
   </style>
 </head>
-<body class="bg-slate-50 flex">
+<body class="bg-[#f8fafc] flex">
 
   <aside id="sidebar" class="sidebar flex flex-col">
-    <div class="px-5 py-6 border-b border-slate-800">
-      <h1 class="text-2xl font-black text-white">Qtutor</h1>
-      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
-    </div>
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
-      <a href="scores.html"    class="nav-item"><span>📝</span> จัดการคะแนน</a>
-      <a href="students.html"  class="nav-item"><span>👥</span> นักเรียน</a>
-      <a href="courses.html"   class="nav-item"><span>📚</span> คอร์สเรียน</a>
-      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
-      <a href="export.html"    class="nav-item active"><span>📤</span> Export รายงาน</a>
-    </nav>
-    <div class="px-3 py-4 border-t border-slate-800">
-      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
-        <span>🚪</span> ออกจากระบบ
-      </button>
-    </div>
-  </aside>
+      <!-- Logo -->
+      <div class="px-5 py-6 border-b border-slate-800">
+        <h1 class="text-2xl font-black text-white">Qtutor</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+      </div>
 
-  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+      <!-- Nav -->
+      <nav class="flex-1 px-3 py-4 space-y-1">
+        <a href="dashboard.html" class="nav-item ">
+          <span>📊</span> ภาพรวม
+        </a>
+        <a href="scores.html" class="nav-item">
+          <span>📝</span> จัดการคะแนน
+        </a>
+        <a href="students.html" class="nav-item">
+          <span>👥</span> นักเรียน
+        </a>
+        <a href="courses.html" class="nav-item">
+          <span>📚</span> คอร์สเรียน
+        </a>
+        <a href="content.html" class="nav-item">
+          <span>🎬</span> เนื้อหา (เฉลย/คลิป)
+        </a>
+        <a href="export.html" class="nav-item active">
+          <span>📤</span> Export รายงาน
+        </a>
+      </nav>
 
-  <div class="flex-1 flex flex-col min-h-screen min-w-0">
-    <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center gap-3 sticky top-0 z-10">
-      <button onclick="openSidebar()" class="md:hidden text-slate-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <h2 class="text-lg font-black text-slate-800">📤 Export รายงาน</h2>
-    </div>
+      <!-- Logout -->
+      <div class="px-3 py-4 border-t border-slate-800">
+        <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
+          <span>🚪</span> ออกจากระบบ
+        </button>
+      </div>
+    </aside>
 
-    <main class="flex-1 p-5 md:p-6 space-y-6 max-w-3xl">
+  <div class="flex-1 flex flex-col min-w-0">
+    
+    <header class="bg-white border-b sticky top-0 z-30 p-4 flex flex-wrap gap-4 justify-between items-center no-print">
+      <div class="flex gap-2">
+        <select id="courseSelect" onchange="loadData()" class="bg-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none">
+          <option value="">-- เลือกคอร์ส --</option>
+        </select>
+        <select id="viewSelect" onchange="switchView()" class="bg-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none">
+          <option value="ranking">🏆 อันดับห้อง</option>
+          <option value="individual">👤 รายบุคคล</option>
+        </select>
+        <select id="studentSelect" onchange="renderIndividual()" class="hidden bg-indigo-50 rounded-xl px-4 py-2 text-sm font-bold text-indigo-700 outline-none">
+          <option value="">-- เลือกนักเรียน --</option>
+        </select>
+      </div>
+      <button onclick="saveImage()" class="bg-slate-800 text-white px-5 py-2 rounded-xl text-xs font-black">📸 บันทึกรูป</button>
+    </header>
 
-      <!-- FILTER -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h3 class="font-black text-slate-700 mb-4">⚙️ ตั้งค่าก่อน Export</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="field-label">คอร์ส <span class="text-red-400">*</span></label>
-            <select id="expCourse" onchange="onCourseChange()" class="input">
-              <option value="">-- เลือกคอร์ส --</option>
-            </select>
+    <main id="exportContent" class="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+
+      <div id="rankingView" class="space-y-6">
+        <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white flex justify-between items-center relative overflow-hidden">
+          <div class="relative z-10">
+            <h2 id="rankTestTitle" class="text-3xl font-black italic">Leaderboard</h2>
+            <p id="rankCourseLabel" class="text-indigo-400 text-sm font-bold"></p>
           </div>
-          <div>
-            <label class="field-label">ครั้งที่สอบ</label>
-            <select id="expTest" class="input">
-              <option value="">ทุกครั้ง</option>
-            </select>
+          <div class="no-print relative z-10">
+             <p class="text-[10px] text-slate-400 uppercase font-black mb-2">เลือกครั้งที่สอบ</p>
+             <div id="testStrip" class="flex gap-2 overflow-x-auto scrollbar-hide max-w-[250px]"></div>
           </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="avg-card border-b-4 border-slate-800">
+            <p class="text-[10px] font-black text-slate-400 uppercase">เฉลี่ยรวม</p>
+            <p id="avgTotal" class="text-2xl font-black text-slate-800">-%</p>
+          </div>
+          <div class="avg-card border-b-4 border-emerald-500">
+            <p class="text-[10px] font-black text-emerald-600 uppercase">เฉลี่ยวิทย์</p>
+            <p id="avgSci" class="text-2xl font-black text-emerald-700">-</p>
+          </div>
+          <div class="avg-card border-b-4 border-blue-500">
+            <p class="text-[10px] font-black text-blue-600 uppercase">เฉลี่ยคณิต</p>
+            <p id="avgMath" class="text-2xl font-black text-blue-700">-</p>
+          </div>
+          <div class="avg-card border-b-4 border-purple-500">
+            <p class="text-[10px] font-black text-purple-600 uppercase">เฉลี่ยอังกฤษ</p>
+            <p id="avgEng" class="text-2xl font-black text-purple-700">-</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+          <div class="grid grid-cols-[50px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 bg-slate-50 text-[10px] font-black text-slate-400 uppercase text-center items-center border-b">
+            <div class="text-left">อันดับ</div>
+            <div class="text-left">ชื่อนักเรียน</div>
+            <div>วิทย์</div>
+            <div>คณิต</div>
+            <div>อังกฤษ</div>
+            <div class="text-right">รวม %</div>
+          </div>
+          <div id="rankingList" class="divide-y divide-slate-50"></div>
         </div>
       </div>
 
-      <!-- EXPORT OPTIONS -->
-      <div>
-        <h3 class="font-black text-slate-700 mb-3">เลือกรูปแบบที่ต้องการ Export</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-          <div class="export-card selected" id="card-scores" onclick="selectCard('scores')">
-            <div class="flex items-start gap-3">
-              <span class="text-3xl">📊</span>
-              <div>
-                <p class="font-black text-slate-800">คะแนนรายคน</p>
-                <p class="text-xs text-slate-500 mt-0.5">นักเรียน × ครั้งสอบ × วิชา พร้อมคะแนนเต็มและ %</p>
-              </div>
-            </div>
+      <div id="individualView" class="hidden space-y-6">
+        <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-xl flex justify-between items-center">
+          <div>
+            <h2 id="iStudentName" class="text-4xl font-black italic">โปรดเลือกนักเรียน</h2>
+            <p id="iCourseLabel" class="text-indigo-200 text-sm mt-1"></p>
           </div>
-
-          <div class="export-card" id="card-ranking" onclick="selectCard('ranking')">
-            <div class="flex items-start gap-3">
-              <span class="text-3xl">🏆</span>
-              <div>
-                <p class="font-black text-slate-800">อันดับห้อง</p>
-                <p class="text-xs text-slate-500 mt-0.5">อันดับ นักเรียน คะแนนเฉลี่ย % รวม</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="export-card" id="card-students" onclick="selectCard('students')">
-            <div class="flex items-start gap-3">
-              <span class="text-3xl">👥</span>
-              <div>
-                <p class="font-black text-slate-800">รายชื่อนักเรียน</p>
-                <p class="text-xs text-slate-500 mt-0.5">ชื่อ ชื่อเล่น โรงเรียน เบอร์โทร</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="export-card" id="card-summary" onclick="selectCard('summary')">
-            <div class="flex items-start gap-3">
-              <span class="text-3xl">📋</span>
-              <div>
-                <p class="font-black text-slate-800">สรุปภาพรวมรายคน</p>
-                <p class="text-xs text-slate-500 mt-0.5">คะแนนเฉลี่ย % แต่ละวิชา และ % รวม</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- PREVIEW + EXPORT -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-black text-slate-700">ตัวอย่างข้อมูล <span id="previewCount" class="text-slate-400 font-normal text-sm"></span></h3>
-          <div class="flex gap-2">
-            <button onclick="preview()" class="bg-slate-100 text-slate-700 font-bold text-sm px-4 py-2 rounded-xl hover:bg-slate-200 transition-colors">🔍 Preview</button>
-            <button onclick="exportCSV()" id="exportBtn" class="btn-primary text-sm px-5 py-2.5">⬇️ Download CSV</button>
+          <div class="bg-white/20 rounded-2xl p-4 text-center">
+            <p class="text-[10px] font-bold uppercase">Average</p>
+            <p id="iTotalPct" class="text-4xl font-black">0%</p>
           </div>
         </div>
-        <div id="previewArea" class="overflow-x-auto rounded-xl border border-slate-100 min-h-16">
-          <p class="text-center text-slate-400 py-6 text-sm">กด Preview เพื่อดูตัวอย่างครับ</p>
+
+        <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+           <div class="flex justify-between items-center mb-6">
+              <h3 class="font-black text-slate-800 italic">Performance Graph</h3>
+              <div class="flex gap-1 no-print">
+                <button onclick="toggleLine(0)" class="subject-btn active total">รวม</button>
+                <button onclick="toggleLine(1)" class="subject-btn active sci">วิทย์</button>
+                <button onclick="toggleLine(2)" class="subject-btn active math">คณิต</button>
+                <button onclick="toggleLine(3)" class="subject-btn active eng">อังกฤษ</button>
+              </div>
+           </div>
+           <div class="h-[300px] w-full">
+             <canvas id="progressChart"></canvas>
+           </div>
         </div>
+
+        <div id="iScoreList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
     </main>
   </div>
 
-  <div id="toast" class="toast"></div>
-
   <script>
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
 
-    let selectedCard = 'scores';
-    let lastData = [];
-    let lastHeaders = [];
+    let allScores = [];
+    let students = [];
+    let activeTest = 0;
+    let chart = null;
 
     async function init() {
-      const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
-      const sel = document.getElementById('expCourse');
-      (courses || []).forEach(c => {
-        sel.innerHTML += `<option value="${c.course_code}">${c.course_name} (${c.course_code})</option>`;
+      const { data } = await db.from('courses').select('*').order('created_at', { ascending: false });
+      data.forEach(c => document.getElementById('courseSelect').innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`);
+    }
+
+    async function loadData() {
+      const code = document.getElementById('courseSelect').value;
+      if (!code) return;
+      const [resS, resSc] = await Promise.all([
+        db.from('students').select('*').eq('course_code', code).order('nickname'),
+        db.from('test_scores').select('*').eq('course_code', code).order('test_number')
+      ]);
+      students = resS.data;
+      allScores = resSc.data;
+
+      const sSel = document.getElementById('studentSelect');
+      sSel.innerHTML = '<option value="">-- เลือกนักเรียน --</option>';
+      students.forEach(s => sSel.innerHTML += `<option value="${s.id}">${s.nickname}</option>`);
+
+      buildTestStrip();
+      switchView();
+    }
+
+    function buildTestStrip() {
+      const strip = document.getElementById('testStrip');
+      strip.innerHTML = `<div class="test-chip active" onclick="setTest(0, this)">รวม</div>`;
+      const tests = [...new Set(allScores.map(s => s.test_number))].sort((a,b)=>a-b);
+      tests.forEach(t => strip.innerHTML += `<div class="test-chip" onclick="setTest(${t}, this)">${t}</div>`);
+    }
+
+    function setTest(t, el) {
+      activeTest = t;
+      document.querySelectorAll('.test-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderRanking();
+    }
+
+    function switchView() {
+      const view = document.getElementById('viewSelect').value;
+      document.getElementById('rankingView').style.display = view === 'ranking' ? 'block' : 'none';
+      document.getElementById('individualView').style.display = view === 'individual' ? 'block' : 'none';
+      document.getElementById('studentSelect').classList.toggle('hidden', view !== 'individual');
+      if(view === 'ranking') renderRanking();
+    }
+
+    function renderRanking() {
+      const courseName = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+      document.getElementById('rankCourseLabel').innerText = courseName;
+      document.getElementById('rankTestTitle').innerText = activeTest === 0 ? "🏆 สรุปผลคะแนนเฉลี่ยสะสม (%)" : `🏆 อันดับ Test ครั้งที่ ${activeTest}`;
+
+      let filtered = activeTest === 0 ? allScores : allScores.filter(s => s.test_number === activeTest);
+      
+      let rows = students.map(s => {
+        const sc = filtered.filter(f => f.student_id === s.id);
+        
+        // ฟังก์ชันคำนวณ % รายวิชา
+        const getSubjectPercent = (sub) => {
+          const subScores = sc.filter(f => f.subject === sub);
+          if (subScores.length === 0) return null;
+          const score = subScores.reduce((a, b) => a + b.score, 0);
+          const full = subScores.reduce((a, b) => a + b.full_score, 0);
+          return full > 0 ? (score / full * 100).toFixed(1) : 0;
+        };
+
+        const sciPct = getSubjectPercent('วิทย์');
+        const mathPct = getSubjectPercent('คณิต');
+        const engPct = getSubjectPercent('อังกฤษ');
+        
+        // คำนวณ % รวมทั้งหมดของนักเรียนคนนี้
+        const totalScore = sc.reduce((a, b) => a + b.score, 0);
+        const totalFull = sc.reduce((a, b) => a + b.full_score, 0);
+        const totalPct = totalFull > 0 ? (totalScore / totalFull * 100) : 0;
+
+        return { 
+          nickname: s.nickname, 
+          sci: sciPct, 
+          math: mathPct, 
+          eng: engPct, 
+          pct: totalPct 
+        };
+      }).sort((a, b) => b.pct - a.pct);
+
+      // คำนวณค่าเฉลี่ยของทั้งห้องเพื่อโชว์ในการ์ดด้านบน
+      const avg = (arr) => {
+        const valid = arr.filter(v => v !== null && !isNaN(v));
+        return valid.length ? (valid.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / valid.length).toFixed(1) : 0;
+      };
+
+      document.getElementById('avgTotal').innerText = avg(rows.map(r => r.pct)) + '%';
+      document.getElementById('avgSci').innerText = avg(rows.map(r => r.sci)) + '%';
+      document.getElementById('avgMath').innerText = avg(rows.map(r => r.math)) + '%';
+      document.getElementById('avgEng').innerText = avg(rows.map(r => r.eng)) + '%';
+
+      // แสดงผลในตาราง
+      document.getElementById('rankingList').innerHTML = rows.map((r, i) => `
+        <div class="grid grid-cols-[50px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 items-center text-center ${i == 0 ? 'row-gold' : i == 1 ? 'row-silver' : i == 2 ? 'row-bronze' : ''}">
+          <div class="text-left font-black text-slate-400 italic">#${i + 1}</div>
+          <div class="text-left font-bold text-slate-800">${r.nickname}</div>
+          
+          <div class="text-xs font-medium text-slate-500">${r.sci !== null ? `${r.sci}<span class="text-[9px] opacity-60">%</span>` : '-'}</div>
+          <div class="text-xs font-medium text-slate-500">${r.math !== null ? `${r.math}<span class="text-[9px] opacity-60">%</span>` : '-'}</div>
+          <div class="text-xs font-medium text-slate-500">${r.eng !== null ? `${r.eng}<span class="text-[9px] opacity-60">%</span>` : '-'}</div>
+          
+          <div class="text-right font-black text-indigo-600">${r.pct.toFixed(1)}%</div>
+        </div>
+      `).join('');
+    }
+
+    function renderIndividual() {
+      const sid = document.getElementById('studentSelect').value;
+      if (!sid) return;
+      const s = students.find(x => x.id == sid);
+      const myScores = allScores.filter(sc => sc.student_id == sid);
+      const tests = [...new Set(myScores.map(m => m.test_number))].sort((a,b)=>a-b);
+
+      document.getElementById('iStudentName').innerText = s.nickname;
+      document.getElementById('iCourseLabel').innerText = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+
+      const ds = { labels: tests.map(t => 'T'+t), total: [], sci: [], math: [], eng: [] };
+      let cards = '';
+
+      tests.forEach(t => {
+        const rows = myScores.filter(m => m.test_number === t);
+        const sumS = rows.reduce((a,b)=>a+b.score,0), sumF = rows.reduce((a,b)=>a+b.full_score,0);
+        const find = (sub) => rows.find(r => r.subject === sub);
+        const p = sumF > 0 ? (sumS/sumF*100) : 0;
+        
+        ds.total.push(p.toFixed(1));
+        ds.sci.push(find('วิทย์') ? (find('วิทย์').score/find('วิทย์').full_score*100).toFixed(1) : null);
+        ds.math.push(find('คณิต') ? (find('คณิต').score/find('คณิต').full_score*100).toFixed(1) : null);
+        ds.eng.push(find('อังกฤษ') ? (find('อังกฤษ').score/find('อังกฤษ').full_score*100).toFixed(1) : null);
+
+        cards += `
+          <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+             <div class="flex justify-between items-center mb-3">
+                <span class="font-black text-slate-800">Test ครั้งที่ ${t}</span>
+                <span class="text-indigo-600 font-black">${p.toFixed(1)}%</span>
+             </div>
+             <div class="flex gap-2">
+                <div class="flex-1 text-center bg-emerald-50 rounded-xl p-2">
+                   <p class="text-[9px] text-emerald-600 font-bold">วิทย์</p>
+                   <p class="text-xs font-medium">${find('วิทย์') ? find('วิทย์').score + '/' + find('วิทย์').full_score : '-'}</p>
+                </div>
+                <div class="flex-1 text-center bg-blue-50 rounded-xl p-2">
+                   <p class="text-[9px] text-blue-600 font-bold">คณิต</p>
+                   <p class="text-xs font-medium">${find('คณิต') ? find('คณิต').score + '/' + find('คณิต').full_score : '-'}</p>
+                </div>
+                <div class="flex-1 text-center bg-purple-50 rounded-xl p-2">
+                   <p class="text-[9px] text-purple-600 font-bold">อังกฤษ</p>
+                   <p class="text-xs font-medium">${find('อังกฤษ') ? find('อังกฤษ').score + '/' + find('อังกฤษ').full_score : '-'}</p>
+                </div>
+             </div>
+          </div>`;
+      });
+      document.getElementById('iScoreList').innerHTML = cards;
+      document.getElementById('iTotalPct').innerText = (ds.total.reduce((a,b)=>+a + +b,0)/ds.total.length).toFixed(1) + '%';
+
+      if(chart) chart.destroy();
+      chart = new Chart(document.getElementById('progressChart'), {
+        type: 'line',
+        data: {
+          labels: ds.labels,
+          datasets: [
+            { label: 'รวม', data: ds.total, borderColor: '#0f172a', borderWidth: 3, tension: 0.4, pointRadius: 4 },
+            { label: 'วิทย์', data: ds.sci, borderColor: '#10b981', borderDash: [5,5], tension: 0.4 },
+            { label: 'คณิต', data: ds.math, borderColor: '#3b82f6', borderDash: [5,5], tension: 0.4 },
+            { label: 'อังกฤษ', data: ds.eng, borderColor: '#a855f7', borderDash: [5,5], tension: 0.4 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
       });
     }
 
-    function onCourseChange() {
-      const testSel = document.getElementById('expTest');
-      testSel.innerHTML = '<option value="">ทุกครั้ง</option>';
-      for (let i = 1; i <= 13; i++) testSel.innerHTML += `<option value="${i}">ครั้งที่ ${i}</option>`;
+    function toggleLine(idx) {
+      const meta = chart.getDatasetMeta(idx);
+      meta.hidden = meta.hidden === null ? !chart.data.datasets[idx].hidden : null;
+      event.target.classList.toggle('active');
+      chart.update();
     }
 
-    function selectCard(name) {
-      selectedCard = name;
-      ['scores','ranking','students','summary'].forEach(n => {
-        document.getElementById('card-' + n).classList.toggle('selected', n === name);
-      });
+    async function saveImage() {
+      const area = document.getElementById('exportContent');
+      const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#f8fafc' });
+      const link = document.createElement('a');
+      link.download = `Report.png`;
+      link.href = canvas.toDataURL();
+      link.click();
     }
-
-    async function fetchData() {
-      const course = document.getElementById('expCourse').value;
-      const test   = document.getElementById('expTest').value;
-      if (!course) { showToast('กรุณาเลือกคอร์สก่อนครับ', 'error'); return null; }
-
-      if (selectedCard === 'scores') {
-        let q = db.from('test_scores').select('*, students(nickname, full_name)').eq('course_code', course).order('test_number').order('student_id');
-        if (test) q = q.eq('test_number', +test);
-        const { data } = await q;
-        const headers = ['nickname', 'full_name', 'test_number', 'subject', 'score', 'full_score', 'percent'];
-        const rows = (data || []).map(r => ({
-          nickname: r.students?.nickname || '',
-          full_name: r.students?.full_name || '',
-          test_number: r.test_number,
-          subject: r.subject,
-          score: r.score,
-          full_score: r.full_score,
-          percent: r.full_score > 0 ? ((r.score / r.full_score) * 100).toFixed(1) : '0',
-        }));
-        return { headers, rows };
-      }
-
-      if (selectedCard === 'ranking') {
-        const { data } = await db.from('class_rankings').select('*, students(nickname, full_name)').eq('course_code', course).order('rank_number');
-        const headers = ['rank_number', 'nickname', 'full_name', 'total_percent'];
-        const rows = (data || []).map(r => ({
-          rank_number: r.rank_number,
-          nickname: r.students?.nickname || '',
-          full_name: r.students?.full_name || '',
-          total_percent: r.total_percent,
-        }));
-        return { headers, rows };
-      }
-
-      if (selectedCard === 'students') {
-        const { data } = await db.from('students').select('*').eq('course_code', course).order('nickname');
-        const headers = ['nickname', 'full_name', 'school', 'phone', 'note'];
-        const rows = (data || []).map(r => ({
-          nickname: r.nickname || '',
-          full_name: r.full_name || '',
-          school: r.school || '',
-          phone: r.phone || '',
-          note: r.note || '',
-        }));
-        return { headers, rows };
-      }
-
-      if (selectedCard === 'summary') {
-        let q = db.from('test_scores').select('*, students(nickname, full_name)').eq('course_code', course);
-        if (test) q = q.eq('test_number', +test);
-        const { data } = await q;
-        const map = {};
-        (data || []).forEach(r => {
-          const key = r.student_id;
-          if (!map[key]) map[key] = { nickname: r.students?.nickname || '', full_name: r.students?.full_name || '', sci: [], math: [], eng: [] };
-          const pct = r.full_score > 0 ? (r.score / r.full_score) * 100 : 0;
-          if (r.subject === 'วิทย์')  map[key].sci.push(pct);
-          if (r.subject === 'คณิต')  map[key].math.push(pct);
-          if (r.subject === 'อังกฤษ') map[key].eng.push(pct);
-        });
-        const avg = arr => arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : '—';
-        const headers = ['nickname', 'full_name', 'sci_avg%', 'math_avg%', 'eng_avg%', 'total_avg%'];
-        const rows = Object.values(map).map(s => {
-          const all = [...s.sci, ...s.math, ...s.eng];
-          return {
-            nickname: s.nickname, full_name: s.full_name,
-            'sci_avg%': avg(s.sci), 'math_avg%': avg(s.math), 'eng_avg%': avg(s.eng),
-            'total_avg%': avg(all),
-          };
-        });
-        return { headers, rows };
-      }
-
-      return null;
-    }
-
-    async function preview() {
-      const result = await fetchData();
-      if (!result) return;
-      lastData = result.rows; lastHeaders = result.headers;
-      document.getElementById('previewCount').textContent = `(${result.rows.length} แถว)`;
-
-      if (!result.rows.length) {
-        document.getElementById('previewArea').innerHTML = '<p class="text-center text-slate-400 py-6 text-sm">ไม่มีข้อมูลครับ</p>';
-        return;
-      }
-
-      const th = result.headers.map(h => `<th class="px-3 py-2 text-xs font-black text-slate-500 text-left uppercase whitespace-nowrap">${h}</th>`).join('');
-      const preview10 = result.rows.slice(0, 10);
-      const trs = preview10.map(r =>
-        `<tr class="hover:bg-slate-50">${result.headers.map(h => `<td class="px-3 py-2 text-xs text-slate-700 whitespace-nowrap">${r[h] ?? ''}</td>`).join('')}</tr>`
-      ).join('');
-      const more = result.rows.length > 10 ? `<tr><td colspan="${result.headers.length}" class="px-3 py-2 text-xs text-slate-400 text-center">...และอีก ${result.rows.length - 10} แถว</td></tr>` : '';
-
-      document.getElementById('previewArea').innerHTML = `
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-100"><tr>${th}</tr></thead>
-          <tbody class="divide-y divide-slate-50">${trs}${more}</tbody>
-        </table>`;
-    }
-
-    async function exportCSV() {
-      if (!lastData.length) {
-        await preview();
-        if (!lastData.length) return;
-      }
-
-      const course = document.getElementById('expCourse').value || 'export';
-      const cardNames = { scores:'คะแนนรายคน', ranking:'อันดับห้อง', students:'รายชื่อนักเรียน', summary:'สรุปภาพรวม' };
-      const filename = `${course}_${cardNames[selectedCard]}_${new Date().toISOString().slice(0,10)}.csv`;
-
-      const header = lastHeaders.join(',');
-      const csvRows = lastData.map(r => lastHeaders.map(h => {
-        const v = String(r[h] ?? '');
-        return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g,'""')}"` : v;
-      }).join(','));
-
-      const csv = '\uFEFF' + [header, ...csvRows].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      showToast(`✅ Download "${filename}" เรียบร้อย`, 'success');
-    }
-
-    function showToast(msg, type = 'success') {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.className = `toast ${type} show`;
-      setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.removeItem('admin_user'); location.href = 'index.html'; } }
-    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
     init();
+    function logout() {
+      if (confirm('ออกจากระบบใช่ไหม?')) {
+        sessionStorage.removeItem('admin_user');
+        location.href = 'index.html';
+      }
+    }
   </script>
 </body>
 </html>
