@@ -2,33 +2,34 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>เนื้อหา - Qtutor Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { font-family: 'Kanit', sans-serif; }
-    body { background-color: #f8fafc; display: flex; min-height: 100vh; }
+    * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #f8fafc; }
     
-    /* Sidebar Fix */
-    .sidebar { background: #0f172a; width: 240px; flex-shrink: 0; display: flex !important; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 40; }
+    .sidebar { background: #0f172a; width: 240px; flex-shrink: 0; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; transition: all 0.3s ease; left: 0; }
     .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; text-decoration: none; margin-bottom: 4px; }
     .nav-item:hover { background: #1e293b; color: #e2e8f0; }
     .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
     
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; backdrop-filter: blur(2px); }
+    .content-area { margin-left: 240px; transition: all 0.3s; min-height: 100vh; display: flex; flex-direction: column; }
+    
     .field-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; }
     .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; width: 100%; transition: all 0.2s; }
-    .input:focus { border-color: #6366f1; outline: none; }
     
     .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 10px 22px; cursor: pointer; border: none; }
-    .btn-sm { font-weight: 700; border-radius: 10px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+    .btn-sm { font-weight: 700; border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
     .btn-edit { background: #ede9fe; color: #6d28d9; }
     .btn-danger { background: #fee2e2; color: #dc2626; }
     .btn-view { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
     .btn-view.active { background: #0f172a; color: #fff; }
 
-    .tab-btn { padding: 10px 24px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn { padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn.active { background: #0f172a; color: #fff; }
     .tab-btn:not(.active) { background: #f1f5f9; color: #64748b; }
 
@@ -38,18 +39,41 @@
     .pill-eng { background: #ede9fe; color: #5b21b6; }
     .pill-all { background: #f1f5f9; color: #475569; }
 
-    .preview-box { background: #fff; border: 2px solid #e2e8f0; border-radius: 20px; overflow: hidden; margin-top: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+    /* Toast Notification Style */
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; padding: 16px 24px; border-radius: 20px; font-weight: 700; font-size: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform: translateY(150px); opacity: 0; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+    .toast.error { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+
+    .preview-box { background: #fff; border: 2px solid #e2e8f0; border-radius: 20px; overflow: hidden; margin-top: 12px; }
     iframe { width: 100%; aspect-ratio: 16/9; border: none; }
 
-    @media (max-width: 768px) { .sidebar { display: none !important; } }
+    @media (max-width: 1024px) {
+      .sidebar { left: -240px; }
+      .sidebar.open { left: 0; }
+      .content-area { margin-left: 0; }
+      .overlay.open { display: block; }
+      .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
+    }
+    
+    @media (max-width: 640px) {
+      .item-card { flex-direction: column; align-items: flex-start; }
+      .action-btns { width: 100%; display: grid; grid-template-cols: 1fr; }
+    }
   </style>
 </head>
-<body>
+<body class="flex">
 
-  <aside class="sidebar">
-    <div class="px-5 py-6 border-b border-slate-800">
-      <h1 class="text-2xl font-black text-white">Qtutor</h1>
-      <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+  <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+  <div id="toast" class="toast"></div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-black text-white">Qtutor</h1>
+        <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+      </div>
+      <button onclick="toggleSidebar()" class="lg:hidden text-slate-400">✕</button>
     </div>
     <nav class="flex-1 px-3 py-4 overflow-y-auto">
       <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
@@ -60,23 +84,26 @@
       <a href="export.html" class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
     <div class="px-3 py-4 border-t border-slate-800">
-      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10">
-        <span>🚪</span> ออกจากระบบ
-      </button>
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400"><span>🚪</span> ออกจากระบบ</button>
     </div>
   </aside>
 
-  <div class="flex-1 flex flex-col min-w-0">
-    <header class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
-      <h2 class="text-xl font-black text-slate-800">🎬 จัดการเนื้อหา</h2>
-      <button onclick="openModal()" class="btn-primary shadow-lg">+ เพิ่มเนื้อหา</button>
+  <div class="content-area flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b border-slate-100 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden bg-slate-50 p-2 rounded-lg text-slate-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <h2 class="text-lg md:text-xl font-black text-slate-800">🎬 จัดการเนื้อหา</h2>
+      </div>
+      <button onclick="openModal()" class="btn-primary shadow-lg text-sm md:text-base">+ เพิ่มเนื้อหา</button>
     </header>
 
-    <main class="p-6 space-y-6 max-w-5xl mx-auto w-full">
-      <section class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-5">
+    <main class="p-4 md:p-6 space-y-6 max-w-5xl mx-auto w-full">
+      <section class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
         <div class="flex-1">
           <label class="field-label">เลือกคอร์ส</label>
-          <select id="filterCourse" onchange="loadContent()" class="input"><option value="">-- แสดงคอร์สทั้งหมด --</option></select>
+          <select id="filterCourse" onchange="loadContent()" class="input"></select>
         </div>
         <div class="flex-1">
           <label class="field-label">แยกตามวิชา</label>
@@ -90,51 +117,40 @@
         </div>
       </section>
 
-      <div class="flex gap-3 border-b border-slate-200 pb-1">
+      <div class="flex gap-2 border-b border-slate-200 pb-1 overflow-x-auto no-scrollbar">
         <button class="tab-btn active" id="tab-sol" onclick="switchTab('answer')">📄 เฉลยไฟล์ PDF</button>
         <button class="tab-btn" id="tab-vid" onclick="switchTab('clip')">🎥 คลิปวิดีโอ YouTube</button>
       </div>
 
-      <div id="listContainer" class="space-y-4">
-        </div>
+      <div id="listContainer" class="space-y-4"></div>
     </main>
   </div>
 
-  <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-[32px] p-8 w-full max-w-lg shadow-2xl">
+  <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-3 md:p-4 z-[200] backdrop-blur-sm" onclick="if(event.target===this) closeModal()">
+    <div class="bg-white rounded-[28px] md:rounded-[32px] p-6 md:p-8 w-full max-w-lg shadow-2xl overflow-y-auto max-h-[95vh]">
       <div class="flex justify-between items-center mb-6">
-        <h3 id="modalTitle" class="text-2xl font-black text-slate-800">เพิ่มเนื้อหา</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
+        <h3 id="modalTitle" class="text-xl md:text-2xl font-black text-slate-800">เพิ่มเนื้อหา</h3>
+        <button onclick="closeModal()" class="text-slate-400 text-3xl">&times;</button>
       </div>
-      
       <input type="hidden" id="editId">
-      
       <div class="space-y-5">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div><label class="field-label">คอร์ส *</label><select id="modalCourse" class="input"></select></div>
-          <div><label id="labelStep" class="field-label">สัปดาห์ (Week) *</label><input type="number" id="modalStep" class="input" placeholder="เช่น 1"></div>
+          <div><label id="labelStep" class="field-label">สัปดาห์ (Week) *</label><input type="number" id="modalStep" class="input"></div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="field-label">วิชา *</label><select id="modalSubject" class="input">
-            <option value="วิทย์">วิทย์</option><option value="คณิต">คณิต</option><option value="อังกฤษ">อังกฤษ</option><option value="รวม">รวม</option>
-          </select></div>
-          <div><label class="field-label">ชื่อเรื่อง *</label><input type="text" id="modalTitleInput" class="input" placeholder="ระบุหัวข้อ..."></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="field-label">วิชา *</label><select id="modalSubject" class="input"><option value="วิทย์">วิทย์</option><option value="คณิต">คณิต</option><option value="อังกฤษ">อังกฤษ</option><option value="รวม">รวม</option></select></div>
+          <div><label class="field-label">ชื่อเรื่อง *</label><input type="text" id="modalTitleInput" class="input"></div>
         </div>
-        <div id="areaAnswer">
-          <label class="field-label">ลิงก์ไฟล์ PDF *</label>
-          <input type="url" id="modalFileUrl" class="input" placeholder="https://drive.google.com/...">
-        </div>
+        <div id="areaAnswer"><label class="field-label">ลิงก์ไฟล์ PDF *</label><input type="url" id="modalFileUrl" class="input"></div>
         <div id="areaClip" class="hidden">
-          <label class="field-label">YouTube URL *</label>
-          <input type="url" id="modalVideoUrl" class="input" placeholder="https://youtube.com/...">
-          <label class="field-label mt-4">ไฟล์ PDF แนบ (ถ้ามี)</label>
-          <input type="url" id="modalPdfUrl" class="input" placeholder="ใส่ลิงก์ไฟล์ PDF">
+          <label class="field-label">YouTube URL *</label><input type="url" id="modalVideoUrl" class="input">
+          <label class="field-label mt-4">ไฟล์ PDF แนบ (ถ้ามี)</label><input type="url" id="modalPdfUrl" class="input">
         </div>
       </div>
-
-      <div class="flex gap-4 mt-8">
-        <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl hover:bg-slate-200 transition-all">ยกเลิก</button>
-        <button onclick="saveData()" class="flex-1 btn-primary py-4 shadow-indigo-200 shadow-lg">💾 บันทึกข้อมูล</button>
+      <div class="flex flex-col sm:flex-row gap-3 mt-8">
+        <button onclick="closeModal()" class="order-2 sm:order-1 flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl">ยกเลิก</button>
+        <button onclick="saveData()" id="saveBtn" class="order-1 sm:order-2 flex-1 btn-primary py-3 shadow-lg">💾 บันทึกข้อมูล</button>
       </div>
     </div>
   </div>
@@ -147,10 +163,23 @@
     let currentTab = 'answer';
     let allData = { solutions: [], videos: [] };
 
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('open');
+    }
+
     async function init() {
       const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', {ascending: false});
       const fCourse = document.getElementById('filterCourse');
       const mCourse = document.getElementById('modalCourse');
+      fCourse.innerHTML = '<option value="">-- แสดงคอร์สทั้งหมด --</option>';
       courses?.forEach(c => {
         const opt = `<option value="${c.course_code}">${c.course_name}</option>`;
         fCourse.innerHTML += opt; mCourse.innerHTML += opt;
@@ -172,7 +201,6 @@
       const course = document.getElementById('filterCourse').value;
       const sub = document.getElementById('filterSubject').value;
       const container = document.getElementById('listContainer');
-      
       let items = currentTab === 'answer' ? allData.solutions : allData.videos;
       if (course) items = items.filter(i => i.course_code === course);
       if (sub) items = items.filter(i => i.subject === sub);
@@ -185,24 +213,22 @@
       container.innerHTML = items.map(item => {
         const url = currentTab === 'answer' ? item.file_url : item.video_url;
         return `
-        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 transition-all hover:shadow-md">
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl ${currentTab === 'answer' ? 'bg-indigo-50 text-indigo-500' : 'bg-rose-50 text-rose-500'} flex items-center justify-center text-2xl">
+        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4">
+          <div class="item-card flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl shrink-0 ${currentTab === 'answer' ? 'bg-indigo-50 text-indigo-500' : 'bg-rose-50 text-rose-500'} flex items-center justify-center text-xl">
               ${currentTab === 'answer' ? '📄' : '🎥'}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1 flex-wrap">
                 <span class="subject-pill ${pillClass(item.subject)}">${item.subject}</span>
-                <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  ${currentTab === 'answer' ? 'WEEK '+item.week : 'ORDER '+item.order_number} • ${item.course_code}
-                </span>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${currentTab === 'answer' ? 'WEEK '+item.week : 'ORDER '+item.order_number} • ${item.course_code}</span>
               </div>
-              <p class="font-bold text-slate-800 truncate">${item.title}</p>
+              <p class="font-bold text-slate-800 text-sm truncate">${item.title}</p>
             </div>
-            <div class="flex gap-2">
+            <div class="action-btns flex gap-2">
               <button onclick="togglePreview('${item.id}', '${url}', this)" class="btn-sm btn-view">👁️ Preview</button>
               <button onclick="editItem('${item.id}')" class="btn-sm btn-edit">แก้ไข</button>
-              <button onclick="deleteItem('${item.id}')" class="btn-sm btn-danger">ลบ</button>
+              <button onclick="deleteItem('${item.id}', '${item.title.replace(/'/g, "\\'")}')" class="btn-sm btn-danger">ลบ</button>
             </div>
           </div>
           <div id="preview-${item.id}" class="hidden preview-box"></div>
@@ -210,82 +236,9 @@
       }).join('');
     }
 
-    function togglePreview(id, url, btn) {
-      const box = document.getElementById(`preview-${id}`);
-      if (!box.classList.contains('hidden')) {
-        box.classList.add('hidden');
-        btn.classList.remove('active');
-        box.innerHTML = '';
-        return;
-      }
-
-      // Close other previews
-      document.querySelectorAll('.preview-box').forEach(el => { el.classList.add('hidden'); el.innerHTML = ''; });
-      document.querySelectorAll('.btn-view').forEach(el => el.classList.remove('active'));
-
-      box.classList.remove('hidden');
-      btn.classList.add('active');
-
-      // Convert Links for Preview
-      let finalUrl = url;
-      if (currentTab === 'clip') {
-        const vidId = url.match(/(?:youtu\.be\/|v=|embed\/|watch\?v=)([A-Za-z0-9_-]{11})/);
-        finalUrl = vidId ? `https://www.youtube.com/embed/${vidId[1]}` : url;
-      } else if (url.includes('drive.google.com')) {
-        finalUrl = url.replace('/view', '/preview').replace('?usp=sharing', '');
-      }
-
-      box.innerHTML = `
-        <div class="bg-slate-50 p-2 text-[10px] font-bold text-slate-400 flex justify-between">
-          <span>PREVIEW MODE</span>
-          <a href="${url}" target="_blank" class="text-indigo-600">เปิดลิงก์ต้นฉบับ ↗</a>
-        </div>
-        <iframe src="${finalUrl}" allowfullscreen></iframe>
-      `;
-    }
-
-    function editItem(id) {
-      const list = currentTab === 'answer' ? allData.solutions : allData.videos;
-      const item = list.find(i => i.id == id);
-      if(!item) return;
-
-      document.getElementById('editId').value = item.id;
-      document.getElementById('modalCourse').value = item.course_code;
-      document.getElementById('modalSubject').value = item.subject;
-      document.getElementById('modalTitleInput').value = item.title;
-      document.getElementById('modalStep').value = currentTab === 'answer' ? item.week : item.order_number;
-      
-      if(currentTab === 'answer') {
-        document.getElementById('modalFileUrl').value = item.file_url;
-      } else {
-        document.getElementById('modalVideoUrl').value = item.video_url;
-        document.getElementById('modalPdfUrl').value = item.pdf_url || '';
-      }
-      
-      document.getElementById('modalTitle').textContent = '📝 แก้ไขเนื้อหา';
-      openModal(true);
-    }
-
-    function openModal(isEdit = false) {
-      if(!isEdit) {
-        document.getElementById('editId').value = '';
-        document.getElementById('modalTitleInput').value = '';
-        document.getElementById('modalStep').value = '';
-        document.getElementById('modalFileUrl').value = '';
-        document.getElementById('modalVideoUrl').value = '';
-        document.getElementById('modalPdfUrl').value = '';
-        document.getElementById('modalTitle').textContent = '➕ เพิ่มเนื้อหา';
-      }
-      document.getElementById('modal').classList.remove('hidden');
-      document.getElementById('areaAnswer').classList.toggle('hidden', currentTab!=='answer');
-      document.getElementById('areaClip').classList.toggle('hidden', currentTab!=='clip');
-      document.getElementById('labelStep').textContent = currentTab === 'answer' ? 'สัปดาห์ที่ (Week) *' : 'ลำดับคลิป (Order) *';
-    }
-
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
     async function saveData() {
       const id = document.getElementById('editId').value;
+      const btn = document.getElementById('saveBtn');
       const table = currentTab === 'answer' ? 'solutions' : 'videos';
       const payload = {
         course_code: document.getElementById('modalCourse').value,
@@ -302,35 +255,80 @@
         payload.pdf_url = document.getElementById('modalPdfUrl').value || null;
       }
 
-      if(!payload.title || !payload.course_code) return alert('กรุณากรอกข้อมูลให้ครบ');
+      if(!payload.title || !payload.course_code) return showToast('กรุณากรอกข้อมูลให้ครบ', 'error');
 
-      if(id) await db.from(table).update(payload).eq('id', id);
-      else await db.from(table).insert(payload);
+      btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+
+      const { error } = id ? await db.from(table).update(payload).eq('id', id) : await db.from(table).insert(payload);
       
-      closeModal();
-      loadContent();
+      btn.disabled = false; btn.innerHTML = '💾 บันทึกข้อมูล';
+      
+      if(error) {
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      } else {
+        showToast(id ? '✅ แก้ไขข้อมูลสำเร็จแล้ว' : '✅ เพิ่มเนื้อหาใหม่สำเร็จแล้ว');
+        closeModal();
+        loadContent();
+      }
     }
 
-    async function deleteItem(id) {
-      if(!confirm('คุณแน่ใจนะว่าจะลบข้อมูลนี้?')) return;
-      await db.from(currentTab==='answer'?'solutions':'videos').delete().eq('id', id);
-      loadContent();
+    async function deleteItem(id, title) {
+      if(!confirm(`ยืนยันการลบเนื้อหา: "${title}" ?`)) return;
+      const { error } = await db.from(currentTab==='answer'?'solutions':'videos').delete().eq('id', id);
+      if(error) {
+        showToast('ลบไม่สำเร็จ', 'error');
+      } else {
+        showToast('🗑️ ลบเนื้อหาเรียบร้อยแล้ว');
+        loadContent();
+      }
     }
 
-    function switchTab(t) {
-      currentTab = t;
-      document.getElementById('tab-sol').classList.toggle('active', t==='answer');
-      document.getElementById('tab-vid').classList.toggle('active', t==='clip');
-      renderList();
+    // [ส่วนอื่นๆ ของ JS ยังคงเหมือนเดิม]
+    function togglePreview(id, url, btn) {
+      const box = document.getElementById(`preview-${id}`);
+      if (!box.classList.contains('hidden')) { box.classList.add('hidden'); btn.classList.remove('active'); box.innerHTML = ''; return; }
+      document.querySelectorAll('.preview-box').forEach(el => { el.classList.add('hidden'); el.innerHTML = ''; });
+      document.querySelectorAll('.btn-view').forEach(el => el.classList.remove('active'));
+      box.classList.remove('hidden'); btn.classList.add('active');
+      let finalUrl = url;
+      if (currentTab === 'clip') {
+        const vidId = url.match(/(?:youtu\.be\/|v=|embed\/|watch\?v=)([A-Za-z0-9_-]{11})/);
+        finalUrl = vidId ? `https://www.youtube.com/embed/${vidId[1]}` : url;
+      } else if (url.includes('drive.google.com')) {
+        finalUrl = url.replace('/view', '/preview').replace('?usp=sharing', '');
+      }
+      box.innerHTML = `<div class="bg-slate-50 p-2 text-[10px] font-bold text-slate-400 flex justify-between"><span>PREVIEW MODE</span><a href="${url}" target="_blank" class="text-indigo-600">เปิดต้นฉบับ ↗</a></div><iframe src="${finalUrl}" allowfullscreen></iframe>`;
     }
-
-    function pillClass(s) {
-      const map = {'วิทย์':'pill-sci', 'คณิต':'pill-math', 'อังกฤษ':'pill-eng'};
-      return map[s] || 'pill-all';
+    function editItem(id) {
+      const list = currentTab === 'answer' ? allData.solutions : allData.videos;
+      const item = list.find(i => i.id == id);
+      if(!item) return;
+      document.getElementById('editId').value = item.id;
+      document.getElementById('modalCourse').value = item.course_code;
+      document.getElementById('modalSubject').value = item.subject;
+      document.getElementById('modalTitleInput').value = item.title;
+      document.getElementById('modalStep').value = currentTab === 'answer' ? item.week : item.order_number;
+      if(currentTab === 'answer') { document.getElementById('modalFileUrl').value = item.file_url; } 
+      else { document.getElementById('modalVideoUrl').value = item.video_url; document.getElementById('modalPdfUrl').value = item.pdf_url || ''; }
+      document.getElementById('modalTitle').textContent = '📝 แก้ไขเนื้อหา';
+      openModal(true);
     }
-
+    function openModal(isEdit = false) {
+      if(!isEdit) {
+        document.getElementById('editId').value = ''; document.getElementById('modalTitleInput').value = '';
+        document.getElementById('modalStep').value = ''; document.getElementById('modalFileUrl').value = '';
+        document.getElementById('modalVideoUrl').value = ''; document.getElementById('modalPdfUrl').value = '';
+        document.getElementById('modalTitle').textContent = '➕ เพิ่มเนื้อหา';
+      }
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('areaAnswer').classList.toggle('hidden', currentTab!=='answer');
+      document.getElementById('areaClip').classList.toggle('hidden', currentTab!=='clip');
+      document.getElementById('labelStep').textContent = currentTab === 'answer' ? 'สัปดาห์ (Week) *' : 'ลำดับคลิป (Order) *';
+    }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    function switchTab(t) { currentTab = t; document.getElementById('tab-sol').classList.toggle('active', t==='answer'); document.getElementById('tab-vid').classList.toggle('active', t==='clip'); renderList(); }
+    function pillClass(s) { const map = {'วิทย์':'pill-sci', 'คณิต':'pill-math', 'อังกฤษ':'pill-eng'}; return map[s] || 'pill-all'; }
     function logout() { if(confirm('ต้องการออกจากระบบ?')) { location.href='index.html'; } }
-
     init();
   </script>
 </body>
