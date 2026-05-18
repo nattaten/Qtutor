@@ -2,90 +2,56 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>อันดับห้อง - Qtutor</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * { font-family: 'Kanit', sans-serif; }
+    * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #f8fafc; }
 
-    /* test selector strip */
-    .test-strip {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      padding: 4px 2px 8px;
-      scrollbar-width: none;
-    }
+    .test-strip { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 4px 0 8px; scrollbar-width: none; }
     .test-strip::-webkit-scrollbar { display: none; }
     .test-chip {
-      scroll-snap-align: start;
-      flex: 0 0 72px;
-      height: 56px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      font-weight: 900;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.18s;
-      border: 2px solid transparent;
-      background: #f1f5f9;
-      color: #64748b;
-      line-height: 1.2;
+      flex: 0 0 auto; min-width: 52px; height: 46px; border-radius: 12px;
+      font-weight: 900; font-size: 14px; cursor: pointer; transition: all 0.18s;
+      background: #334155; color: #cbd5e1; border: 2px solid transparent;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2;
     }
-    .test-chip.active {
-      background: #0f172a;
-      color: #fff;
-      border-color: #0f172a;
-      box-shadow: 0 4px 12px rgba(15,23,42,0.25);
-      transform: scale(1.04);
-    }
-    .test-chip-sub { font-size: 10px; font-weight: 400; opacity: 0.6; }
-    .test-chip.active .test-chip-sub { opacity: 0.5; color: #fff; }
+    .test-chip.active { background: #fff; color: #0f172a; border-color: #fff; transform: scale(1.06); box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    .test-chip-sub { font-size: 9px; font-weight: 400; opacity: 0.6; }
 
-    /* hero */
-    .hero-gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+    .avg-card { background: #fff; border-radius: 20px; padding: 14px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 
-    /* row styles */
     .row-gold   { background: linear-gradient(135deg,#fefce8,#fef9c3); border-left: 4px solid #eab308; }
     .row-silver { background: linear-gradient(135deg,#f8fafc,#f1f5f9); border-left: 4px solid #94a3b8; }
     .row-bronze { background: linear-gradient(135deg,#fff7ed,#ffedd5); border-left: 4px solid #f97316; }
     .row-me     { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-left: 4px solid #3b82f6; }
     .row-normal { background: #fff; border-left: 4px solid transparent; }
 
-    .pill-sci  { background: #d1fae5; color: #065f46; }
-    .pill-math { background: #dbeafe; color: #1e40af; }
-    .pill-eng  { background: #ede9fe; color: #5b21b6; }
-    .pill-total { background: #0f172a; color: #fff; }
-
     @media print { .no-print { display: none !important; } }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="min-h-screen">
 
   <!-- NAVBAR -->
-  <nav class="bg-white/90 backdrop-blur-md shadow-sm px-4 py-3 sticky top-0 z-20 border-b border-slate-100">
-    <div class="max-w-2xl mx-auto flex items-center justify-between">
+  <nav class="bg-white/90 backdrop-blur-md shadow-sm px-4 py-3 sticky top-0 z-30 border-b border-slate-100 no-print">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button onclick="location.href='dashboard.html'" class="text-slate-400 hover:text-slate-700 transition-colors">
+        <button onclick="location.href='dashboard.html'" class="text-slate-400 hover:text-slate-700 p-1">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
         <div>
-          <h1 class="text-lg font-black text-slate-800 leading-tight">🏆 อันดับห้อง</h1>
-          <p id="courseName" class="text-xs text-slate-400"></p>
+          <h1 class="text-base font-black text-slate-800 leading-tight">🏆 อันดับห้อง</h1>
+          <p id="navCourse" class="text-xs text-slate-400"></p>
         </div>
       </div>
-      <button onclick="saveImage()" class="no-print bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold text-sm px-4 py-2 rounded-2xl shadow transition-all flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button onclick="saveImage()" class="no-print bg-slate-800 active:scale-95 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
         บันทึกรูป
@@ -93,83 +59,65 @@
     </div>
   </nav>
 
-  <!-- TEST SELECTOR -->
-  <div class="bg-white border-b border-slate-100 px-4 pt-3 pb-1 sticky top-[60px] z-10">
-    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">เลือกครั้งที่ test</p>
-    <div id="testStrip" class="test-strip"></div>
-  </div>
+  <!-- EXPORT CONTENT -->
+  <div id="exportContent" class="max-w-3xl mx-auto px-4 py-4 pb-20 space-y-5">
 
-  <!-- MAIN -->
-  <div id="mainContent" class="max-w-2xl mx-auto px-4 py-4 pb-20 space-y-4">
-
-    <!-- HERO MY RANK -->
-    <div class="hero-gradient rounded-3xl p-5 text-white shadow-xl shadow-indigo-200">
-      <p class="text-indigo-200 text-xs font-semibold uppercase tracking-widest">อันดับของคุณ</p>
-      <div class="flex items-end justify-between mt-1">
+    <!-- HERO (dark) -->
+    <div class="bg-[#0f172a] rounded-[2rem] p-5 md:p-7 text-white shadow-xl">
+      <div class="flex items-center gap-4 mb-5">
+        <div class="bg-yellow-400 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-yellow-400/30 flex-shrink-0">🏆</div>
         <div>
-          <p id="heroRank" class="text-5xl font-black leading-none">#—</p>
-          <p id="heroOf" class="text-indigo-200 text-sm mt-1">จาก — คน</p>
+          <h2 id="heroTitle" class="text-2xl md:text-3xl font-black italic leading-tight">Dashboard</h2>
+          <p id="heroCourse" class="text-indigo-400 font-bold uppercase tracking-widest text-xs mt-0.5"></p>
         </div>
-        <div class="text-right space-y-1">
-          <div class="flex gap-2 justify-end">
-            <span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl">วิทย์ <span id="heroSci">—</span></span>
-            <span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl">คณิต <span id="heroMath">—</span></span>
+      </div>
+      <div>
+        <p class="text-[10px] text-slate-400 uppercase font-black mb-2 tracking-widest">เลือกครั้งที่สอบ</p>
+        <div id="testStrip" class="test-strip"></div>
+      </div>
+    </div>
+
+    <!-- TOPICS AREA -->
+    <div id="topicsArea"></div>
+
+    <!-- AVG CARDS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="avg-card border-b-4 border-slate-800">
+        <p class="text-[10px] font-black text-slate-400 uppercase">รวม</p>
+        <p id="avgTotal" class="text-2xl font-black text-slate-800">—</p>
+      </div>
+      <div class="avg-card border-b-4 border-emerald-500">
+        <p class="text-[10px] font-black text-emerald-600 uppercase">วิทย์</p>
+        <p id="avgSci" class="text-2xl font-black text-emerald-700">—</p>
+      </div>
+      <div class="avg-card border-b-4 border-blue-500">
+        <p class="text-[10px] font-black text-blue-600 uppercase">คณิต</p>
+        <p id="avgMath" class="text-2xl font-black text-blue-700">—</p>
+      </div>
+      <div class="avg-card border-b-4 border-purple-500">
+        <p class="text-[10px] font-black text-purple-600 uppercase">อังกฤษ</p>
+        <p id="avgEng" class="text-2xl font-black text-purple-700">—</p>
+      </div>
+    </div>
+
+    <!-- RANKING TABLE -->
+    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <div style="min-width:560px;">
+          <div class="grid grid-cols-[64px_1fr_72px_72px_72px_80px] gap-2 px-5 py-4 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+            <span>Rank</span><span>Student</span>
+            <span class="text-center">Sci %</span>
+            <span class="text-center">Math %</span>
+            <span class="text-center">Eng %</span>
+            <span class="text-right">Total %</span>
           </div>
-          <div class="flex gap-2 justify-end">
-            <span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl">อังกฤษ <span id="heroEng">—</span></span>
-            <span class="bg-white/10 border border-white/40 text-white text-xs font-bold px-2.5 py-1 rounded-xl">รวม <span id="heroTotal">—</span></span>
+          <div id="rankingList" class="divide-y divide-slate-50">
+            <p class="text-center py-8 text-slate-400 text-sm animate-pulse">กำลังโหลด...</p>
           </div>
         </div>
       </div>
-      <div class="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
-        <div id="heroBar" class="h-full rounded-full bg-white/70 transition-all duration-700" style="width:0%"></div>
-      </div>
-      <p id="heroGap" class="text-indigo-200 text-xs mt-1.5"></p>
     </div>
 
-    <!-- NOTE -->
-    <div class="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-2.5 flex items-center gap-3">
-      <span>ℹ️</span>
-      <p class="text-xs text-blue-700">ชื่อเพื่อนถูกซ่อนไว้ คุณจะเห็นแค่ <strong>อันดับ</strong> และ <strong>คะแนน</strong> ของแต่ละคน</p>
-    </div>
-
-    <!-- COLUMN HEADER -->
-    <div class="grid grid-cols-[36px_1fr_52px_52px_52px_58px] gap-1 px-3 pb-1 text-xs font-bold text-slate-400 uppercase tracking-wider">
-      <div>#</div>
-      <div>ชื่อ</div>
-      <div class="text-center">วิทย์</div>
-      <div class="text-center">คณิต</div>
-      <div class="text-center">อังกฤษ</div>
-      <div class="text-center">รวม%</div>
-    </div>
-
-    <!-- RANKING LIST -->
-    <div id="rankingList" class="space-y-2">
-      <div class="text-center py-10 text-slate-400 animate-pulse bg-white rounded-3xl text-sm">กำลังโหลด...</div>
-    </div>
-
-    <!-- CLASS AVG -->
-    <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-100">
-      <p class="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">📊 ค่าเฉลี่ยห้อง</p>
-      <div class="grid grid-cols-4 gap-2 text-center">
-        <div class="bg-slate-800 rounded-2xl p-3">
-          <p class="text-xs text-slate-300">รวม</p>
-          <p id="avgTotal" class="text-lg font-black text-white">—</p>
-        </div>
-        <div class="bg-emerald-50 rounded-2xl p-3">
-          <p class="text-xs text-emerald-600">วิทย์</p>
-          <p id="avgSci" class="text-lg font-black text-emerald-700">—</p>
-        </div>
-        <div class="bg-blue-50 rounded-2xl p-3">
-          <p class="text-xs text-blue-600">คณิต</p>
-          <p id="avgMath" class="text-lg font-black text-blue-700">—</p>
-        </div>
-        <div class="bg-violet-50 rounded-2xl p-3">
-          <p class="text-xs text-violet-600">อังกฤษ</p>
-          <p id="avgEng" class="text-lg font-black text-violet-700">—</p>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -178,192 +126,194 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allScores = [];
-    let myId = null;
-    let courseCode = null;
-    let activeTest = 0; // 0 = รวมทุกครั้ง
+    let students  = [];
+    let myId      = null;
+    let activeTest = 0;
 
+    // ─── Init ──────────────────────────────────────────────────
     async function init() {
       const userData = JSON.parse(sessionStorage.getItem('student_user'));
       if (!userData) return (location.href = 'index.html');
+
       myId = +userData.id;
-      courseCode = userData.course_code;
-      document.getElementById('courseName').textContent = userData.course_name;
+      document.getElementById('navCourse').textContent  = userData.course_name;
+      document.getElementById('heroCourse').textContent = userData.course_name;
 
-      const { data } = await db
-        .from('test_scores')
-        .select('student_id, test_number, subject, score, full_score')
-        .eq('course_code', courseCode);
+      const [sRes, scRes] = await Promise.all([
+        db.from('students').select('id, nickname').eq('course_code', userData.course_code).order('nickname'),
+        db.from('test_scores').select('student_id, test_number, subject, score, full_score, topic').eq('course_code', userData.course_code),
+      ]);
+      students  = sRes.data  || [];
+      allScores = scRes.data || [];
 
-      allScores = data || [];
       buildTestStrip();
       render();
     }
 
+    // ─── Test strip ────────────────────────────────────────────
     function buildTestStrip() {
       const tests = [...new Set(allScores.map(s => s.test_number))].sort((a, b) => a - b);
       const strip = document.getElementById('testStrip');
+      strip.innerHTML = '';
 
-      const allChip = makeChip(0, 'ทุกครั้ง', '', true);
+      const allChip = document.createElement('button');
+      allChip.className = 'test-chip active';
+      allChip.innerHTML = 'รวม';
+      allChip.addEventListener('click', () => selectTest(0, allChip));
       strip.appendChild(allChip);
 
       tests.forEach(t => {
-        strip.appendChild(makeChip(t, `ครั้งที่`, t, false));
+        const btn = document.createElement('button');
+        btn.className = 'test-chip';
+        btn.innerHTML = `<span>${t}</span>`;
+        btn.addEventListener('click', () => selectTest(t, btn));
+        strip.appendChild(btn);
       });
     }
 
-    function makeChip(val, label, sub, active) {
-      const btn = document.createElement('button');
-      btn.className = 'test-chip' + (active ? ' active' : '');
-      btn.dataset.val = val;
-      btn.innerHTML = `<span>${label}</span>${sub !== '' ? `<span class="test-chip-sub">${sub}</span>` : ''}`;
-      btn.addEventListener('click', () => selectTest(val, btn));
-      return btn;
-    }
-
-    function selectTest(val, clickedBtn) {
+    function selectTest(val, btn) {
       activeTest = val;
       document.querySelectorAll('.test-chip').forEach(b => b.classList.remove('active'));
-      clickedBtn.classList.add('active');
-      // scroll the chip into view smoothly
-      clickedBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      btn.classList.add('active');
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       render();
     }
 
-    // รวมคะแนนของนักเรียนแต่ละคนตาม test filter
-    function computeRows() {
-      let filtered = activeTest === 0
-        ? allScores
-        : allScores.filter(s => s.test_number === activeTest);
+    // ─── Render all ────────────────────────────────────────────
+    function render() {
+      const label = activeTest === 0 ? 'Dashboard' : `Test #${activeTest}`;
+      document.getElementById('heroTitle').textContent = label;
 
-      // group by student_id
+      const filtered = activeTest === 0 ? allScores : allScores.filter(s => s.test_number === activeTest);
+
+      renderTopics(filtered);
+      renderRanking(filtered);
+    }
+
+    // ─── Topics area ───────────────────────────────────────────
+    function renderTopics(filtered) {
+      const area = document.getElementById('topicsArea');
+      const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
+
+      if (activeTest !== 0) {
+        // Single test: show one topic per subject
+        const topicMap = {};
+        filtered.forEach(r => { if (r.topic && !topicMap[r.subject]) topicMap[r.subject] = r.topic; });
+        const cols = subjects.map(sub => `
+          <div>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">${sub === 'อังกฤษ' ? 'อังกฤษ' : sub}</p>
+            <p class="text-sm font-bold text-slate-700">${topicMap[sub] || '-'}</p>
+          </div>`).join('');
+        area.innerHTML = `
+          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">📚 เนื้อหาที่สอบครั้งที่ ${activeTest}</p>
+            <div class="grid grid-cols-3 gap-4">${cols}</div>
+          </div>`;
+      } else {
+        // All tests: show numbered list of topics per subject
+        const topicsBySubject = {};
+        subjects.forEach(s => {
+          const rows = allScores.filter(r => r.subject === s && r.topic);
+          const unique = [];
+          const seen = new Set();
+          rows.sort((a, b) => a.test_number - b.test_number).forEach(r => {
+            if (!seen.has(r.topic)) { seen.add(r.topic); unique.push(r.topic); }
+          });
+          topicsBySubject[s] = unique;
+        });
+
+        const cols = subjects.map(sub => {
+          const items = topicsBySubject[sub];
+          const colorMap = { 'วิทย์': '#6366f1', 'คณิต': '#6366f1', 'อังกฤษ': '#6366f1' };
+          return `
+            <div class="space-y-2">
+              <p class="text-xs font-black text-white flex items-center gap-2">
+                <span class="w-1 h-4 bg-indigo-500 rounded-full"></span>${sub}
+              </p>
+              <div class="bg-slate-800/60 rounded-2xl p-3 border border-slate-700/40 min-h-[60px]">
+                ${items.length > 0
+                  ? items.map((t, i) => `<p class="text-[11px] text-slate-300 leading-relaxed mb-1 font-medium">${i + 1}. ${t}</p>`).join('')
+                  : '<p class="text-[11px] text-slate-500 italic">ยังไม่มีข้อมูลเนื้อหา</p>'}
+              </div>
+            </div>`;
+        }).join('');
+
+        area.innerHTML = `
+          <div class="bg-slate-900 rounded-[2rem] p-5 shadow-xl">
+            <p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">📚 ภาพรวมเนื้อหาการสอบทั้งหมด</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">${cols}</div>
+          </div>`;
+      }
+    }
+
+    // ─── Ranking ───────────────────────────────────────────────
+    function renderRanking(filtered) {
       const map = {};
       filtered.forEach(s => {
         const sid = +s.student_id;
-        if (!map[sid]) map[sid] = { sci: 0, sciF: 0, math: 0, mathF: 0, eng: 0, engF: 0 };
-        if (s.subject === 'วิทย์')  { map[sid].sci  += +s.score; map[sid].sciF  += +s.full_score; }
-        if (s.subject === 'คณิต')  { map[sid].math += +s.score; map[sid].mathF += +s.full_score; }
+        if (!map[sid]) map[sid] = { sci:0, sciF:0, math:0, mathF:0, eng:0, engF:0 };
+        if (s.subject === 'วิทย์')   { map[sid].sci  += +s.score; map[sid].sciF  += +s.full_score; }
+        if (s.subject === 'คณิต')   { map[sid].math += +s.score; map[sid].mathF += +s.full_score; }
         if (s.subject === 'อังกฤษ') { map[sid].eng  += +s.score; map[sid].engF  += +s.full_score; }
       });
 
       const rows = Object.entries(map).map(([sid, d]) => {
-        const totalScore = d.sci + d.math + d.eng;
-        const totalFull  = d.sciF + d.mathF + d.engF;
-        const totalPct   = totalFull > 0 ? (totalScore / totalFull) * 100 : 0;
+        const tS = d.sci + d.math + d.eng;
+        const tF = d.sciF + d.mathF + d.engF;
+        const getPct = (score, full) => full > 0 ? (score / full * 100).toFixed(1) : null;
         return {
           student_id: +sid,
-          sci:  d.sciF  > 0 ? d.sci  : null,
-          sciF: d.sciF,
-          math: d.mathF > 0 ? d.math : null,
-          mathF: d.mathF,
-          eng:  d.engF  > 0 ? d.eng  : null,
-          engF: d.engF,
-          totalPct,
-          totalScore,
-          totalFull,
+          nickname: students.find(s => s.id === +sid)?.nickname || '—',
+          sci:  d.sciF  > 0 ? getPct(d.sci,  d.sciF)  : null,
+          math: d.mathF > 0 ? getPct(d.math, d.mathF) : null,
+          eng:  d.engF  > 0 ? getPct(d.eng,  d.engF)  : null,
+          pct: tF > 0 ? (tS / tF * 100) : 0,
         };
-      }).sort((a, b) => b.totalPct - a.totalPct);
+      }).sort((a, b) => b.pct - a.pct);
 
-      rows.forEach((r, i) => r.rank = i + 1);
-      return rows;
-    }
+      // Avg
+      const avg = arr => arr.length ? (arr.reduce((a, b) => +a + +b, 0) / arr.length).toFixed(1) + '%' : '—';
+      document.getElementById('avgTotal').textContent = avg(rows.map(r => r.pct));
+      document.getElementById('avgSci').textContent   = avg(rows.map(r => r.sci).filter(Boolean));
+      document.getElementById('avgMath').textContent  = avg(rows.map(r => r.math).filter(Boolean));
+      document.getElementById('avgEng').textContent   = avg(rows.map(r => r.eng).filter(Boolean));
 
-    function fmt(score, full) {
-      if (score === null || full === 0) return '—';
-      return score + '<span class="text-slate-400 text-[10px">/' + full + '</span>';
-    }
-
-    function render() {
-      const rows = computeRows();
-      renderHero(rows);
-      renderList(rows);
-      renderAvg(rows);
-    }
-
-    function renderHero(rows) {
-      const me = rows.find(r => r.student_id === myId);
-      if (!me) {
-        document.getElementById('heroRank').textContent = '#—';
-        document.getElementById('heroOf').textContent   = `จาก ${rows.length} คน`;
-        ['heroSci','heroMath','heroEng','heroTotal'].forEach(id => document.getElementById(id).textContent = '—');
-        document.getElementById('heroBar').style.width = '0%';
-        document.getElementById('heroGap').textContent = '';
-        return;
-      }
-      document.getElementById('heroRank').textContent  = `#${me.rank}`;
-      document.getElementById('heroOf').textContent    = `จาก ${rows.length} คน`;
-      document.getElementById('heroSci').textContent   = me.sci  !== null ? me.sci  : '—';
-      document.getElementById('heroMath').textContent  = me.math !== null ? me.math : '—';
-      document.getElementById('heroEng').textContent   = me.eng  !== null ? me.eng  : '—';
-      document.getElementById('heroTotal').textContent = `${me.totalPct.toFixed(1)}%`;
-      document.getElementById('heroBar').style.width   = `${Math.min(100, me.totalPct)}%`;
-
-      const above = rows[me.rank - 2];
-      document.getElementById('heroGap').textContent = above
-        ? `เพิ่มอีก ${(above.totalPct - me.totalPct).toFixed(1)}% ขึ้นอันดับ #${above.rank}`
-        : me.rank === 1 ? '🥇 อันดับ 1 ของห้อง!' : '';
-    }
-
-    function renderList(rows) {
-      const list = document.getElementById('rankingList');
-      if (!rows.length) {
-        list.innerHTML = '<p class="text-center text-slate-400 py-8 bg-white rounded-3xl text-sm">ยังไม่มีข้อมูล</p>';
-        return;
-      }
-
-      list.innerHTML = rows.map(r => {
+      // List
+      document.getElementById('rankingList').innerHTML = rows.map((r, i) => {
+        const rank = i + 1;
         const isMe = r.student_id === myId;
-        let rowCls = r.rank === 1 ? 'row-gold' : r.rank === 2 ? 'row-silver' : r.rank === 3 ? 'row-bronze' : 'row-normal';
-        if (isMe) rowCls = 'row-me';
-        const emoji = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '';
-        const rankLabel = emoji || `<span class="text-xs font-black text-slate-500">#${r.rank}</span>`;
-        const name = isMe ? '<span class="text-blue-600 font-black">⭐ คุณ</span>' : '<span class="text-slate-700">นักเรียน</span>';
-
-        const sciTxt  = r.sci  !== null ? `<span class="font-black">${r.sci}</span><span class="text-slate-400 text-[10px]">/${r.sciF}</span>`  : '<span class="text-slate-300">—</span>';
-        const mathTxt = r.math !== null ? `<span class="font-black">${r.math}</span><span class="text-slate-400 text-[10px]">/${r.mathF}</span>` : '<span class="text-slate-300">—</span>';
-        const engTxt  = r.eng  !== null ? `<span class="font-black">${r.eng}</span><span class="text-slate-400 text-[10px]">/${r.engF}</span>`  : '<span class="text-slate-300">—</span>';
-        const pctTxt  = `<span class="font-black ${isMe ? 'text-blue-600' : 'text-slate-800'}">${r.totalPct.toFixed(1)}%</span>`;
-
+        const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+        // Show name only for self, hide others
+        const nameCell = isMe
+          ? `<span class="font-black text-blue-600 text-sm">⭐ ${r.nickname}</span>`
+          : `<span class="text-slate-400 text-sm font-bold">นักเรียน</span>`;
+        const fmt = v => v !== null ? `<span class="font-bold text-slate-700">${v}</span>` : '<span class="text-slate-300">—</span>';
+        const rowCls = rank === 1 ? 'bg-yellow-50/60' : isMe ? 'bg-blue-50/60' : '';
         return `
-          <div class="${rowCls} rounded-2xl px-3 py-3 grid grid-cols-[36px_1fr_52px_52px_52px_58px] gap-1 items-center">
-            <div class="text-center text-base leading-none">${rankLabel}</div>
-            <div class="text-sm leading-tight">${name}</div>
-            <div class="text-center text-sm leading-none">${sciTxt}</div>
-            <div class="text-center text-sm leading-none">${mathTxt}</div>
-            <div class="text-center text-sm leading-none">${engTxt}</div>
-            <div class="text-center text-sm leading-none">${pctTxt}</div>
-          </div>`;
+        <div class="grid grid-cols-[64px_1fr_72px_72px_72px_80px] gap-2 px-5 py-3 items-center ${rowCls}">
+          <div class="font-black text-slate-400 text-sm">${emoji || '#' + rank}</div>
+          <div>${nameCell}</div>
+          <div class="text-center text-xs">${fmt(r.sci)}</div>
+          <div class="text-center text-xs">${fmt(r.math)}</div>
+          <div class="text-center text-xs">${fmt(r.eng)}</div>
+          <div class="text-right font-black text-sm ${isMe ? 'text-blue-600' : 'text-indigo-600'}">${r.pct.toFixed(1)}%</div>
+        </div>`;
       }).join('');
     }
 
-    function renderAvg(rows) {
-      if (!rows.length) return;
-      const n = rows.length;
-      const sciPct  = rows.filter(r => r.sciF > 0).map(r => r.sci / r.sciF * 100);
-      const mathPct = rows.filter(r => r.mathF > 0).map(r => r.math / r.mathF * 100);
-      const engPct  = rows.filter(r => r.engF > 0).map(r => r.eng / r.engF * 100);
-      const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) + '%' : '—';
-
-      document.getElementById('avgSci').textContent   = avg(sciPct);
-      document.getElementById('avgMath').textContent  = avg(mathPct);
-      document.getElementById('avgEng').textContent   = avg(engPct);
-
-      const allPct = rows.map(r => r.totalPct);
-      document.getElementById('avgTotal').textContent = avg(allPct);
-    }
-
+    // ─── Save image ────────────────────────────────────────────
     async function saveImage() {
       const btn = event.target.closest('button');
       const orig = btn.innerHTML;
-      btn.textContent = '⏳ กำลังบันทึก...';
+      btn.textContent = '⏳...';
       btn.disabled = true;
       try {
-        const canvas = await html2canvas(document.getElementById('mainContent'), {
+        const canvas = await html2canvas(document.getElementById('exportContent'), {
           scale: 2, useCORS: true, backgroundColor: '#f8fafc',
-          ignoreElements: el => el.classList.contains('no-print')
+          ignoreElements: el => el.classList.contains('no-print'),
         });
-        const label = activeTest === 0 ? 'ทุกครั้ง' : `ครั้งที่${activeTest}`;
         const link = document.createElement('a');
-        link.download = `ranking-${label}.png`;
+        link.download = `อันดับห้อง-${activeTest === 0 ? 'รวม' : 'ครั้งที่' + activeTest}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       } catch (e) { alert('บันทึกไม่สำเร็จ: ' + e.message); }
