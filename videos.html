@@ -6,31 +6,50 @@
     <title>บทเรียนวิดีโอ - Qtutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        .content-hidden { display: none; }
+        * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
         .rotate-icon { transform: rotate(180deg); }
-        
-        /* Modal Style */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); }
-        .modal-content { position: relative; margin: auto; top: 15%; width: 95%; max-width: 700px; aspect-ratio: 16/9; }
-        .close-modal { position: absolute; top: -45px; right: 0; color: white; font-size: 20px; cursor: pointer; font-weight: bold; }
+
+        /* ── Modal shared ── */
+        .modal {
+            display: none; position: fixed; z-index: 100;
+            inset: 0; background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(6px);
+            align-items: center; justify-content: center; flex-direction: column;
+        }
+        .modal.active { display: flex; }
+
+        /* ── Video modal ── */
+        .video-wrapper {
+            position: relative; width: 96%; max-width: 800px;
+            aspect-ratio: 16/9;
+        }
+        .video-wrapper iframe { width: 100%; height: 100%; border-radius: 14px; }
+
+        /* ── PDF modal ── */
+        .pdf-wrapper {
+            position: relative; width: 96%; height: 86vh; max-width: 820px;
+        }
+        .pdf-wrapper iframe { width: 100%; height: 100%; border-radius: 14px; background: #fff; }
     </style>
 </head>
-<body class="bg-slate-50 font-['Kanit'] min-h-screen">
+<body class="bg-slate-50 min-h-screen">
 
+    <!-- NAVBAR -->
     <div class="bg-white shadow-sm p-4 sticky top-0 z-20">
-        <div class="max-w-md mx-auto flex items-center">
-            <button onclick="location.href='dashboard.html'" class="mr-4 text-slate-400">
+        <div class="max-w-2xl mx-auto flex items-center">
+            <button onclick="location.href='dashboard.html'" class="mr-4 text-slate-400 hover:text-slate-700 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             </button>
-            <h1 class="text-xl font-bold text-slate-800">บทเรียนวิดีโอ</h1>
+            <h1 class="text-xl font-bold text-slate-800">🎬 บทเรียนวิดีโอ</h1>
         </div>
     </div>
 
-    <main class="max-w-md mx-auto p-4 pb-20">
+    <!-- MAIN -->
+    <main class="max-w-2xl mx-auto p-4 pb-20">
         <div id="videoContent" class="space-y-3">
             <div class="text-center py-10">
                 <p class="text-slate-400 animate-pulse">กำลังโหลดบทเรียน...</p>
@@ -38,142 +57,254 @@
         </div>
     </main>
 
-    <div id="videoModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeVideo()">✕ ปิดหน้าต่าง</span>
-            <iframe id="youtubePlayer" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen class="rounded-xl shadow-2xl"></iframe>
+    <!-- VIDEO MODAL -->
+    <div id="videoModal" class="modal" onclick="handleBackdropClick(event,'videoModal')">
+        <div class="w-full max-w-[800px] flex justify-between items-center px-2 pb-3">
+            <p id="videoTitle" class="text-white font-bold text-sm truncate max-w-[70%]"></p>
+            <button onclick="closeVideo()"
+                class="bg-white/20 hover:bg-red-500/70 text-white text-xs font-bold px-3 py-2 rounded-full transition-colors">
+                ✕ ปิด
+            </button>
+        </div>
+        <div class="video-wrapper">
+            <iframe id="videoPlayer" src="" frameborder="0"
+                allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
         </div>
     </div>
 
+    <!-- PDF MODAL -->
+    <div id="pdfModal" class="modal" onclick="handleBackdropClick(event,'pdfModal')">
+        <div class="w-full max-w-[820px] flex justify-between items-center px-2 pb-3">
+            <p id="pdfTitle" class="text-white font-bold text-sm truncate max-w-[60%]"></p>
+            <div class="flex items-center gap-2">
+                <a id="pdfTabBtn" href="#" target="_blank"
+                    class="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-full flex items-center gap-1.5 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    เปิดแท็บใหม่
+                </a>
+                <button onclick="closePDF()"
+                    class="bg-white/20 hover:bg-red-500/70 text-white text-xs font-bold px-3 py-2 rounded-full transition-colors">
+                    ✕ ปิด
+                </button>
+            </div>
+        </div>
+        <div class="pdf-wrapper">
+            <iframe id="pdfPlayer" src="" frameborder="0"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
+        </div>
+        <p class="text-white/40 text-xs text-center mt-2">หากไฟล์ไม่โหลด กด "เปิดแท็บใหม่" เพื่อดูในเบราว์เซอร์ครับ</p>
+    </div>
+
     <script>
-      const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
-      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0'; // คีย์ของคุณ
-      const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // ฟังก์ชันกำหนดสีตามวิชา
-      function getSubjectColor(subject) {
-          if (subject.includes('คณิต')) return { bg: 'bg-blue-600', light: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100' };
-          if (subject.includes('วิทย์')) return { bg: 'bg-green-600', light: 'bg-green-50', text: 'text-green-600', border: 'border-green-100' };
-          if (subject.includes('อังกฤษ')) return { bg: 'bg-pink-500', light: 'bg-pink-50', text: 'text-pink-600', border: 'border-pink-100' };
-          return { bg: 'bg-slate-600', light: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-100' };
-      }
+        // ── Subject colours ──────────────────────────────────────────
+        function getSubjectColor(subject) {
+            if (!subject) return { bg:'bg-slate-600', light:'bg-slate-50', text:'text-slate-600', border:'border-slate-100' };
+            if (subject.includes('คณิต'))   return { bg:'bg-blue-600',  light:'bg-blue-50',  text:'text-blue-600',  border:'border-blue-100'  };
+            if (subject.includes('วิทย'))   return { bg:'bg-green-600', light:'bg-green-50', text:'text-green-600', border:'border-green-100' };
+            if (subject.includes('อังกฤษ')) return { bg:'bg-pink-500',  light:'bg-pink-50',  text:'text-pink-600',  border:'border-pink-100'  };
+            return { bg:'bg-slate-600', light:'bg-slate-50', text:'text-slate-600', border:'border-slate-100' };
+        }
 
-      async function init() {
-          // 1. ดึงข้อมูลผู้ใช้จาก sessionStorage
-          const user = JSON.parse(sessionStorage.getItem('student_user'));
-          
-          // 2. ถ้าไม่มีข้อมูล (ยังไม่ Login) ให้เด้งไปหน้าแรก
-          if (!user) return window.location.href = 'index.html';
+        // ── URL helpers ──────────────────────────────────────────────
 
-          // 3. ดึงข้อมูลวิดีโอ โดยกรองตาม course_code (ระบบปี 2569)
-          const { data, error } = await db
-              .from('videos')
-              .select('*')
-              .eq('course_code', user.course_code) // เปลี่ยนจาก level เป็น course_code
-              .order('subject', { ascending: true })
-              .order('order_number', { ascending: true });
+        // YouTube: return embed URL or null
+        function toYouTubeEmbed(url) {
+            if (!url) return null;
+            let id = null;
+            if (url.includes('youtu.be/'))   id = url.split('youtu.be/')[1].split(/[?&]/)[0];
+            else if (url.includes('v='))      id = url.split('v=')[1].split('&')[0];
+            else if (url.includes('/embed/')) return url; // already embed
+            return id ? `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` : null;
+        }
 
-          if (error) {
-              console.error("Error fetching videos:", error);
-              document.getElementById('videoContent').innerHTML = `<p class="text-center text-red-400 mt-10">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>`;
-              return;
-          }
+        // Google Drive: extract file ID and return preview URL or null
+        function toGDriveEmbed(url) {
+            if (!url || !url.includes('drive.google.com')) return null;
+            const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
+            const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
+            return null;
+        }
 
-          renderVideos(data);
-      }
+        // Convert any video/pdf URL to embeddable
+        function toEmbedUrl(url) {
+            if (!url) return null;
+            return toYouTubeEmbed(url) || toGDriveEmbed(url) || url;
+        }
 
-      // --- ฟังก์ชันควบคุม UI (เหมือนเดิมแต่ปรับปรุงความลื่นไหล) ---
+        function toPDFEmbed(url) {
+            if (!url) return null;
+            return toGDriveEmbed(url) || url;
+        }
 
-      function toggleSubject(id) {
-          const content = document.getElementById(`subject-${id}`);
-          const icon = document.getElementById(`icon-${id}`);
-          if (content.style.display === "block") {
-              content.style.display = "none";
-              icon.classList.remove('rotate-icon');
-          } else {
-              content.style.display = "block";
-              icon.classList.add('rotate-icon');
-          }
-      }
+        // ── Init ─────────────────────────────────────────────────────
+        async function init() {
+            const user = JSON.parse(sessionStorage.getItem('student_user'));
+            if (!user) return (location.href = 'index.html');
 
-      function playVideo(url) {
-          let videoId = "";
-          if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
-          else if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-          else videoId = url;
+            const { data, error } = await db
+                .from('videos')
+                .select('*')
+                .eq('course_code', user.course_code)
+                .order('subject',      { ascending: true })
+                .order('order_number', { ascending: true });
 
-          document.getElementById('youtubePlayer').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-          document.getElementById('videoModal').style.display = "block";
-          document.body.style.overflow = 'hidden'; // ล็อคหน้าจอไม่ให้สกรูลขณะดูวิดีโอ
-      }
+            if (error) {
+                document.getElementById('videoContent').innerHTML =
+                    '<p class="text-center text-red-400 mt-10">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+                return;
+            }
+            renderVideos(data || []);
+        }
 
-      function closeVideo() {
-          document.getElementById('videoModal').style.display = "none";
-          document.getElementById('youtubePlayer').src = "";
-          document.body.style.overflow = 'auto';
-      }
+        // ── Render ───────────────────────────────────────────────────
+        function renderVideos(data) {
+            const container = document.getElementById('videoContent');
+            if (!data.length) {
+                container.innerHTML = '<p class="text-center text-slate-400 mt-10">ยังไม่มีบทเรียนในคอร์สนี้</p>';
+                return;
+            }
+            container.innerHTML = '';
 
-      function renderVideos(data) {
-          const container = document.getElementById('videoContent');
-          if (!data || data.length === 0) {
-              container.innerHTML = `<p class="text-center text-slate-400 mt-10">ยังไม่มีบทเรียนในคอร์สนี้</p>`;
-              return;
-          }
-          container.innerHTML = '';
+            // Group by subject
+            const grouped = {};
+            data.forEach(item => {
+                const subj = item.subject || 'ทั่วไป';
+                if (!grouped[subj]) grouped[subj] = [];
+                grouped[subj].push(item);
+            });
 
-          // จัดกลุ่มตามวิชา
-          const groupedBySubject = data.reduce((acc, curr) => {
-              const subj = curr.subject || 'ทั่วไป';
-              if (!acc[subj]) acc[subj] = [];
-              acc[subj].push(curr);
-              return acc;
-          }, {});
+            let idx = 0;
+            for (const subject of Object.keys(grouped)) {
+                idx++;
+                const color = getSubjectColor(subject);
+                const items = grouped[subject];
 
-          let index = 0;
-          for (const subject in groupedBySubject) {
-              index++;
-              const color = getSubjectColor(subject);
-              let subjectHTML = `
-                  <div class="border border-slate-200 rounded-3xl overflow-hidden bg-white shadow-sm mb-3">
-                      <button onclick="toggleSubject(${index})" class="w-full flex justify-between items-center p-5 hover:bg-slate-50 transition-all">
-                          <div class="flex items-center">
-                              <div class="w-2 h-6 ${color.bg} rounded-full mr-3"></div>
-                              <span class="text-lg font-bold text-slate-800">${subject}</span>
-                          </div>
-                          <svg id="icon-${index}" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                      </button>
-                      <div id="subject-${index}" style="display: none;" class="px-4 pb-5 space-y-3">
-                          <div class="h-[1px] bg-slate-100 mb-2 mx-2"></div>
-              `;
+                let html = `
+                    <div class="border border-slate-200 rounded-3xl overflow-hidden bg-white shadow-sm mb-3">
+                        <button onclick="toggleSubject(${idx})"
+                            class="w-full flex justify-between items-center p-5 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-7 ${color.bg} rounded-full"></div>
+                                <span class="text-lg font-bold text-slate-800">${subject}</span>
+                                <span class="text-xs text-slate-400 font-semibold">(${items.length} บทเรียน)</span>
+                            </div>
+                            <svg id="icon-${idx}" class="h-5 w-5 text-slate-400 transition-transform duration-300"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div id="subject-${idx}" style="display:none;" class="px-4 pb-5 space-y-3">
+                            <div class="h-px bg-slate-100 mb-2 mx-2"></div>`;
 
-              groupedBySubject[subject].forEach(item => {
-                  subjectHTML += `
-                      <div class="p-4 rounded-2xl border ${color.border} ${color.light}">
-                          <p class="text-slate-800 font-bold mb-3 text-sm">${item.title}</p>
-                          <div class="flex gap-2">
-                              ${item.video_url ? `
-                                  <button onclick="playVideo('${item.video_url}')" class="flex-1 bg-white ${color.text} py-2.5 rounded-xl text-xs font-black shadow-sm border border-white hover:bg-white/50 active:scale-95 transition-all">
-                                      🎬 ดูวิดีโอ
-                                  </button>
-                              ` : ''}
-                              ${item.pdf_url ? `
-                                  <button onclick="window.open('${item.pdf_url}', '_blank')" class="flex-1 ${color.bg} text-white py-2.5 rounded-xl text-xs font-black shadow-md active:scale-95 transition-all">
-                                      📄 ดาวน์โหลดชีท
-                                  </button>
-                              ` : ''}
-                          </div>
-                      </div>
-                  `;
-              });
+                items.forEach(item => {
+                    const safeTitle = (item.title || '').replace(/'/g, "\\'");
+                    const safeVideo = (item.video_url || '').replace(/'/g, "\\'");
+                    const safePDF   = (item.pdf_url   || '').replace(/'/g, "\\'");
 
-              subjectHTML += `</div></div>`;
-              container.innerHTML += subjectHTML;
-          }
-      }
+                    // YouTube thumbnail
+                    let thumbHtml = '';
+                    const ytEmbed = toYouTubeEmbed(item.video_url);
+                    if (ytEmbed) {
+                        const ytId = ytEmbed.match(/embed\/([a-zA-Z0-9_-]+)/)?.[1];
+                        if (ytId) {
+                            thumbHtml = `
+                                <div class="relative rounded-xl overflow-hidden mb-3 cursor-pointer group/thumb"
+                                    onclick="playVideo('${safeVideo}','${safeTitle}')">
+                                    <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg"
+                                        class="w-full object-cover aspect-video" alt="${item.title}" loading="lazy">
+                                    <div class="absolute inset-0 bg-black/30 group-hover/thumb:bg-black/20 transition-colors flex items-center justify-center">
+                                        <div class="bg-red-600 rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
+                                            <svg class="h-6 w-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                    }
 
-      init();
+                    html += `
+                        <div class="p-4 rounded-2xl border ${color.border} ${color.light}">
+                            ${thumbHtml}
+                            <p class="text-slate-800 font-bold mb-3 text-sm">${item.title}</p>
+                            <div class="flex gap-2">
+                                ${item.video_url ? `
+                                    <button onclick="playVideo('${safeVideo}','${safeTitle}')"
+                                        class="flex-1 bg-white ${color.text} py-2.5 rounded-xl text-xs font-black shadow-sm border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                        🎬 ดูวิดีโอ
+                                    </button>` : ''}
+                                ${item.pdf_url ? `
+                                    <button onclick="openPDF('${safePDF}','${safeTitle}')"
+                                        class="flex-1 ${color.bg} text-white py-2.5 rounded-xl text-xs font-black shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                        📄 ดูชีท
+                                    </button>` : ''}
+                            </div>
+                        </div>`;
+                });
+
+                html += `</div></div>`;
+                container.innerHTML += html;
+            }
+        }
+
+        // ── Toggle ───────────────────────────────────────────────────
+        function toggleSubject(id) {
+            const content = document.getElementById(`subject-${id}`);
+            const icon    = document.getElementById(`icon-${id}`);
+            const isOpen  = content.style.display === 'block';
+            content.style.display = isOpen ? 'none' : 'block';
+            icon.classList.toggle('rotate-icon', !isOpen);
+        }
+
+        // ── Video modal ──────────────────────────────────────────────
+        function playVideo(url, title) {
+            const embedUrl = toEmbedUrl(url);
+            if (!embedUrl) return alert('ไม่พบลิงก์วิดีโอครับ');
+            document.getElementById('videoPlayer').src = embedUrl;
+            document.getElementById('videoTitle').textContent = title || '';
+            document.getElementById('videoModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeVideo() {
+            document.getElementById('videoModal').classList.remove('active');
+            document.getElementById('videoPlayer').src = '';
+            document.body.style.overflow = 'auto';
+        }
+
+        // ── PDF modal ────────────────────────────────────────────────
+        function openPDF(url, title) {
+            const embedUrl = toPDFEmbed(url);
+            document.getElementById('pdfPlayer').src  = embedUrl;
+            document.getElementById('pdfTabBtn').href = url;
+            document.getElementById('pdfTitle').textContent = title || '';
+            document.getElementById('pdfModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePDF() {
+            document.getElementById('pdfModal').classList.remove('active');
+            document.getElementById('pdfPlayer').src = '';
+            document.body.style.overflow = 'auto';
+        }
+
+        // ── Backdrop click to close ──────────────────────────────────
+        function handleBackdropClick(e, modalId) {
+            if (e.target.id === modalId) {
+                if (modalId === 'videoModal') closeVideo();
+                else closePDF();
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>
