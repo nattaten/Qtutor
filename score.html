@@ -22,7 +22,6 @@
     .toggle-btn { border: 2px solid; border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
 
     /* Status colours */
-    /* ≥80 ดีเยี่ยม=emerald | ≥70 ดี=blue | ≥50 ผ่านเกณฑ์=orange | <50 ควรปรับปรุง=red */
     .s-great { color: #059669; font-weight: 800; }
     .s-good  { color: #2563eb; font-weight: 800; }
     .s-pass  { color: #f97316; font-weight: 800; }
@@ -32,6 +31,124 @@
     .sci-accent  { color: #059669; }
     .math-accent { color: #2563eb; }
     .eng-accent  { color: #9333ea; }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE TABLE / CARD LAYOUT
+       ═══════════════════════════════════════════════════════════ */
+
+    /* Desktop (769px+) - ตารางแนวนอน */
+    @media (min-width: 769px) {
+      .subject-cards { display: none !important; }
+      .subject-table { display: block !important; }
+    }
+
+    /* Mobile (<768px) - Card Stack */
+    @media (max-width: 768px) {
+      .subject-table { display: none !important; }
+      .subject-cards { display: block !important; }
+    }
+
+    /* Card Styles */
+    .subject-card {
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .subject-card:active {
+      transform: scale(0.98);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid #f1f5f9;
+    }
+
+    .card-topic {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-topic-number {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .card-percentage {
+      font-size: 18px;
+      font-weight: 900;
+      color: #6366f1;
+      text-align: right;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .card-score-group {
+      display: flex;
+      gap: 16px;
+    }
+
+    .card-score-item {
+      flex: 1;
+    }
+
+    .card-status {
+      padding-top: 10px;
+      border-top: 1.5px solid #f1f5f9;
+      text-align: right;
+    }
+
+    .card-status-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card-status-text {
+      font-size: 13px;
+      font-weight: 800;
+    }
 
     @media print { .no-print { display: none !important; } }
   </style>
@@ -121,11 +238,7 @@
     let chartInstance = null;
     let allScores = [];
 
-    // ─── Status logic (อ้างอิงจากโค้ดฝั่งแอดมิน) ────────────
-    // ≥ 80% → ดีเยี่ยม (emerald)
-    // ≥ 70% → ดี (blue)
-    // ≥ 50% → ผ่านเกณฑ์ (orange)
-    // < 50% → ควรปรับปรุง (red)
+    // ─── Status logic ────────────────────────────────
     function getStatus(pct) {
       if (pct >= 80) return { text: 'ดีเยี่ยม',    cls: 's-great' };
       if (pct >= 70) return { text: 'ดี',           cls: 's-good'  };
@@ -237,7 +350,7 @@
       btn.style.opacity     = on ? '1' : '0.5';
     }
 
-    // ─── Per-subject tables ────────────────────────────────────
+    // ─── Per-subject sections (Table + Cards) ───────────────────
     function renderSubjectSections(scores) {
       const subjects = [
         { key: 'วิทย์',   label: 'วิชาวิทย์',   accent: '#10b981', cls: 'sci-accent',  barColor: 'bg-emerald-500' },
@@ -256,8 +369,10 @@
         section.id = `capture-${sub.key}`;
         section.className = 'bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden mb-5';
 
-        // Header
-        const rowsHtml = rows.map((row, idx) => {
+        // ═════════════════════════════════════════════════════════
+        // TABLE VIEW (Desktop)
+        // ═════════════════════════════════════════════════════════
+        const tableRowsHtml = rows.map((row, idx) => {
           const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
           const status = getStatus(pct);
           return `
@@ -277,6 +392,43 @@
           </tr>`;
         }).join('');
 
+        // ═════════════════════════════════════════════════════════
+        // CARD VIEW (Mobile)
+        // ═════════════════════════════════════════════════════════
+        const cardRowsHtml = rows.map((row, idx) => {
+          const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
+          const status = getStatus(pct);
+          return `
+          <div class="subject-card">
+            <div class="card-header">
+              <div class="card-topic">
+                <span class="card-topic-number">${idx + 1}.</span>
+                <span>${row.topic || '-'}</span>
+              </div>
+              <div class="card-percentage">${pct.toFixed(0)}%</div>
+            </div>
+            <div class="card-content">
+              <div class="card-score-group">
+                <div class="card-score-item">
+                  <div class="card-label">ได้คะแนน</div>
+                  <div class="card-value">${row.score}</div>
+                </div>
+                <div class="card-score-item">
+                  <div class="card-label">คะแนนเต็ม</div>
+                  <div class="card-value">${row.full_score}</div>
+                </div>
+              </div>
+              <div class="card-status">
+                <div class="card-status-label">สถานะ</div>
+                <div class="card-status-text ${status.cls}">${status.text}</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
+        // ═════════════════════════════════════════════════════════
+        // Combine both views
+        // ═════════════════════════════════════════════════════════
         section.innerHTML = `
           <div class="px-4 md:px-6 py-4 flex justify-between items-center">
             <h3 class="text-xl font-black text-slate-800 italic flex items-center gap-3">
@@ -291,7 +443,9 @@
               บันทึกรูปวิชา
             </button>
           </div>
-          <div class="overflow-x-auto">
+
+          <!-- TABLE (Desktop) -->
+          <div class="subject-table overflow-x-auto">
             <table class="w-full border-collapse" style="min-width:460px">
               <thead>
                 <tr class="bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider">
@@ -302,8 +456,13 @@
                   <th class="px-3 md:px-6 py-3 text-right w-28">สถานะ</th>
                 </tr>
               </thead>
-              <tbody>${rowsHtml}</tbody>
+              <tbody>${tableRowsHtml}</tbody>
             </table>
+          </div>
+
+          <!-- CARDS (Mobile) -->
+          <div class="subject-cards px-4 md:px-6 py-4">
+            ${cardRowsHtml}
           </div>`;
 
         container.appendChild(section);
