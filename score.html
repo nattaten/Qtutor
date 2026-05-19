@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>คะแนนรายบุคคล - Qtutor</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,31 +21,18 @@
     .save-btn:hover { opacity: 0.9; transform: scale(1.02); }
     .save-btn:active { transform: scale(0.97); }
 
-    /* Toggle line buttons */
     .toggle-btn { border: 2px solid; border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
 
-    /* Status colours */
     .s-great { color: #059669; font-weight: 800; }
     .s-good  { color: #2563eb; font-weight: 800; }
     .s-pass  { color: #f97316; font-weight: 800; }
     .s-fail  { color: #ef4444; font-weight: 800; }
 
-    /* Subject colour accents */
-    .sci-accent  { color: #059669; }
-    .math-accent { color: #2563eb; }
-    .eng-accent  { color: #9333ea; }
-
-    /* ═══════════════════════════════════════════════════════════
-       RESPONSIVE TABLE / CARD LAYOUT
-       ═══════════════════════════════════════════════════════════ */
-
-    /* Desktop (769px+) - ตารางแนวนอน */
+    /* ── Responsive layout ────────────────────────── */
     @media (min-width: 769px) {
       .subject-cards { display: none !important; }
       .subject-table { display: block !important; }
     }
-
-    /* Mobile (<768px) - Card Stack */
     @media (max-width: 768px) {
       .subject-table { display: none !important; }
       .subject-cards { display: block !important; }
@@ -50,105 +40,24 @@
 
     /* Card Styles */
     .subject-card {
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 12px;
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column;
+      background: #ffffff; border: 1.5px solid #e2e8f0;
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-
-    .subject-card:active {
-      transform: scale(0.98);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1.5px solid #f1f5f9;
-    }
-
-    .card-topic {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0f172a;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .card-topic-number {
-      color: #cbd5e1;
-      font-size: 13px;
-    }
-
-    .card-percentage {
-      font-size: 18px;
-      font-weight: 900;
-      color: #6366f1;
-      text-align: right;
-    }
-
-    .card-content {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .card-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .card-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .card-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: #1e293b;
-    }
-
-    .card-score-group {
-      display: flex;
-      gap: 16px;
-    }
-
-    .card-score-item {
-      flex: 1;
-    }
-
-    .card-status {
-      padding-top: 10px;
-      border-top: 1.5px solid #f1f5f9;
-      text-align: right;
-    }
-
-    .card-status-label {
-      font-size: 10px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .card-status-text {
-      font-size: 13px;
-      font-weight: 800;
-    }
+    .subject-card:active { transform: scale(0.98); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1.5px solid #f1f5f9; }
+    .card-topic { font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; }
+    .card-topic-number { color: #cbd5e1; font-size: 13px; }
+    .card-percentage { font-size: 18px; font-weight: 900; color: #6366f1; text-align: right; }
+    .card-content { display: flex; flex-direction: column; gap: 10px; }
+    .card-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-value { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .card-score-group { display: flex; gap: 16px; }
+    .card-score-item { flex: 1; }
+    .card-status { padding-top: 10px; border-top: 1.5px solid #f1f5f9; text-align: right; }
+    .card-status-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+    .card-status-text { font-size: 13px; font-weight: 800; }
 
     @media print { .no-print { display: none !important; } }
   </style>
@@ -202,20 +111,16 @@
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-black text-slate-800 text-sm">Performance Graph</h3>
         <div class="flex gap-2 flex-wrap no-print" id="lineToggles">
-          <button data-idx="0" onclick="toggleLine(0)"
-            class="toggle-btn" style="border-color:#10b981;background:#d1fae5;color:#065f46;">
+          <button data-idx="0" onclick="toggleLine(0)" class="toggle-btn" style="border-color:#10b981;background:#d1fae5;color:#065f46;">
             <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>วิทย์
           </button>
-          <button data-idx="1" onclick="toggleLine(1)"
-            class="toggle-btn" style="border-color:#3b82f6;background:#dbeafe;color:#1e40af;">
+          <button data-idx="1" onclick="toggleLine(1)" class="toggle-btn" style="border-color:#3b82f6;background:#dbeafe;color:#1e40af;">
             <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>คณิต
           </button>
-          <button data-idx="2" onclick="toggleLine(2)"
-            class="toggle-btn" style="border-color:#a855f7;background:#ede9fe;color:#5b21b6;">
+          <button data-idx="2" onclick="toggleLine(2)" class="toggle-btn" style="border-color:#a855f7;background:#ede9fe;color:#5b21b6;">
             <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>อังกฤษ
           </button>
-          <button data-idx="3" onclick="toggleLine(3)"
-            class="toggle-btn" style="border-color:#0f172a;background:#0f172a;color:#fff;">
+          <button data-idx="3" onclick="toggleLine(3)" class="toggle-btn" style="border-color:#0f172a;background:#0f172a;color:#fff;">
             <span class="w-2 h-2 rounded-full bg-white/80 inline-block"></span>รวม
           </button>
         </div>
@@ -236,9 +141,9 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let chartInstance = null;
-    let allScores = [];
+    let allScores     = [];
 
-    // ─── Status logic ────────────────────────────────
+    // ─── Status logic ──────────────────────────────────────────
     function getStatus(pct) {
       if (pct >= 80) return { text: 'ดีเยี่ยม',    cls: 's-great' };
       if (pct >= 70) return { text: 'ดี',           cls: 's-good'  };
@@ -253,6 +158,14 @@
       { on: { border:'#0f172a', bg:'#0f172a', color:'#fff'    }, off: { border:'#cbd5e1', bg:'#f1f5f9', color:'#94a3b8' } },
     ];
 
+    function clearUI() {
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      allScores = [];
+      document.getElementById('heroOverall').textContent = '—';
+      document.getElementById('subjectSections').innerHTML =
+        '<div class="text-center py-12 text-slate-400 animate-pulse text-sm">กำลังโหลดคะแนน...</div>';
+    }
+
     // ─── Init ──────────────────────────────────────────────────
     async function init() {
       const userData = JSON.parse(sessionStorage.getItem('student_user'));
@@ -262,16 +175,26 @@
       document.getElementById('heroCourseBadge').textContent = userData.course_name;
       document.getElementById('navCourse').textContent       = userData.course_name;
 
-      const { data: scores } = await db
+      clearUI();
+
+      const { data: scores, error } = await db
         .from('test_scores')
         .select('test_number, subject, score, full_score, topic')
         .eq('student_id', userData.id)
         .eq('course_code', userData.course_code)
-        .order('test_number', { ascending: true });
+        .order('test_number', { ascending: true })
+        .gte('full_score', 0);
 
-      if (!scores || !scores.length) {
+      if (error) {
+        console.error('Supabase fetch error:', error);
         document.getElementById('subjectSections').innerHTML =
-          '<p class="text-center text-slate-400 py-10 text-sm">ยังไม่มีข้อมูลคะแนน</p>';
+          '<div class="text-center py-10 text-red-400 font-bold">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+        return;
+      }
+
+      if (!scores || scores.length === 0) {
+        document.getElementById('subjectSections').innerHTML =
+          '<div class="text-center py-10 text-slate-400">ไม่พบข้อมูลคะแนน</div>';
         return;
       }
 
@@ -285,7 +208,8 @@
     function renderHeroSummary(scores) {
       const totS = scores.reduce((a, b) => a + (+b.score), 0);
       const totF = scores.reduce((a, b) => a + (+b.full_score), 0);
-      document.getElementById('heroOverall').textContent = totF > 0 ? `${(totS / totF * 100).toFixed(1)}%` : '—';
+      document.getElementById('heroOverall').textContent =
+        totF > 0 ? `${(totS / totF * 100).toFixed(1)}%` : '—';
     }
 
     // ─── Chart ─────────────────────────────────────────────────
@@ -301,16 +225,15 @@
         const d = byTest[test]?.[sub];
         return d && d.full > 0 ? +((d.score / d.full) * 100).toFixed(1) : null;
       };
-      const sciD  = tests.map(t => pct(t, 'วิทย์'));
-      const matD  = tests.map(t => pct(t, 'คณิต'));
-      const engD  = tests.map(t => pct(t, 'อังกฤษ'));
-      const totD  = tests.map((_, i) => {
+      const sciD = tests.map(t => pct(t, 'วิทย์'));
+      const matD = tests.map(t => pct(t, 'คณิต'));
+      const engD = tests.map(t => pct(t, 'อังกฤษ'));
+      const totD = tests.map((_, i) => {
         const vals = [sciD[i], matD[i], engD[i]].filter(v => v !== null);
         return vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
       });
 
       const ctx = document.getElementById('progressChart').getContext('2d');
-      if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -350,35 +273,43 @@
       btn.style.opacity     = on ? '1' : '0.5';
     }
 
-    // ─── Per-subject sections (Table + Cards) ───────────────────
+    // ─── Per-subject sections ───────────────────────────────────
     function renderSubjectSections(scores) {
       const subjects = [
-        { key: 'วิทย์',   label: 'วิชาวิทย์',   accent: '#10b981', cls: 'sci-accent',  barColor: 'bg-emerald-500' },
-        { key: 'คณิต',   label: 'วิชาคณิต',   accent: '#3b82f6', cls: 'math-accent', barColor: 'bg-blue-500'    },
-        { key: 'อังกฤษ', label: 'วิชาอังกฤษ', accent: '#a855f7', cls: 'eng-accent',  barColor: 'bg-purple-500'  },
+        { key: 'วิทย์',   label: 'วิชาวิทย์',   accent: '#10b981' },
+        { key: 'คณิต',   label: 'วิชาคณิต',   accent: '#3b82f6' },
+        { key: 'อังกฤษ', label: 'วิชาอังกฤษ', accent: '#a855f7' },
       ];
 
       const container = document.getElementById('subjectSections');
+      // ① Clear before every render — ป้องกันแถวเก่าค้างจอ
       container.innerHTML = '';
 
       subjects.forEach(sub => {
-        const rows = scores.filter(s => s.subject === sub.key).sort((a, b) => +a.test_number - +b.test_number);
-        if (!rows.length) return;
+        // ② DATA-DRIVEN: กรองเฉพาะ rows ที่มีอยู่จริงใน scores array
+        //    ไม่มีการ loop ตามตัวเลข 1,2,3,... เด็ดขาด
+        //    ถ้า DB ข้าม test_number 3 ไป แถวที่ 3 จะไม่ถูกสร้างขึ้นมาเลย
+        const rows = scores
+          .filter(s => s.subject === sub.key)
+          .sort((a, b) => +a.test_number - +b.test_number);
+
+        if (!rows.length) return; // วิชานี้ไม่มีข้อมูลเลย — ข้ามทั้งวิชา
 
         const section = document.createElement('div');
         section.id = `capture-${sub.key}`;
         section.className = 'bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden mb-5';
 
-        // ═════════════════════════════════════════════════════════
-        // TABLE VIEW (Desktop)
-        // ═════════════════════════════════════════════════════════
-        const tableRowsHtml = rows.map((row, idx) => {
+        // ── Table rows (desktop) ─────────────────────────────
+        // ③ ใช้ row.test_number (ค่าจริงจาก DB) แทน idx+1
+        //    → ถ้า DB มีแค่ครั้งที่ 1,2,4 จะแสดง "ครั้งที่ 1","ครั้งที่ 2","ครั้งที่ 4"
+        //    → ไม่มีทางแสดง "ครั้งที่ 3" ถ้า DB ไม่มีข้อมูลนั้น
+        const tableRowsHtml = rows.map((row) => {
           const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
           const status = getStatus(pct);
           return `
           <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
             <td class="px-4 md:px-6 py-3 font-bold text-slate-700 text-sm">
-              <span class="text-slate-300 font-black mr-2">${idx + 1}.</span>
+              <span class="text-slate-300 font-black mr-2">ครั้งที่ ${row.test_number}.</span>
               ${row.topic || '<span class="text-slate-300 font-normal">-</span>'}
             </td>
             <td class="px-3 py-3 text-center font-bold text-slate-700 text-sm">${row.score}</td>
@@ -392,17 +323,16 @@
           </tr>`;
         }).join('');
 
-        // ═════════════════════════════════════════════════════════
-        // CARD VIEW (Mobile)
-        // ═════════════════════════════════════════════════════════
-        const cardRowsHtml = rows.map((row, idx) => {
+        // ── Card rows (mobile) ───────────────────────────────
+        // ③ เช่นกัน — ใช้ row.test_number แทน idx+1
+        const cardRowsHtml = rows.map((row) => {
           const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
           const status = getStatus(pct);
           return `
           <div class="subject-card">
             <div class="card-header">
               <div class="card-topic">
-                <span class="card-topic-number">${idx + 1}.</span>
+                <span class="card-topic-number">ครั้งที่ ${row.test_number}.</span>
                 <span>${row.topic || '-'}</span>
               </div>
               <div class="card-percentage">${pct.toFixed(0)}%</div>
@@ -426,9 +356,6 @@
           </div>`;
         }).join('');
 
-        // ═════════════════════════════════════════════════════════
-        // Combine both views
-        // ═════════════════════════════════════════════════════════
         section.innerHTML = `
           <div class="px-4 md:px-6 py-4 flex justify-between items-center">
             <h3 class="text-xl font-black text-slate-800 italic flex items-center gap-3">
