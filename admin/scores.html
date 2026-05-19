@@ -104,11 +104,20 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="field-label">คอร์ส</label>
-              <select id="enterCourse" onchange="onCourseTestChange()" class="input"><option value="">-- เลือกคอร์ส --</option></select>
+              <select id="enterCourse" onchange="onEnterCourseChange()" class="input"><option value="">-- เลือกคอร์ส --</option></select>
             </div>
             <div>
               <label class="field-label">ครั้งที่สอบ</label>
-              <select id="enterTest" onchange="onCourseTestChange()" class="input"><option value="">-- ครั้งที่ --</option></select>
+              <div class="flex gap-2 items-center">
+                <select id="enterTest" onchange="onCourseTestChange()" class="input flex-1"><option value="">-- ครั้งที่ --</option></select>
+                <button onclick="addNextTest()" id="addTestBtn" title="เพิ่มการสอบครั้งถัดไป"
+                  class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-lg rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-md shadow-indigo-200 disabled:opacity-40"
+                  disabled>＋</button>
+                <button onclick="deleteTest()" id="delTestBtn" title="ลบการสอบครั้งนี้"
+                  class="flex-shrink-0 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-black text-lg rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-md shadow-red-200 disabled:opacity-40"
+                  disabled>🗑</button>
+              </div>
+              <p id="testHint" class="text-xs text-slate-400 mt-1">เลือกคอร์สก่อนเพื่อดูการสอบที่มีอยู่</p>
             </div>
           </div>
         </div>
@@ -117,7 +126,7 @@
         <div id="fullScoreArea" class="hidden bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-black text-slate-800 text-sm md:text-base">2. คะแนนเต็ม & หัวข้อรายสัปดาห์</h3>
-            <button id="updateAllFullBtn" onclick="updateAllFullScores()" class="btn-secondary hidden text-xs px-3 py-2">⚡ อัปเดตคะแนนเต็มทุกคน</button>
+            <button id="updateAllFullBtn" onclick="updateAllFullScores()" class="btn-secondary hidden text-xs px-3 py-2">⚡ อัปเดตเต็มทุกคน</button>
           </div>
 
           <div class="grid grid-cols-3 gap-2 mb-4">
@@ -254,11 +263,11 @@
     let allStudents = [];
     let currentTopicsData = {};
 
-    // ─── Sidebar ───────────────────────────────────────────────
+    // Sidebar
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
-    // ─── Init ──────────────────────────────────────────────────
+    // Init
     async function init() {
       const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
       ['enterCourse', 'viewCourse'].forEach(id => {
@@ -266,12 +275,93 @@
         sel.innerHTML = `<option value="">-- เลือกคอร์ส --</option>`;
         (courses || []).forEach(c => { sel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`; });
       });
-      for (let i = 1; i <= 13; i++) {
-        document.getElementById('enterTest').innerHTML += `<option value="${i}">ครั้งที่ ${i}</option>`;
+    }
+
+    // ── Helper: pendingTest key per course ──────────────────────────────────────
+    function pendingKey(code) { return 'pendingTest_' + code; }
+
+    // ── When course changes → reload test list from DB + restore pending test ──
+    async function onEnterCourseChange() {
+      const code    = document.getElementById('enterCourse').value;
+      const testSel = document.getElementById('enterTest');
+      const addBtn  = document.getElementById('addTestBtn');
+      const hint    = document.getElementById('testHint');
+
+      // Reset downstream UI
+      testSel.innerHTML = '<option value="">-- ครั้งที่ --</option>';
+      document.getElementById('fullScoreArea').classList.add('hidden');
+      document.getElementById('bulkScoreArea').classList.add('hidden');
+      document.getElementById('studentScoreList').innerHTML = '';
+
+      if (!code) {
+        addBtn.disabled = true;
+        hint.textContent = 'เลือกคอร์สก่อนเพื่อดูการสอบที่มีอยู่';
+        return;
+      }
+
+      // Pull existing test numbers from DB
+      const { data } = await db
+        .from('test_scores')
+        .select('test_number')
+        .eq('course_code', code);
+
+      const existing = [...new Set((data || []).map(r => r.test_number))].sort((a, b) => a - b);
+      let nextNum = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+
+      existing.forEach(n => {
+        testSel.innerHTML += `<option value="${n}">ครั้งที่ ${n}</option>`;
+      });
+
+      // ── [FIX] คืนค่าการสอบที่เพิ่งเพิ่ม (ยังไม่บันทึก) จาก sessionStorage ──
+      // ถ้ายังไม่ได้บันทึกลง DB (เช่น ผู้ใช้กด + แล้วสลับแท็บ) จะโหลดกลับมาให้อัตโนมัติ
+      const saved = sessionStorage.getItem(pendingKey(code));
+      if (saved && !existing.includes(+saved)) {
+        testSel.innerHTML += `<option value="${saved}">ครั้งที่ ${saved} (ยังไม่บันทึก)</option>`;
+        testSel.value = saved;
+        nextNum = +saved + 1;
+        // โหลด UI ส่วนกรอกคะแนนให้อัตโนมัติ
+        await onCourseTestChange();
+      }
+
+      addBtn.disabled = false;
+      addBtn.dataset.next = nextNum;
+
+      const total = existing.length + (saved && !existing.includes(+saved) ? 1 : 0);
+      if (total === 0) {
+        hint.textContent = `ยังไม่มีการสอบ — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
+      } else {
+        hint.textContent = `มีการสอบแล้ว ${total} ครั้ง — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
       }
     }
 
-    // ─── Tab switching ─────────────────────────────────────────
+    // ── Add next test number to dropdown & select it ────────────────────────────
+    function addNextTest() {
+      const code    = document.getElementById('enterCourse').value;
+      if (!code) return;
+      const addBtn  = document.getElementById('addTestBtn');
+      const testSel = document.getElementById('enterTest');
+      const hint    = document.getElementById('testHint');
+      const nextNum = +(addBtn.dataset.next || 1);
+
+      // ตรวจว่ามีใน dropdown แล้วหรือยัง
+      const exists = Array.from(testSel.options).some(o => +o.value === nextNum);
+      if (!exists) {
+        testSel.innerHTML += `<option value="${nextNum}">ครั้งที่ ${nextNum} (ยังไม่บันทึก)</option>`;
+      }
+      testSel.value = nextNum;
+
+      // ── [FIX] บันทึกเลขครั้งที่ลง sessionStorage ทันที ──
+      // ทำให้กลับมาหน้าเดิมหรือสลับแท็บแล้วยังเห็นครั้งที่นี้อยู่เสมอ
+      sessionStorage.setItem(pendingKey(code), nextNum);
+
+      const newNext = nextNum + 1;
+      addBtn.dataset.next = newNext;
+      hint.textContent = `กด ＋ เพื่อเพิ่มครั้งที่ ${newNext}`;
+
+      onCourseTestChange();
+    }
+
+    // Tab switching
     function switchTab(name, btn) {
       ['enter','view','import'].forEach(t => document.getElementById('tab-' + t).classList.add('hidden'));
       document.getElementById('tab-' + name).classList.remove('hidden');
@@ -279,34 +369,112 @@
       btn.classList.add('active');
     }
 
-    // ─── Toast ─────────────────────────────────────────────────
+    // Toast
     function showToast(m, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = m; t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    // ─── Full-score labels ─────────────────────────────────────
+    // Full-score labels
     function updateFullLabels() {
       const s = document.getElementById('sciFullInput').value;
       const m = document.getElementById('mathFullInput').value;
       const e = document.getElementById('engFullInput').value;
-      const sciLabel = document.getElementById('sciFullLabel');
+      const sciLabel  = document.getElementById('sciFullLabel');
       const mathLabel = document.getElementById('mathFullLabel');
-      const engLabel = document.getElementById('engFullLabel');
+      const engLabel  = document.getElementById('engFullLabel');
       if (sciLabel)  sciLabel.textContent  = `/${s}`;
       if (mathLabel) mathLabel.textContent = `/${m}`;
       if (engLabel)  engLabel.textContent  = `/${e}`;
-      // update per-card full hints
       document.querySelectorAll('.full-hint-sci').forEach(el => el.textContent = `เต็ม ${s}`);
       document.querySelectorAll('.full-hint-math').forEach(el => el.textContent = `เต็ม ${m}`);
       document.querySelectorAll('.full-hint-eng').forEach(el => el.textContent = `เต็ม ${e}`);
     }
 
-    // ─── On course+test change ─────────────────────────────────
+    // ── Delete entire test ───────────────────────────────────────────────────────
+    async function deleteTest() {
+      const code = document.getElementById('enterCourse').value;
+      const test = document.getElementById('enterTest').value;
+      if (!code || !test) return;
+
+      // ── [FIX] ถ้าเป็นครั้งที่ "ยังไม่บันทึก" (pending) ให้ยกเลิกแบบไม่ต้องลบ DB ──
+      const saved = sessionStorage.getItem(pendingKey(code));
+      if (saved && +saved === +test) {
+        if (!confirm(`ยกเลิกการเพิ่มครั้งที่ ${test}?`)) return;
+        sessionStorage.removeItem(pendingKey(code));
+        const testSel = document.getElementById('enterTest');
+        const opt = testSel.querySelector(`option[value="${test}"]`);
+        if (opt) opt.remove();
+        testSel.value = '';
+        document.getElementById('fullScoreArea').classList.add('hidden');
+        document.getElementById('bulkScoreArea').classList.add('hidden');
+        document.getElementById('studentScoreList').innerHTML = '';
+        document.getElementById('delTestBtn').disabled = true;
+        // คำนวณ nextNum ใหม่
+        const remaining = Array.from(testSel.options).filter(o => o.value).length;
+        const nextNum   = remaining > 0
+          ? Math.max(...Array.from(testSel.options).filter(o => o.value).map(o => +o.value)) + 1
+          : 1;
+        document.getElementById('addTestBtn').dataset.next = nextNum;
+        document.getElementById('testHint').textContent =
+          remaining > 0
+            ? `มีการสอบแล้ว ${remaining} ครั้ง — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`
+            : `ยังไม่มีการสอบ — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
+        return;
+      }
+
+      // ลบการสอบที่บันทึกแล้วใน DB
+      if (!confirm(`⚠️ ลบการสอบครั้งที่ ${test} ของคอร์สนี้ทั้งหมด?\n\nคะแนนของนักเรียนทุกคนในครั้งนี้จะถูกลบถาวร`)) return;
+
+      const btn = document.getElementById('delTestBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳';
+
+      const { error } = await db.from('test_scores')
+        .delete()
+        .eq('course_code', code)
+        .eq('test_number', +test);
+
+      if (error) {
+        showToast('ลบไม่สำเร็จ กรุณาลองใหม่', 'error');
+        btn.disabled = false;
+        btn.textContent = '🗑';
+        return;
+      }
+
+      showToast(`✅ ลบการสอบครั้งที่ ${test} เรียบร้อย`);
+      // ── [FIX] เคลียร์ pending ด้วย (กรณีที่ลบแล้วกลับมาใหม่ไม่ให้โหลด pending เดิม) ──
+      sessionStorage.removeItem(pendingKey(code));
+      refreshRankings(code);
+
+      const testSel = document.getElementById('enterTest');
+      const opt = testSel.querySelector(`option[value="${test}"]`);
+      if (opt) opt.remove();
+      testSel.value = '';
+
+      document.getElementById('fullScoreArea').classList.add('hidden');
+      document.getElementById('bulkScoreArea').classList.add('hidden');
+      document.getElementById('studentScoreList').innerHTML = '';
+      btn.disabled = true;
+      btn.textContent = '🗑';
+
+      const remaining = Array.from(testSel.options).filter(o => o.value).length;
+      const nextNum   = remaining > 0
+        ? Math.max(...Array.from(testSel.options).filter(o => o.value).map(o => +o.value)) + 1
+        : 1;
+      document.getElementById('addTestBtn').dataset.next = nextNum;
+      document.getElementById('testHint').textContent =
+        remaining > 0
+          ? `มีการสอบแล้ว ${remaining} ครั้ง — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`
+          : `ยังไม่มีการสอบ — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
+    }
+
+    // ── On course+test change ────────────────────────────────────────────────────
     async function onCourseTestChange() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
+      document.getElementById('delTestBtn').disabled = !(code && test);
 
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
@@ -315,7 +483,6 @@
 
       if (!code || !test) return;
 
-      // Load existing full scores + topics for this test
       const { data: existing } = await db.from('test_scores')
         .select('subject, full_score, topic')
         .eq('course_code', code)
@@ -326,6 +493,11 @@
       document.getElementById('updateAllFullBtn').classList.remove('hidden');
 
       if (existing?.length) {
+        // ── [FIX] ถ้ามีข้อมูลใน DB แล้ว ให้อัปเดต label option ให้ถูกต้อง ──
+        const opt = document.getElementById('enterTest').querySelector(`option[value="${test}"]`);
+        if (opt && opt.textContent.includes('ยังไม่บันทึก')) {
+          opt.textContent = `ครั้งที่ ${test}`;
+        }
         existing.forEach(r => {
           if (r.subject === 'วิทย์') {
             document.getElementById('sciFullInput').value = r.full_score;
@@ -341,7 +513,6 @@
           }
         });
       } else {
-        // Reset topic inputs for new test
         document.getElementById('topicSci').value = '';
         document.getElementById('topicMath').value = '';
         document.getElementById('topicEng').value = '';
@@ -351,7 +522,7 @@
       await loadBulkStudentArea(code, test);
     }
 
-    // ─── Save Topics ────────────────────────────────────────────
+    // ── Save Topics ──────────────────────────────────────────────────────────────
     async function saveTopics() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
@@ -362,9 +533,9 @@
       const engTopic  = document.getElementById('topicEng').value.trim();
 
       const updates = [
-        { subj: 'วิทย์', topic: sciTopic },
-        { subj: 'คณิต', topic: mathTopic },
-        { subj: 'อังกฤษ', topic: engTopic },
+        { subj: 'วิทย์',   topic: sciTopic },
+        { subj: 'คณิต',    topic: mathTopic },
+        { subj: 'อังกฤษ',  topic: engTopic },
       ];
 
       let hasError = false;
@@ -380,7 +551,7 @@
       hasError ? showToast('บันทึกหัวข้อบางวิชาล้มเหลว', 'error') : showToast('✅ บันทึกหัวข้อสำเร็จ');
     }
 
-    // ─── Load all students + pre-fill scores ───────────────────
+    // ── Load all students + pre-fill scores ─────────────────────────────────────
     async function loadBulkStudentArea(code, test) {
       const list = document.getElementById('studentScoreList');
       list.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
@@ -394,7 +565,6 @@
 
       allStudents = students || [];
 
-      // Build existing score map
       const scoreMap = {};
       (scores || []).forEach(r => {
         if (!scoreMap[r.student_id]) scoreMap[r.student_id] = {};
@@ -410,12 +580,11 @@
         return;
       }
 
-      // Mobile: cards | Desktop: rows
       list.innerHTML = allStudents.map(s => {
         const sc = scoreMap[s.id] || {};
-        const sciVal  = sc['วิทย์']   != null ? sc['วิทย์']   : '';
-        const mathVal = sc['คณิต']    != null ? sc['คณิต']    : '';
-        const engVal  = sc['อังกฤษ']  != null ? sc['อังกฤษ']  : '';
+        const sciVal  = sc['วิทย์']  != null ? sc['วิทย์']  : '';
+        const mathVal = sc['คณิต']   != null ? sc['คณิต']   : '';
+        const engVal  = sc['อังกฤษ'] != null ? sc['อังกฤษ'] : '';
         return `
         <!-- Mobile card -->
         <div class="student-score-card md:hidden">
@@ -451,7 +620,7 @@
       }).join('');
     }
 
-    // ─── Save all scores (bulk) ────────────────────────────────
+    // ── Save all scores (bulk) ───────────────────────────────────────────────────
     async function saveAllScores() {
       const code  = document.getElementById('enterCourse').value;
       const test  = document.getElementById('enterTest').value;
@@ -478,13 +647,25 @@
 
       const btn = document.getElementById('saveAllBtn');
       btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+
       const { error } = await db.from('test_scores').upsert(rows, { onConflict: 'student_id,test_number,subject' });
-      if (!error) { showToast(`✅ บันทึก ${rows.length} รายการสำเร็จ`); refreshRankings(code); }
-      else showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+      if (!error) {
+        showToast(`✅ บันทึก ${rows.length} รายการสำเร็จ`);
+        // ── [FIX] บันทึกสำเร็จแล้ว → เคลียร์ pending ออกจาก sessionStorage ──
+        sessionStorage.removeItem(pendingKey(code));
+        // อัปเดต label ใน dropdown ให้ไม่มี "(ยังไม่บันทึก)"
+        const opt = document.getElementById('enterTest').querySelector(`option[value="${test}"]`);
+        if (opt && opt.textContent.includes('ยังไม่บันทึก')) {
+          opt.textContent = `ครั้งที่ ${test}`;
+        }
+        refreshRankings(code);
+      } else {
+        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+      }
       btn.disabled = false; btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
     }
 
-    // ─── Update all full scores ────────────────────────────────
+    // ── Update all full scores ───────────────────────────────────────────────────
     async function updateAllFullScores() {
       const code  = document.getElementById('enterCourse').value;
       const test  = document.getElementById('enterTest').value;
@@ -502,7 +683,7 @@
       refreshRankings(code);
     }
 
-    // ─── View tab: load students ───────────────────────────────
+    // ── View tab: load students ──────────────────────────────────────────────────
     async function loadStudents(cId, sId) {
       const code = document.getElementById(cId).value;
       const sel = document.getElementById(sId);
@@ -512,7 +693,7 @@
       data?.forEach(s => { sel.innerHTML += `<option value="${s.id}">${s.nickname}</option>`; });
     }
 
-    // ─── View tab: score table (keep original) ─────────────────
+    // ── View tab: score table ────────────────────────────────────────────────────
     async function loadScoreTable() {
       const code = document.getElementById('viewCourse').value;
       const sid  = document.getElementById('viewStudent').value;
@@ -576,8 +757,6 @@
       });
 
       container.innerHTML = html + '</tbody></table>';
-
-      // Load and show topics below
       loadViewTopics(code, data);
     }
 
@@ -606,11 +785,10 @@
       else showToast('ลบไม่สำเร็จ', 'error');
     }
 
-    // ─── View Topics (ใต้ตาราง แก้ไขได้) ──────────────────────
+    // ── View Topics ──────────────────────────────────────────────────────────────
     function loadViewTopics(code, rows) {
       if (!rows?.length) return;
 
-      // Build map: test_number -> { subject: topic }
       const topicMap = {};
       rows.forEach(r => {
         if (!topicMap[r.test_number]) topicMap[r.test_number] = {};
@@ -655,7 +833,7 @@
       hasError ? showToast('บันทึกบางรายการล้มเหลว', 'error') : showToast('✅ บันทึกหัวข้อสำเร็จ');
     }
 
-    // ─── CSV Import (คงเดิมทุกอย่าง) ──────────────────────────
+    // ── CSV Import ───────────────────────────────────────────────────────────────
     function previewCSV(e) {
       const file = e.target.files[0]; if (!file) return;
       const reader = new FileReader();
@@ -699,7 +877,7 @@
       a.download = 'score-template.csv'; a.click();
     }
 
-    // ─── Rankings refresh ──────────────────────────────────────
+    // ── Rankings refresh ─────────────────────────────────────────────────────────
     async function refreshRankings(courseCode) {
       const { data: scores } = await db.from('test_scores').select('student_id, score, full_score').eq('course_code', courseCode);
       const map = {};
