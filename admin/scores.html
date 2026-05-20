@@ -624,43 +624,61 @@
     async function saveAllScores() {
       const code  = document.getElementById('enterCourse').value;
       const test  = document.getElementById('enterTest').value;
+      if (!code || !test) return showToast('กรุณาเลือกคอร์สและครั้งที่สอบ', 'error');
+
       const sciF  = +document.getElementById('sciFullInput').value;
       const mathF = +document.getElementById('mathFullInput').value;
       const engF  = +document.getElementById('engFullInput').value;
       const sciTopic  = document.getElementById('topicSci').value.trim();
       const mathTopic = document.getElementById('topicMath').value.trim();
       const engTopic  = document.getElementById('topicEng').value.trim();
+      
       const isMobile  = window.innerWidth < 768;
       const pfx = isMobile ? 'm' : 'd';
 
       const rows = [];
+      const subjects = [
+        { name: 'วิทย์',   idSuffix: 'sci',  full: sciF,  topic: sciTopic },
+        { name: 'คณิต',    idSuffix: 'math', full: mathF, topic: mathTopic },
+        { name: 'อังกฤษ',  idSuffix: 'eng',  full: engF,  topic: engTopic }
+      ];
+
       allStudents.forEach(s => {
-        const sciVal  = document.getElementById(`${pfx}-sci-${s.id}`)?.value;
-        const mathVal = document.getElementById(`${pfx}-math-${s.id}`)?.value;
-        const engVal  = document.getElementById(`${pfx}-eng-${s.id}`)?.value;
-        if (sciVal  !== '') rows.push({ course_code: code, student_id: s.id, test_number: +test, subject: 'วิทย์',   score: +sciVal,  full_score: sciF,  topic: sciTopic  || null });
-        if (mathVal !== '') rows.push({ course_code: code, student_id: s.id, test_number: +test, subject: 'คณิต',    score: +mathVal, full_score: mathF, topic: mathTopic || null });
-        if (engVal  !== '') rows.push({ course_code: code, student_id: s.id, test_number: +test, subject: 'อังกฤษ', score: +engVal,  full_score: engF,  topic: engTopic  || null });
+        subjects.forEach(sub => {
+          const val = document.getElementById(`${pfx}-${sub.idSuffix}-${s.id}`)?.value;
+          
+          // ส่งข้อมูลทุกแถวที่ "เคย" มี input หรือถูกล้างค่าให้ว่าง
+          // ถ้าช่องว่าง (val === '') จะส่งเป็น null เข้า Database ทันที
+          rows.push({ 
+            course_code: code, 
+            student_id: s.id, 
+            test_number: +test, 
+            subject: sub.name, 
+            score: (val === '' || val === null) ? null : +val, 
+            full_score: sub.full, 
+            topic: sub.topic || null 
+          });
+        });
       });
 
-      if (!rows.length) return showToast('ยังไม่ได้กรอกคะแนน', 'error');
+      if (!rows.length) return showToast('ไม่พบข้อมูลนักเรียน', 'error');
 
       const btn = document.getElementById('saveAllBtn');
       btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
 
       const { error } = await db.from('test_scores').upsert(rows, { onConflict: 'student_id,test_number,subject' });
+      
       if (!error) {
-        showToast(`✅ บันทึก ${rows.length} รายการสำเร็จ`);
-        // ── [FIX] บันทึกสำเร็จแล้ว → เคลียร์ pending ออกจาก sessionStorage ──
+        showToast(`✅ บันทึกคะแนนทั้งหมดเรียบร้อย`);
         sessionStorage.removeItem(pendingKey(code));
-        // อัปเดต label ใน dropdown ให้ไม่มี "(ยังไม่บันทึก)"
         const opt = document.getElementById('enterTest').querySelector(`option[value="${test}"]`);
         if (opt && opt.textContent.includes('ยังไม่บันทึก')) {
           opt.textContent = `ครั้งที่ ${test}`;
         }
         refreshRankings(code);
       } else {
-        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+        console.error(error);
+        showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
       }
       btn.disabled = false; btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
     }
@@ -769,13 +787,31 @@
     async function saveInline(rowId, sid, test, code) {
       const r = document.getElementById(rowId);
       const upserts = [];
+      
       r.querySelectorAll('td[data-subj]').forEach(td => {
         const input = td.querySelector('input');
-        upserts.push({ student_id: sid, test_number: test, course_code: code, subject: td.dataset.subj, score: +input.value, full_score: +input.dataset.f });
+        const val = input.value; // ค่าจากช่อง Input ที่แก้ไข
+        
+        upserts.push({ 
+          student_id: sid, 
+          test_number: test, 
+          course_code: code, 
+          subject: td.dataset.subj, 
+          score: (val === '' || val === null) ? null : +val, // ดักค่าว่างตรงนี้
+          full_score: +input.dataset.f 
+        });
       });
+
       const { error } = await db.from('test_scores').upsert(upserts, { onConflict: 'student_id,test_number,subject' });
-      if (!error) { showToast('บันทึกสำเร็จ'); loadScoreTable(); refreshRankings(code); }
-      else showToast('เกิดข้อผิดพลาด', 'error');
+      
+      if (!error) { 
+        showToast('อัปเดตคะแนนเรียบร้อย'); 
+        loadScoreTable(); 
+        refreshRankings(code); 
+      } else { 
+        console.error(error);
+        showToast('เกิดข้อผิดพลาด', 'error'); 
+      }
     }
 
     async function deleteRow(sid, test, code) {
@@ -894,6 +930,37 @@
     }
 
     init();
+
+    function sendLineInquiry() {
+      // 1. ดึงค่าจากหน้าเว็บมาทำข้อความ
+      const courseCode = document.getElementById('enterCourse').value || 'ไม่ระบุคอร์ส';
+      const testNum = document.getElementById('enterTest').value || '-';
+      
+      // 2. สร้างข้อความที่จะส่ง (ปรับแต่งตามใจชอบ)
+      const baseText = `สวัสดีครับคุณครู อยากสอบถามเรื่องคะแนน\n📌 คอร์ส: ${courseCode}\n📝 การสอบครั้งที่: ${testNum}\n(ส่งจากระบบ Qtutor)`;
+      
+      // 3. แปลงข้อความให้เป็นรูปแบบที่ URL รองรับ (Encoding)
+      const encodedText = encodeURIComponent(baseText);
+      
+      // 4. ลิงก์ไปที่แอป LINE
+      // หมายเหตุ: ตรงนี้ถ้าคุณมี LINE OA ให้เปลี่ยนเป็น https://line.me/R/oaMessage/@ไอดีของคุณ/?${encodedText}
+      // แต่ถ้าเป็นไลน์ส่วนตัว ให้ใช้ระบบส่งข้อความมาตรฐาน:
+      window.open(`https://line.me/R/msg/text/?${encodedText}`, '_blank');
+    }
   </script>
+
+  <button onclick="sendLineInquiry()" 
+    class="fixed bottom-6 right-6 z-[9999] group flex items-center shadow-2xl overflow-hidden max-w-[56px] hover:max-w-[250px] h-[56px] bg-[#06C755] text-white rounded-full transition-all duration-300 ease-in-out">
+    
+    <div class="flex-shrink-0 w-[56px] h-[56px] flex items-center justify-center bg-[#05b34c]">
+      <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M24 10.304c0-5.691-5.383-10.304-12-10.304s-12 4.613-12 10.304c0 5.097 4.272 9.353 10.068 10.106.392.085.924.258 1.18.59.244.316.16.811.078 1.132l-.396 1.763c-.118.513.056.666.368.666.305 0 .614-.158.854-.428l2.61-4.148c2.155-.544 4.223-1.637 5.76-3.298 1.543-1.666 2.48-3.564 2.48-5.383z"/>
+      </svg>
+    </div>
+
+    <span class="whitespace-nowrap pr-6 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2">
+      สอบถามเรื่องคะแนน
+    </span>
+  </button>
 </body>
 </html>
