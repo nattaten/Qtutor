@@ -316,6 +316,7 @@
 
     let csvData = [];
     let allStudents = [];
+    let currentCourseStudents = [];  // BUG FIX #1: Track students in current course
     let currentTopicsData = {};
     let selectedStudentIds = new Set();
     let inScoringPhase = false;
@@ -352,7 +353,8 @@
     }
 
     function updateSelectionInfo() {
-      const total = document.querySelectorAll('.student-checkbox[data-student-id]').length;
+      // BUG FIX #1: Use tracked course students instead of DOM count for accuracy
+      const total = currentCourseStudents.length;
       const selected = document.querySelectorAll('.student-checkbox[data-student-id]:checked').length;
       document.getElementById('selectionInfo').textContent = `${selected} / ${total} คนที่เลือก`;
       
@@ -839,6 +841,7 @@
         .order('nickname');
 
       allStudents = students || [];
+      currentCourseStudents = students || [];  // BUG FIX #1: Track current course students
 
       if (!allStudents.length) {
         list.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนในคอร์สนี้</p>`;
@@ -1137,7 +1140,7 @@
       
       if (hasInvalidScore) {
         showToast('มีคะแนนที่ไม่ถูกต้อง (เกินคะแนนเต็มหรือติดลบ)', 'error');
-        return;
+        return;  // Prevent save
       }
       
       r.querySelectorAll('td[data-subj]').forEach(td => {
@@ -1184,7 +1187,7 @@
       input.style.backgroundColor = '';
       if (saveBtn) saveBtn.disabled = false;
       
-      // Empty or non-numeric: allow (valid)
+      // Empty or non-numeric: allow (valid - null/no score is acceptable)
       if (value === '' || isNaN(value)) {
         return true;
       }
