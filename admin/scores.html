@@ -26,6 +26,8 @@
     .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 13px 20px; transition: all 0.15s; border: none; cursor: pointer; text-align: center; width: 100%; font-size: 15px; min-height: 50px; }
     .btn-primary:active { transform: scale(0.98); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary.success { background: linear-gradient(135deg,#10b981,#34d399); animation: successPulse 0.6s ease-out; }
+    @keyframes successPulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
     .btn-secondary { background: #10b981; color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 16px; font-size: 12px; border: none; cursor: pointer; min-height: 40px; }
     .btn-topic { background: linear-gradient(135deg,#f59e0b,#f97316); color: #fff; font-weight: 800; border-radius: 10px; padding: 9px 16px; font-size: 13px; border: none; cursor: pointer; white-space: nowrap; }
     .btn-topic:active { transform: scale(0.97); }
@@ -47,6 +49,8 @@
     .full-indicator { font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px; text-align: center; }
     .selection-controls { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
     .selection-info { font-size: 12px; color: #64748b; font-weight: 600; padding: 2px 8px; background: #f1f5f9; border-radius: 6px; }
+    .score-indicator { animation: slideIn 0.4s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     @media (max-width: 768px) {
       .sidebar { position: fixed; z-index: 50; left: -240px; height: 100vh; }
       .sidebar.open { left: 0; }
@@ -316,10 +320,50 @@
 
     let csvData = [];
     let allStudents = [];
-    let currentCourseStudents = [];  // BUG FIX #1: Track students in current course
+    let currentCourseStudents = [];
     let currentTopicsData = {};
     let selectedStudentIds = new Set();
     let inScoringPhase = false;
+    let isSaving = false;  // NEW: Track save state
+
+    // ========== PERSISTENCE: LocalStorage Helpers ==========
+    function saveSelectionState(courseCode, testNumber) {
+      const state = { courseCode, testNumber, timestamp: Date.now() };
+      localStorage.setItem('scoreManagementState', JSON.stringify(state));
+    }
+
+    function loadSelectionState() {
+      const saved = localStorage.getItem('scoreManagementState');
+      return saved ? JSON.parse(saved) : null;
+    }
+
+    function applyPersistentState() {
+      const state = loadSelectionState();
+      if (!state) return;
+
+      // Apply to Enter tab
+      const enterCourse = document.getElementById('enterCourse');
+      if (enterCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+        enterCourse.value = state.courseCode;
+        onEnterCourseChange();  // This will load tests
+        
+        // Then set test if available
+        setTimeout(() => {
+          const enterTest = document.getElementById('enterTest');
+          if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
+            enterTest.value = state.testNumber;
+            onCourseTestChange();
+          }
+        }, 300);
+      }
+
+      // Apply to View tab
+      const viewCourse = document.getElementById('viewCourse');
+      if (viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+        viewCourse.value = state.courseCode;
+        loadStudents('viewCourse', 'viewStudent');
+      }
+    }
 
     // Sidebar
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
@@ -338,6 +382,9 @@
         sel.innerHTML = `<option value="">-- เลือกคอร์ส --</option>`;
         (courses || []).forEach(c => { sel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`; });
       });
+
+      // Apply persistent state after options are loaded
+      setTimeout(() => applyPersistentState(), 100);
     }
 
     // ── Helper: pendingTest key per course ──────────────────────────────────────
@@ -353,12 +400,10 @@
     }
 
     function updateSelectionInfo() {
-      // BUG FIX #1: Use tracked course students instead of DOM count for accuracy
       const total = currentCourseStudents.length;
       const selected = document.querySelectorAll('.student-checkbox[data-student-id]:checked').length;
       document.getElementById('selectionInfo').textContent = `${selected} / ${total} คนที่เลือก`;
       
-      // Update selected set
       selectedStudentIds.clear();
       document.querySelectorAll('.student-checkbox[data-student-id]:checked').forEach(cb => {
         selectedStudentIds.add(+cb.dataset.studentId);
@@ -371,7 +416,6 @@
         return;
       }
 
-      // CRITICAL FIX #3: Validate all scores in selection list before confirming
       const sciF  = +document.getElementById('sciFullInput').value;
       const mathF = +document.getElementById('mathFullInput').value;
       const engF  = +document.getElementById('engFullInput').value;
@@ -426,13 +470,11 @@
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
       
-      // Hide selection list, show scoring
       document.getElementById('studentSelectionList').classList.add('hidden');
       document.getElementById('selectionPhase').classList.add('hidden');
       document.getElementById('scoringPhaseContainer').classList.remove('hidden');
       document.getElementById('selectedStudentCount').textContent = selectedStudentIds.size;
 
-      // Load only selected students
       const list = document.getElementById('studentScoreList');
       list.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
 
@@ -469,7 +511,7 @@
         <div class="student-score-card md:hidden" data-student-id="${s.id}">
           <div class="student-name-badge">
             <span>${s.nickname}</span>
-            <span class="text-xs text-slate-400 font-normal">${sciVal !== '' || mathVal !== '' || engVal !== '' ? '✏️ มีคะแนนแล้ว' : ''}</span>
+            <span class="text-xs text-slate-400 font-normal score-indicator-${s.id} ${sciVal !== '' || mathVal !== '' || engVal !== '' ? '' : 'hidden'}">✏️ มีคะแนนแล้ว</span>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <div>
@@ -498,12 +540,11 @@
         </div>`;
       }).join('');
 
-      // Update labels
       document.getElementById('sciFullLabel2').textContent = `/${sciF}`;
       document.getElementById('mathFullLabel2').textContent = `/${mathF}`;
       document.getElementById('engFullLabel2').textContent = `/${engF}`;
 
-      // CRITICAL FIX #3: Validate all pre-filled scores on load
+      // NEW: Validate all pre-filled scores on load
       setTimeout(() => {
         document.querySelectorAll('#studentScoreList .score-input').forEach(input => {
           validateScoreInput(input);
@@ -516,13 +557,11 @@
       const val = input.value.trim();
       const fullScore = +input.dataset.full;
       
-      // Remove non-numeric/decimal characters
       const sanitized = val.replace(/[^\d.]/g, '');
       if (sanitized !== val) {
         input.value = sanitized;
       }
 
-      // Reset to default color
       input.classList.remove('valid', 'invalid', 'empty');
 
       if (input.value === '' || input.value === null) {
@@ -559,7 +598,7 @@
         }
       });
 
-      saveBtn.disabled = hasInvalid;
+      saveBtn.disabled = hasInvalid || isSaving;  // NEW: Also check save state
     }
 
     function handleScoreKeypress(e, input) {
@@ -570,7 +609,6 @@
         const isMobile = window.innerWidth < 768;
         const pfx = isMobile ? 'm' : 'd';
         
-        // Get current student ID from input ID
         const currentStudentId = input.id.split('-')[2];
         const allStudentCards = document.querySelectorAll(`[data-student-id]`);
         const currentIdx = Array.from(allStudentCards).findIndex(el => el.dataset.studentId === currentStudentId);
@@ -597,7 +635,6 @@
       const addBtn  = document.getElementById('addTestBtn');
       const hint    = document.getElementById('testHint');
 
-      // Reset downstream UI
       testSel.innerHTML = '<option value="">-- ครั้งที่ --</option>';
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
@@ -610,7 +647,9 @@
         return;
       }
 
-      // Pull existing test numbers from DB
+      // NEW: Save selection state
+      saveSelectionState(code, '');
+
       const { data } = await db
         .from('test_scores')
         .select('test_number')
@@ -666,12 +705,25 @@
       onCourseTestChange();
     }
 
-    // Tab switching
+    // Tab switching - NEW: Sync data when switching to View tab
     function switchTab(name, btn) {
       ['enter','view','import'].forEach(t => document.getElementById('tab-' + t).classList.add('hidden'));
       document.getElementById('tab-' + name).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+
+      // NEW: Auto-load view tab with current selection state
+      if (name === 'view') {
+        const state = loadSelectionState();
+        if (state && state.courseCode) {
+          const viewCourse = document.getElementById('viewCourse');
+          if (viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+            viewCourse.value = state.courseCode;
+            loadStudents('viewCourse', 'viewStudent');
+            setTimeout(() => loadScoreTable(), 300);
+          }
+        }
+      }
     }
 
     // Toast
@@ -779,6 +831,11 @@
       const test = document.getElementById('enterTest').value;
       document.getElementById('delTestBtn').disabled = !(code && test);
 
+      // NEW: Update selection state
+      if (code && test) {
+        saveSelectionState(code, test);
+      }
+
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
       document.getElementById('updateAllFullBtn').classList.add('hidden');
@@ -833,7 +890,6 @@
       document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
       document.getElementById('selectionPhase').classList.remove('hidden');
 
-      // CRITICAL FIX #1: Fetch students for THIS course only
       const { data: students } = await db
         .from('students')
         .select('id, nickname')
@@ -841,14 +897,13 @@
         .order('nickname');
 
       allStudents = students || [];
-      currentCourseStudents = students || [];  // BUG FIX #1: Track current course students
+      currentCourseStudents = students || [];
 
       if (!allStudents.length) {
         list.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนในคอร์สนี้</p>`;
         return;
       }
 
-      // CRITICAL FIX #2: Fetch existing scores for this test
       const { data: existingScores } = await db
         .from('test_scores')
         .select('student_id, subject, score, full_score')
@@ -905,7 +960,6 @@
         </div>
       `}).join('');
 
-      // Reset selection
       selectedStudentIds.clear();
       updateSelectionInfo();
     }
@@ -939,7 +993,7 @@
       hasError ? showToast('บันทึกหัวข้อบางวิชาล้มเหลว', 'error') : showToast('✅ บันทึกหัวข้อสำเร็จ');
     }
 
-    // ── Save all scores - ONLY SELECTED STUDENTS ──────────────────────────────────
+    // ── Save all scores - ONLY SELECTED STUDENTS (WITH REAL-TIME UI UPDATE) ───────
     async function saveAllScores() {
       const code  = document.getElementById('enterCourse').value;
       const test  = document.getElementById('enterTest').value;
@@ -962,7 +1016,6 @@
         { name: 'อังกฤษ',  idSuffix: 'eng',  full: engF,  topic: engTopic }
       ];
 
-      // CRUCIAL: Only process SELECTED students
       const selectedStudents = allStudents.filter(s => selectedStudentIds.has(s.id));
 
       selectedStudents.forEach(s => {
@@ -985,24 +1038,75 @@
       if (!rows.length) return showToast('ไม่พบข้อมูลนักเรียน', 'error');
 
       const btn = document.getElementById('saveAllBtn');
-      btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
+      
+      // NEW: Set save state
+      isSaving = true;
+      btn.disabled = true;
+      btn.textContent = '⏳ กำลังบันทึก...';
 
       const { error } = await db.from('test_scores').upsert(rows, { onConflict: 'student_id,test_number,subject' });
       
       if (!error) {
+        // NEW: Show success feedback
+        btn.classList.add('success');
+        btn.textContent = '✅ บันทึกเรียบร้อย!';
+
         showToast(`✅ บันทึกคะแนนทั้งหมดเรียบร้อย`);
         sessionStorage.removeItem(pendingKey(code));
         const opt = document.getElementById('enterTest').querySelector(`option[value="${test}"]`);
         if (opt && opt.textContent.includes('ยังไม่บันทึก')) {
           opt.textContent = `ครั้งที่ ${test}`;
         }
+
+        // NEW: Real-time update of indicators in selection list
+        await refreshSelectionListIndicators(code, test);
+        
         refreshRankings(code);
-        backToSelection();
+
+        // NEW: Keep success state for 2 seconds then reset
+        setTimeout(() => {
+          btn.classList.remove('success');
+          btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
+          isSaving = false;
+          btn.disabled = false;
+          backToSelection();
+        }, 2000);
       } else {
         console.error(error);
         showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
+        isSaving = false;
+        btn.disabled = false;
+        btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
       }
-      btn.disabled = false; btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
+    }
+
+    // NEW: Refresh selection list to show score indicators after save
+    async function refreshSelectionListIndicators(code, test) {
+      const { data: scores } = await db
+        .from('test_scores')
+        .select('student_id, subject, score')
+        .eq('course_code', code)
+        .eq('test_number', +test);
+
+      const scoreMap = {};
+      (scores || []).forEach(r => {
+        if (!scoreMap[r.student_id]) scoreMap[r.student_id] = {};
+        scoreMap[r.student_id][r.subject] = r.score;
+      });
+
+      // Update indicators in selection list
+      allStudents.forEach(s => {
+        const sc = scoreMap[s.id] || {};
+        const indicator = document.querySelector(`.score-indicator-${s.id}`);
+        if (indicator) {
+          const hasScore = sc['วิทย์'] != null || sc['คณิต'] != null || sc['อังกฤษ'] != null;
+          if (hasScore) {
+            indicator.classList.remove('hidden');
+          } else {
+            indicator.classList.add('hidden');
+          }
+        }
+      });
     }
 
     // ── Update all full scores ───────────────────────────────────────────────────
@@ -1069,7 +1173,6 @@
       Object.values(grouped).forEach(g => {
         const rowId = `inline-${g.student_id}-${g.test_number}`;
         
-        // Display null as "—" (muted grey) and 0 as bold "0"
         const displayScore = (score, full) => {
           if (score === null || score === undefined) {
             return `<span class="null-score">—</span><span class="text-slate-400 font-normal">/${full ?? 50}</span>`;
@@ -1122,7 +1225,6 @@
       const r = document.getElementById(rowId);
       const upserts = [];
       
-      // BUG FIX #2: Validate all inputs before saving
       let hasInvalidScore = false;
       r.querySelectorAll('td[data-subj]').forEach(td => {
         const input = td.querySelector('input');
@@ -1140,7 +1242,7 @@
       
       if (hasInvalidScore) {
         showToast('มีคะแนนที่ไม่ถูกต้อง (เกินคะแนนเต็มหรือติดลบ)', 'error');
-        return;  // Prevent save
+        return;
       }
       
       r.querySelectorAll('td[data-subj]').forEach(td => {
@@ -1176,32 +1278,28 @@
       else showToast('ลบไม่สำเร็จ', 'error');
     }
 
-    // ── BUG FIX #2: Validate View/Edit Table Inputs ───────────────────────────────
+    // ── Validate View/Edit Table Inputs ───────────────────────────────────────────
     function validateViewTableInput(input) {
       const value = input.value.trim();
       const fullScore = parseFloat(input.dataset.f);
       const row = input.closest('tr');
       const saveBtn = row?.querySelector('button[onclick*="saveInline"]');
       
-      // Reset background color by default
       input.style.backgroundColor = '';
       if (saveBtn) saveBtn.disabled = false;
       
-      // Empty or non-numeric: allow (valid - null/no score is acceptable)
       if (value === '' || isNaN(value)) {
         return true;
       }
       
       const numValue = parseFloat(value);
       
-      // Check if score exceeds full score or is negative
       if (numValue < 0 || numValue > fullScore) {
-        input.style.backgroundColor = '#fee2e2';  // light red background
+        input.style.backgroundColor = '#fee2e2';
         if (saveBtn) saveBtn.disabled = true;
         return false;
       }
       
-      // Valid score
       input.style.backgroundColor = '';
       if (saveBtn) saveBtn.disabled = false;
       return true;
@@ -1317,12 +1415,10 @@
 
     init();
 
-    
   </script>
 
-    <a href="https://line.me/ti/p/1122082543" target="_blank" 
+  <a href="https://line.me/ti/p/1122082543" target="_blank" 
     class="fixed bottom-6 right-6 z-[9999] group flex items-center shadow-2xl overflow-hidden max-w-[56px] hover:max-w-[200px] h-[56px] bg-[#06C755] text-white rounded-full transition-all duration-300 ease-in-out">
-    
     <div class="flex-shrink-0 w-[56px] h-[56px] flex items-center justify-center">
       <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
         <path d="M24 10.304c0-5.691-5.383-10.304-12-10.304s-12 4.613-12 10.304c0 5.097 4.272 9.353 10.068 10.106.392.085.924.258 1.18.59.244.316.16.811.078 1.132l-.396 1.763c-.118.513.056.666.368.666.305 0 .614-.158.854-.428l2.61-4.148c2.155-.544 4.223-1.637 5.76-3.298 1.543-1.666 2.48-3.564 2.48-5.383z"/>
@@ -1331,6 +1427,6 @@
     <span class="whitespace-nowrap pr-6 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
       สอบถามปัญหา
     </span>
-    </a>
+  </a>
 </body>
 </html>
