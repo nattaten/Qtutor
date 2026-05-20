@@ -16,35 +16,48 @@
     .field-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block; }
     .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 11px 13px; font-size: 15px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; outline: none; }
     .input:focus { border-color: #6366f1; }
-    .score-input { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 10px 8px; font-size: 18px; font-weight: 900; color: #1e293b; width: 100%; text-align: center; outline: none; }
+    .score-input { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 10px 8px; font-size: 18px; font-weight: 900; color: #1e293b; width: 100%; text-align: center; outline: none; transition: all 0.2s; }
     .score-input:focus { border-color: #6366f1; background: #fff; }
+    .score-input.valid { background: #dcfce7; border-color: #22c55e; }
+    .score-input.invalid { background: #fee2e2; border-color: #ef4444; }
+    .score-input.empty { background: #fff; border-color: #e2e8f0; }
     .topic-input { background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 600; color: #1e293b; width: 100%; outline: none; }
     .topic-input:focus { border-color: #f59e0b; }
-    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 13px 20px; transition: all 0.15s; border: none; cursor: pointer; text-align: center; width: 100%; font-size: 15px; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 13px 20px; transition: all 0.15s; border: none; cursor: pointer; text-align: center; width: 100%; font-size: 15px; min-height: 50px; }
     .btn-primary:active { transform: scale(0.98); }
-    .btn-secondary { background: #10b981; color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 16px; font-size: 12px; border: none; cursor: pointer; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: #10b981; color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 16px; font-size: 12px; border: none; cursor: pointer; min-height: 40px; }
     .btn-topic { background: linear-gradient(135deg,#f59e0b,#f97316); color: #fff; font-weight: 800; border-radius: 10px; padding: 9px 16px; font-size: 13px; border: none; cursor: pointer; white-space: nowrap; }
     .btn-topic:active { transform: scale(0.97); }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 80px); z-index: 9999; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; opacity: 0; width: 90%; max-width: 380px; text-align: center; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
     .toast.success { background: #d1fae5; color: #065f46; }
     .toast.error   { background: #fee2e2; color: #991b1b; }
-    .tab-btn { padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; flex: 1; text-align: center; white-space: nowrap; min-width: 0; }
+    .tab-btn { padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; flex: 1; text-align: center; white-space: nowrap; min-width: 0; min-height: 40px; }
     .tab-btn.active { background: #0f172a; color: #fff; }
     .tab-btn:not(.active) { background: #f1f5f9; color: #64748b; }
     .edit-field { width: 60px; text-align: center; border: 2px solid #6366f1; border-radius: 8px; font-weight: 800; padding: 4px; }
-    .student-score-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 16px; padding: 12px 14px; transition: border-color 0.15s; }
-    .student-score-card:focus-within { border-color: #6366f1; }
-    .student-name-badge { font-weight: 800; font-size: 14px; color: #1e293b; padding: 4px 0 10px 0; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; }
+    .student-score-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 16px; padding: 12px 14px; transition: all 0.15s; }
+    .student-score-card.row-focused { background: #f0f9ff; border-color: #6366f1; }
+    .student-score-card.hidden-row { opacity: 0.4; pointer-events: none; }
+    .student-name-badge { font-weight: 800; font-size: 14px; color: #1e293b; padding: 4px 0 10px 0; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .student-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: #6366f1; }
+    .selection-score { padding: 6px 2px; border-radius: 4px; transition: all 0.2s; }
+    .selection-score.invalid { background: #fee2e2; color: #991b1b; font-weight: bold; }
     .full-indicator { font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px; text-align: center; }
+    .selection-controls { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
+    .selection-info { font-size: 12px; color: #64748b; font-weight: 600; padding: 2px 8px; background: #f1f5f9; border-radius: 6px; }
     @media (max-width: 768px) {
       .sidebar { position: fixed; z-index: 50; left: -240px; height: 100vh; }
       .sidebar.open { left: 0; }
       .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; backdrop-filter: blur(2px); }
       .overlay.open { display: block; }
+      .mobile-stack { display: flex; flex-direction: column; }
+      .mobile-stack > * { width: 100%; }
     }
     @media (min-width: 769px) {
       .sidebar { position: relative; left: 0; }
+      .desktop-row-highlight:focus-within { background: #f0f9ff; }
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -52,6 +65,8 @@
     .topic-edit-input:focus { border-color: #f59e0b; background: #fff; }
     .loading-dots::after { content: ''; animation: dots 1.2s infinite; }
     @keyframes dots { 0%,100%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+    .null-score { color: #94a3b8; font-weight: 300; font-style: italic; }
+    .zero-score { color: #1e293b; font-weight: 900; }
   </style>
 </head>
 <body class="bg-slate-50 flex overflow-x-hidden">
@@ -101,7 +116,7 @@
         <!-- Step 1: เลือกคอร์ส + ครั้งที่ -->
         <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
           <h3 class="font-black text-slate-800 mb-3 text-sm md:text-base">1. เลือกคอร์สและครั้งที่สอบ</h3>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="mobile-stack md:grid md:grid-cols-2 gap-3">
             <div>
               <label class="field-label">คอร์ส</label>
               <select id="enterCourse" onchange="onEnterCourseChange()" class="input"><option value="">-- เลือกคอร์ส --</option></select>
@@ -111,10 +126,10 @@
               <div class="flex gap-2 items-center">
                 <select id="enterTest" onchange="onCourseTestChange()" class="input flex-1"><option value="">-- ครั้งที่ --</option></select>
                 <button onclick="addNextTest()" id="addTestBtn" title="เพิ่มการสอบครั้งถัดไป"
-                  class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-lg rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-md shadow-indigo-200 disabled:opacity-40"
+                  class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-lg rounded-xl w-12 h-12 flex items-center justify-center transition-all shadow-md shadow-indigo-200 disabled:opacity-40 min-w-[50px]"
                   disabled>＋</button>
                 <button onclick="deleteTest()" id="delTestBtn" title="ลบการสอบครั้งนี้"
-                  class="flex-shrink-0 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-black text-lg rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-md shadow-red-200 disabled:opacity-40"
+                  class="flex-shrink-0 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-black text-lg rounded-xl w-12 h-12 flex items-center justify-center transition-all shadow-md shadow-red-200 disabled:opacity-40 min-w-[50px]"
                   disabled>🗑</button>
               </div>
               <p id="testHint" class="text-xs text-slate-400 mt-1">เลือกคอร์สก่อนเพื่อดูการสอบที่มีอยู่</p>
@@ -166,26 +181,66 @@
           </div>
         </div>
 
-        <!-- Step 3: กรอกคะแนนทุกคน -->
+        <!-- Step 3: เลือกนักเรียน + กรอกคะแนน -->
         <div id="bulkScoreArea" class="hidden">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-black text-slate-800 text-sm md:text-base">3. กรอกคะแนนทุกคน</h3>
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 class="font-black text-slate-800 text-sm md:text-base">3. เลือกและกรอกคะแนน</h3>
             <span id="bulkTestLabel" class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"></span>
           </div>
 
-          <!-- Desktop table header -->
-          <div class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px] gap-2 px-4 mb-2">
+          <!-- Selection Controls -->
+          <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4">
+            <div class="flex flex-wrap gap-2 items-center mb-2">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="student-checkbox" title="เลือกทั้งหมด">
+              <label for="selectAllCheckbox" class="font-bold text-slate-700 text-sm cursor-pointer">เลือกทั้งหมด</label>
+              <span id="selectionInfo" class="selection-info">0 / 0 คนที่เลือก</span>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="confirmSelection()" class="btn-primary py-2 px-4 text-sm font-bold flex-1 min-h-[40px]">
+                ✅ ยืนยันการเลือก
+              </button>
+              <button onclick="resetSelection()" class="bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm min-h-[40px]">
+                🔄 รีเซ็ต
+              </button>
+            </div>
+          </div>
+
+          <!-- Student List with Checkboxes -->
+          <div id="selectionPhase" class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px_50px] gap-2 px-4 mb-2">
             <div class="text-xs font-black text-slate-500 uppercase">นักเรียน</div>
             <div class="text-xs font-black text-emerald-600 uppercase text-center">วิทย์ <span id="sciFullLabel" class="font-normal"></span></div>
             <div class="text-xs font-black text-blue-600 uppercase text-center">คณิต <span id="mathFullLabel" class="font-normal"></span></div>
             <div class="text-xs font-black text-violet-600 uppercase text-center">Eng <span id="engFullLabel" class="font-normal"></span></div>
+            <div class="text-xs font-black text-slate-500 uppercase text-center">เลือก</div>
           </div>
 
-          <div id="studentScoreList" class="space-y-2"></div>
+          <div id="studentSelectionList" class="space-y-2 mb-4"></div>
 
-          <button onclick="saveAllScores()" id="saveAllBtn" class="btn-primary mt-4">
-            💾 บันทึกคะแนนทั้งหมด
-          </button>
+          <!-- Score Entry Area -->
+          <div class="hidden" id="scoringPhaseContainer">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+              <div class="text-sm font-bold text-blue-700">
+                📌 กำลังกรอกคะแนนให้กับ <span id="selectedStudentCount">0</span> นักเรียน
+              </div>
+              <button onclick="backToSelection()" class="text-blue-600 text-xs font-bold mt-2 hover:underline">
+                ← เปลี่ยนการเลือก
+              </button>
+            </div>
+
+            <!-- Desktop table header -->
+            <div class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px] gap-2 px-4 mb-2">
+              <div class="text-xs font-black text-slate-500 uppercase">นักเรียน</div>
+              <div class="text-xs font-black text-emerald-600 uppercase text-center">วิทย์ <span id="sciFullLabel2" class="font-normal"></span></div>
+              <div class="text-xs font-black text-blue-600 uppercase text-center">คณิต <span id="mathFullLabel2" class="font-normal"></span></div>
+              <div class="text-xs font-black text-violet-600 uppercase text-center">Eng <span id="engFullLabel2" class="font-normal"></span></div>
+            </div>
+
+            <div id="studentScoreList" class="space-y-2"></div>
+
+            <button onclick="saveAllScores()" id="saveAllBtn" class="btn-primary mt-4">
+              💾 บันทึกคะแนนทั้งหมด
+            </button>
+          </div>
         </div>
 
       </div>
@@ -193,7 +248,7 @@
       <!-- ===== TAB: ดู/แก้ไข ===== -->
       <div id="tab-view" class="hidden space-y-4">
         <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div class="mobile-stack md:grid md:grid-cols-2 gap-3 mb-3">
             <div>
               <label class="field-label">คอร์ส</label>
               <select id="viewCourse" onchange="loadStudents('viewCourse','viewStudent')" class="input"><option value="">-- เลือกคอร์ส --</option></select>
@@ -262,14 +317,21 @@
     let csvData = [];
     let allStudents = [];
     let currentTopicsData = {};
+    let selectedStudentIds = new Set();
+    let inScoringPhase = false;
 
     // Sidebar
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
-    // Init
+    // Init - Fetch only active courses (using is_active column)
     async function init() {
-      const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
+      const { data: courses } = await db
+        .from('courses')
+        .select('course_code, course_name')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
       ['enterCourse', 'viewCourse'].forEach(id => {
         const sel = document.getElementById(id);
         sel.innerHTML = `<option value="">-- เลือกคอร์ส --</option>`;
@@ -280,7 +342,253 @@
     // ── Helper: pendingTest key per course ──────────────────────────────────────
     function pendingKey(code) { return 'pendingTest_' + code; }
 
-    // ── When course changes → reload test list from DB + restore pending test ──
+    // ── Selection Phase Functions ──────────────────────────────────────────────────
+    function toggleSelectAll() {
+      const checked = document.getElementById('selectAllCheckbox').checked;
+      document.querySelectorAll('.student-checkbox[data-student-id]').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateSelectionInfo();
+    }
+
+    function updateSelectionInfo() {
+      const total = document.querySelectorAll('.student-checkbox[data-student-id]').length;
+      const selected = document.querySelectorAll('.student-checkbox[data-student-id]:checked').length;
+      document.getElementById('selectionInfo').textContent = `${selected} / ${total} คนที่เลือก`;
+      
+      // Update selected set
+      selectedStudentIds.clear();
+      document.querySelectorAll('.student-checkbox[data-student-id]:checked').forEach(cb => {
+        selectedStudentIds.add(+cb.dataset.studentId);
+      });
+    }
+
+    function confirmSelection() {
+      if (selectedStudentIds.size === 0) {
+        showToast('กรุณาเลือกนักเรียนอย่างน้อย 1 คน', 'error');
+        return;
+      }
+
+      // CRITICAL FIX #3: Validate all scores in selection list before confirming
+      const sciF  = +document.getElementById('sciFullInput').value;
+      const mathF = +document.getElementById('mathFullInput').value;
+      const engF  = +document.getElementById('engFullInput').value;
+
+      const scoreElements = document.querySelectorAll('.selection-score');
+      let hasInvalidScore = false;
+
+      scoreElements.forEach((el, idx) => {
+        const fullScore = +el.dataset.full;
+        const scoreText = el.textContent.trim();
+        
+        if (scoreText === '–') {
+          el.classList.remove('invalid');
+          return;
+        }
+
+        const score = parseFloat(scoreText);
+        
+        if (isNaN(score) || score < 0 || score > fullScore) {
+          el.classList.add('invalid');
+          hasInvalidScore = true;
+        } else {
+          el.classList.remove('invalid');
+        }
+      });
+
+      if (hasInvalidScore) {
+        showToast('มีคะแนนที่ไม่ถูกต้องในรายชื่อ กรุณาแก้ไขก่อนทำการยืนยัน', 'error');
+        return;
+      }
+
+      inScoringPhase = true;
+      loadScoringPhase();
+    }
+
+    function resetSelection() {
+      selectedStudentIds.clear();
+      document.getElementById('selectAllCheckbox').checked = false;
+      document.querySelectorAll('.student-checkbox[data-student-id]').forEach(cb => cb.checked = false);
+      updateSelectionInfo();
+    }
+
+    function backToSelection() {
+      inScoringPhase = false;
+      document.getElementById('scoringPhaseContainer').classList.add('hidden');
+      document.getElementById('selectionPhase').classList.remove('hidden');
+      document.getElementById('studentSelectionList').classList.remove('hidden');
+      document.getElementById('studentScoreList').innerHTML = '';
+    }
+
+    async function loadScoringPhase() {
+      const code = document.getElementById('enterCourse').value;
+      const test = document.getElementById('enterTest').value;
+      
+      // Hide selection list, show scoring
+      document.getElementById('studentSelectionList').classList.add('hidden');
+      document.getElementById('selectionPhase').classList.add('hidden');
+      document.getElementById('scoringPhaseContainer').classList.remove('hidden');
+      document.getElementById('selectedStudentCount').textContent = selectedStudentIds.size;
+
+      // Load only selected students
+      const list = document.getElementById('studentScoreList');
+      list.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
+
+      const [{ data: students }, { data: scores }] = await Promise.all([
+        db.from('students').select('id, nickname').eq('course_code', code).order('nickname'),
+        db.from('test_scores').select('student_id, subject, score').eq('course_code', code).eq('test_number', +test),
+      ]);
+
+      const filteredStudents = (students || []).filter(s => selectedStudentIds.has(s.id));
+
+      const scoreMap = {};
+      (scores || []).forEach(r => {
+        if (!scoreMap[r.student_id]) scoreMap[r.student_id] = {};
+        scoreMap[r.student_id][r.subject] = r.score;
+      });
+
+      const sciF  = document.getElementById('sciFullInput').value;
+      const mathF = document.getElementById('mathFullInput').value;
+      const engF  = document.getElementById('engFullInput').value;
+
+      if (!filteredStudents.length) {
+        list.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนที่เลือก</p>`;
+        return;
+      }
+
+      list.innerHTML = filteredStudents.map((s, idx) => {
+        const sc = scoreMap[s.id] || {};
+        const sciVal  = sc['วิทย์']  != null ? sc['วิทย์']  : '';
+        const mathVal = sc['คณิต']   != null ? sc['คณิต']   : '';
+        const engVal  = sc['อังกฤษ'] != null ? sc['อังกฤษ'] : '';
+        
+        return `
+        <!-- Mobile card -->
+        <div class="student-score-card md:hidden" data-student-id="${s.id}">
+          <div class="student-name-badge">
+            <span>${s.nickname}</span>
+            <span class="text-xs text-slate-400 font-normal">${sciVal !== '' || mathVal !== '' || engVal !== '' ? '✏️ มีคะแนนแล้ว' : ''}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="field-label text-emerald-600">วิทย์</label>
+              <input id="m-sci-${s.id}" type="text" inputmode="decimal" value="${sciVal}" placeholder="–" class="score-input text-sm py-2" data-full="${sciF}" data-subject="วิทย์" data-idx="${idx}" onchange="validateScoreInput(this)" onkeypress="handleScoreKeypress(event, this)">
+              <div class="full-indicator full-hint-sci">เต็ม ${sciF}</div>
+            </div>
+            <div>
+              <label class="field-label text-blue-600">คณิต</label>
+              <input id="m-math-${s.id}" type="text" inputmode="decimal" value="${mathVal}" placeholder="–" class="score-input text-sm py-2" data-full="${mathF}" data-subject="คณิต" data-idx="${idx}" onchange="validateScoreInput(this)" onkeypress="handleScoreKeypress(event, this)">
+              <div class="full-indicator full-hint-math">เต็ม ${mathF}</div>
+            </div>
+            <div>
+              <label class="field-label text-violet-600">Eng</label>
+              <input id="m-eng-${s.id}" type="text" inputmode="decimal" value="${engVal}" placeholder="–" class="score-input text-sm py-2" data-full="${engF}" data-subject="อังกฤษ" data-idx="${idx}" onchange="validateScoreInput(this)" onkeypress="handleScoreKeypress(event, this)">
+              <div class="full-indicator full-hint-eng">เต็ม ${engF}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop row -->
+        <div class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px] gap-2 bg-white border border-slate-100 rounded-xl px-4 py-3 items-center hover:border-indigo-200 transition-colors desktop-row-highlight" data-student-id="${s.id}">
+          <div class="font-bold text-slate-800 text-sm">${s.nickname}</div>
+          <div><input id="d-sci-${s.id}"  type="text" inputmode="decimal" value="${sciVal}"  placeholder="–" class="score-input text-sm" data-full="${sciF}" data-subject="วิทย์" data-idx="${idx}" onchange="validateScoreInput(this)" onkeypress="handleScoreKeypress(event, this)"></div>
+          <div><input id="d-math-${s.id}" type="text" inputmode="decimal" value="${mathVal}" placeholder="–" class="score-input text-sm" data-full="${mathF}" data-subject="คณิต" data-idx="${idx}" onkeypress="handleScoreKeypress(event, this)" onchange="validateScoreInput(this)"></div>
+          <div><input id="d-eng-${s.id}"  type="text" inputmode="decimal" value="${engVal}"  placeholder="–" class="score-input text-sm" data-full="${engF}" data-subject="อังกฤษ" data-idx="${idx}" onkeypress="handleScoreKeypress(event, this)" onchange="validateScoreInput(this)"></div>
+        </div>`;
+      }).join('');
+
+      // Update labels
+      document.getElementById('sciFullLabel2').textContent = `/${sciF}`;
+      document.getElementById('mathFullLabel2').textContent = `/${mathF}`;
+      document.getElementById('engFullLabel2').textContent = `/${engF}`;
+
+      // CRITICAL FIX #3: Validate all pre-filled scores on load
+      setTimeout(() => {
+        document.querySelectorAll('#studentScoreList .score-input').forEach(input => {
+          validateScoreInput(input);
+        });
+      }, 100);
+    }
+
+    // ── Input Validation & Formatting ──────────────────────────────────────────────
+    function validateScoreInput(input) {
+      const val = input.value.trim();
+      const fullScore = +input.dataset.full;
+      
+      // Remove non-numeric/decimal characters
+      const sanitized = val.replace(/[^\d.]/g, '');
+      if (sanitized !== val) {
+        input.value = sanitized;
+      }
+
+      // Reset to default color
+      input.classList.remove('valid', 'invalid', 'empty');
+
+      if (input.value === '' || input.value === null) {
+        input.classList.add('empty');
+        return true;
+      }
+
+      const numVal = parseFloat(input.value);
+      
+      if (isNaN(numVal)) {
+        input.classList.add('empty');
+        return true;
+      }
+
+      if (numVal < 0 || numVal > fullScore) {
+        input.classList.add('invalid');
+        document.getElementById('saveAllBtn').disabled = true;
+        return false;
+      }
+
+      input.classList.add('valid');
+      checkIfAllValid();
+      return true;
+    }
+
+    function checkIfAllValid() {
+      const saveBtn = document.getElementById('saveAllBtn');
+      const allInputs = document.querySelectorAll('#studentScoreList .score-input');
+      let hasInvalid = false;
+
+      allInputs.forEach(input => {
+        if (input.classList.contains('invalid')) {
+          hasInvalid = true;
+        }
+      });
+
+      saveBtn.disabled = hasInvalid;
+    }
+
+    function handleScoreKeypress(e, input) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const idx = +input.dataset.idx;
+        const subject = input.dataset.subject;
+        const isMobile = window.innerWidth < 768;
+        const pfx = isMobile ? 'm' : 'd';
+        
+        // Get current student ID from input ID
+        const currentStudentId = input.id.split('-')[2];
+        const allStudentCards = document.querySelectorAll(`[data-student-id]`);
+        const currentIdx = Array.from(allStudentCards).findIndex(el => el.dataset.studentId === currentStudentId);
+        
+        if (currentIdx < allStudentCards.length - 1) {
+          const nextStudentId = allStudentCards[currentIdx + 1].dataset.studentId;
+          const nextInput = document.getElementById(`${pfx}-${getSubjectSuffix(subject)}-${nextStudentId}`);
+          if (nextInput) {
+            setTimeout(() => nextInput.focus(), 100);
+          }
+        }
+      }
+    }
+
+    function getSubjectSuffix(subject) {
+      const map = { 'วิทย์': 'sci', 'คณิต': 'math', 'อังกฤษ': 'eng' };
+      return map[subject] || 'sci';
+    }
+
+    // ── When course changes ──────────────────────────────────────────────────────
     async function onEnterCourseChange() {
       const code    = document.getElementById('enterCourse').value;
       const testSel = document.getElementById('enterTest');
@@ -291,7 +599,8 @@
       testSel.innerHTML = '<option value="">-- ครั้งที่ --</option>';
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
-      document.getElementById('studentScoreList').innerHTML = '';
+      document.getElementById('studentSelectionList').innerHTML = '';
+      inScoringPhase = false;
 
       if (!code) {
         addBtn.disabled = true;
@@ -312,14 +621,11 @@
         testSel.innerHTML += `<option value="${n}">ครั้งที่ ${n}</option>`;
       });
 
-      // ── [FIX] คืนค่าการสอบที่เพิ่งเพิ่ม (ยังไม่บันทึก) จาก sessionStorage ──
-      // ถ้ายังไม่ได้บันทึกลง DB (เช่น ผู้ใช้กด + แล้วสลับแท็บ) จะโหลดกลับมาให้อัตโนมัติ
       const saved = sessionStorage.getItem(pendingKey(code));
       if (saved && !existing.includes(+saved)) {
         testSel.innerHTML += `<option value="${saved}">ครั้งที่ ${saved} (ยังไม่บันทึก)</option>`;
         testSel.value = saved;
         nextNum = +saved + 1;
-        // โหลด UI ส่วนกรอกคะแนนให้อัตโนมัติ
         await onCourseTestChange();
       }
 
@@ -334,7 +640,7 @@
       }
     }
 
-    // ── Add next test number to dropdown & select it ────────────────────────────
+    // ── Add next test number ─────────────────────────────────────────────────────
     function addNextTest() {
       const code    = document.getElementById('enterCourse').value;
       if (!code) return;
@@ -343,15 +649,12 @@
       const hint    = document.getElementById('testHint');
       const nextNum = +(addBtn.dataset.next || 1);
 
-      // ตรวจว่ามีใน dropdown แล้วหรือยัง
       const exists = Array.from(testSel.options).some(o => +o.value === nextNum);
       if (!exists) {
         testSel.innerHTML += `<option value="${nextNum}">ครั้งที่ ${nextNum} (ยังไม่บันทึก)</option>`;
       }
       testSel.value = nextNum;
 
-      // ── [FIX] บันทึกเลขครั้งที่ลง sessionStorage ทันที ──
-      // ทำให้กลับมาหน้าเดิมหรือสลับแท็บแล้วยังเห็นครั้งที่นี้อยู่เสมอ
       sessionStorage.setItem(pendingKey(code), nextNum);
 
       const newNext = nextNum + 1;
@@ -398,7 +701,6 @@
       const test = document.getElementById('enterTest').value;
       if (!code || !test) return;
 
-      // ── [FIX] ถ้าเป็นครั้งที่ "ยังไม่บันทึก" (pending) ให้ยกเลิกแบบไม่ต้องลบ DB ──
       const saved = sessionStorage.getItem(pendingKey(code));
       if (saved && +saved === +test) {
         if (!confirm(`ยกเลิกการเพิ่มครั้งที่ ${test}?`)) return;
@@ -409,9 +711,9 @@
         testSel.value = '';
         document.getElementById('fullScoreArea').classList.add('hidden');
         document.getElementById('bulkScoreArea').classList.add('hidden');
-        document.getElementById('studentScoreList').innerHTML = '';
+        document.getElementById('studentSelectionList').innerHTML = '';
         document.getElementById('delTestBtn').disabled = true;
-        // คำนวณ nextNum ใหม่
+        inScoringPhase = false;
         const remaining = Array.from(testSel.options).filter(o => o.value).length;
         const nextNum   = remaining > 0
           ? Math.max(...Array.from(testSel.options).filter(o => o.value).map(o => +o.value)) + 1
@@ -424,7 +726,6 @@
         return;
       }
 
-      // ลบการสอบที่บันทึกแล้วใน DB
       if (!confirm(`⚠️ ลบการสอบครั้งที่ ${test} ของคอร์สนี้ทั้งหมด?\n\nคะแนนของนักเรียนทุกคนในครั้งนี้จะถูกลบถาวร`)) return;
 
       const btn = document.getElementById('delTestBtn');
@@ -444,7 +745,6 @@
       }
 
       showToast(`✅ ลบการสอบครั้งที่ ${test} เรียบร้อย`);
-      // ── [FIX] เคลียร์ pending ด้วย (กรณีที่ลบแล้วกลับมาใหม่ไม่ให้โหลด pending เดิม) ──
       sessionStorage.removeItem(pendingKey(code));
       refreshRankings(code);
 
@@ -455,7 +755,8 @@
 
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
-      document.getElementById('studentScoreList').innerHTML = '';
+      document.getElementById('studentSelectionList').innerHTML = '';
+      inScoringPhase = false;
       btn.disabled = true;
       btn.textContent = '🗑';
 
@@ -479,7 +780,8 @@
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
       document.getElementById('updateAllFullBtn').classList.add('hidden');
-      document.getElementById('studentScoreList').innerHTML = '';
+      document.getElementById('studentSelectionList').innerHTML = '';
+      inScoringPhase = false;
 
       if (!code || !test) return;
 
@@ -493,7 +795,6 @@
       document.getElementById('updateAllFullBtn').classList.remove('hidden');
 
       if (existing?.length) {
-        // ── [FIX] ถ้ามีข้อมูลใน DB แล้ว ให้อัปเดต label option ให้ถูกต้อง ──
         const opt = document.getElementById('enterTest').querySelector(`option[value="${test}"]`);
         if (opt && opt.textContent.includes('ยังไม่บันทึก')) {
           opt.textContent = `ครั้งที่ ${test}`;
@@ -519,7 +820,91 @@
       }
 
       updateFullLabels();
-      await loadBulkStudentArea(code, test);
+      await loadStudentSelectionList(code, test);
+    }
+
+    // ── Load student selection list with existing scores ────────────────────────────
+    async function loadStudentSelectionList(code, test) {
+      const list = document.getElementById('studentSelectionList');
+      list.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
+      document.getElementById('bulkScoreArea').classList.remove('hidden');
+      document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
+      document.getElementById('selectionPhase').classList.remove('hidden');
+
+      // CRITICAL FIX #1: Fetch students for THIS course only
+      const { data: students } = await db
+        .from('students')
+        .select('id, nickname')
+        .eq('course_code', code)
+        .order('nickname');
+
+      allStudents = students || [];
+
+      if (!allStudents.length) {
+        list.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนในคอร์สนี้</p>`;
+        return;
+      }
+
+      // CRITICAL FIX #2: Fetch existing scores for this test
+      const { data: existingScores } = await db
+        .from('test_scores')
+        .select('student_id, subject, score, full_score')
+        .eq('course_code', code)
+        .eq('test_number', +test);
+
+      const scoreMap = {};
+      (existingScores || []).forEach(r => {
+        if (!scoreMap[r.student_id]) scoreMap[r.student_id] = {};
+        scoreMap[r.student_id][r.subject] = r.score;
+      });
+
+      const sciF  = document.getElementById('sciFullInput').value;
+      const mathF = document.getElementById('mathFullInput').value;
+      const engF  = document.getElementById('engFullInput').value;
+
+      list.innerHTML = allStudents.map(s => {
+        const sc = scoreMap[s.id] || {};
+        const sciVal  = sc['วิทย์']  != null ? sc['วิทย์']  : '';
+        const mathVal = sc['คณิต']   != null ? sc['คณิต']   : '';
+        const engVal  = sc['อังกฤษ'] != null ? sc['อังกฤษ'] : '';
+
+        return `
+        <!-- Mobile selection card -->
+        <div class="student-score-card md:hidden">
+          <div class="student-name-badge">
+            <input type="checkbox" class="student-checkbox" data-student-id="${s.id}" onchange="updateSelectionInfo()">
+            <label class="cursor-pointer flex-1">${s.nickname}</label>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="text-center">
+              <span class="text-slate-400">วิทย์</span>
+              <div class="font-bold">${sciVal !== '' ? sciVal : '–'}</div>
+            </div>
+            <div class="text-center">
+              <span class="text-slate-400">คณิต</span>
+              <div class="font-bold">${mathVal !== '' ? mathVal : '–'}</div>
+            </div>
+            <div class="text-center">
+              <span class="text-slate-400">Eng</span>
+              <div class="font-bold">${engVal !== '' ? engVal : '–'}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop selection row -->
+        <div class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px_50px] gap-2 bg-white border border-slate-100 rounded-xl px-4 py-3 items-center hover:border-indigo-200 transition-colors">
+          <div class="font-bold text-slate-800 text-sm">${s.nickname}</div>
+          <div class="text-xs text-center font-bold selection-score" data-full="${sciF}">${sciVal !== '' ? sciVal : '–'}</div>
+          <div class="text-xs text-center font-bold selection-score" data-full="${mathF}">${mathVal !== '' ? mathVal : '–'}</div>
+          <div class="text-xs text-center font-bold selection-score" data-full="${engF}">${engVal !== '' ? engVal : '–'}</div>
+          <div class="text-center">
+            <input type="checkbox" class="student-checkbox" data-student-id="${s.id}" onchange="updateSelectionInfo()">
+          </div>
+        </div>
+      `}).join('');
+
+      // Reset selection
+      selectedStudentIds.clear();
+      updateSelectionInfo();
     }
 
     // ── Save Topics ──────────────────────────────────────────────────────────────
@@ -551,76 +936,7 @@
       hasError ? showToast('บันทึกหัวข้อบางวิชาล้มเหลว', 'error') : showToast('✅ บันทึกหัวข้อสำเร็จ');
     }
 
-    // ── Load all students + pre-fill scores ─────────────────────────────────────
-    async function loadBulkStudentArea(code, test) {
-      const list = document.getElementById('studentScoreList');
-      list.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
-      document.getElementById('bulkScoreArea').classList.remove('hidden');
-      document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
-
-      const [{ data: students }, { data: scores }] = await Promise.all([
-        db.from('students').select('id, nickname').eq('course_code', code).order('nickname'),
-        db.from('test_scores').select('student_id, subject, score').eq('course_code', code).eq('test_number', +test),
-      ]);
-
-      allStudents = students || [];
-
-      const scoreMap = {};
-      (scores || []).forEach(r => {
-        if (!scoreMap[r.student_id]) scoreMap[r.student_id] = {};
-        scoreMap[r.student_id][r.subject] = r.score;
-      });
-
-      const sciF  = document.getElementById('sciFullInput').value;
-      const mathF = document.getElementById('mathFullInput').value;
-      const engF  = document.getElementById('engFullInput').value;
-
-      if (!allStudents.length) {
-        list.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนในคอร์สนี้</p>`;
-        return;
-      }
-
-      list.innerHTML = allStudents.map(s => {
-        const sc = scoreMap[s.id] || {};
-        const sciVal  = sc['วิทย์']  != null ? sc['วิทย์']  : '';
-        const mathVal = sc['คณิต']   != null ? sc['คณิต']   : '';
-        const engVal  = sc['อังกฤษ'] != null ? sc['อังกฤษ'] : '';
-        return `
-        <!-- Mobile card -->
-        <div class="student-score-card md:hidden">
-          <div class="student-name-badge flex items-center justify-between">
-            <span>${s.nickname}</span>
-            <span class="text-xs text-slate-400 font-normal">${sciVal !== '' || mathVal !== '' || engVal !== '' ? '✏️ มีคะแนนแล้ว' : ''}</span>
-          </div>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="field-label text-emerald-600">วิทย์</label>
-              <input id="m-sci-${s.id}" type="number" min="0" value="${sciVal}" placeholder="–" class="score-input text-sm py-2">
-              <div class="full-indicator full-hint-sci">เต็ม ${sciF}</div>
-            </div>
-            <div>
-              <label class="field-label text-blue-600">คณิต</label>
-              <input id="m-math-${s.id}" type="number" min="0" value="${mathVal}" placeholder="–" class="score-input text-sm py-2">
-              <div class="full-indicator full-hint-math">เต็ม ${mathF}</div>
-            </div>
-            <div>
-              <label class="field-label text-violet-600">Eng</label>
-              <input id="m-eng-${s.id}" type="number" min="0" value="${engVal}" placeholder="–" class="score-input text-sm py-2">
-              <div class="full-indicator full-hint-eng">เต็ม ${engF}</div>
-            </div>
-          </div>
-        </div>
-        <!-- Desktop row -->
-        <div class="hidden md:grid md:grid-cols-[1fr_100px_100px_100px] gap-2 bg-white border border-slate-100 rounded-xl px-4 py-3 items-center hover:border-indigo-200 transition-colors">
-          <div class="font-bold text-slate-800 text-sm">${s.nickname}</div>
-          <div><input id="d-sci-${s.id}"  type="number" min="0" value="${sciVal}"  placeholder="–" class="score-input text-sm"></div>
-          <div><input id="d-math-${s.id}" type="number" min="0" value="${mathVal}" placeholder="–" class="score-input text-sm"></div>
-          <div><input id="d-eng-${s.id}"  type="number" min="0" value="${engVal}"  placeholder="–" class="score-input text-sm"></div>
-        </div>`;
-      }).join('');
-    }
-
-    // ── Save all scores (bulk) ───────────────────────────────────────────────────
+    // ── Save all scores - ONLY SELECTED STUDENTS ──────────────────────────────────
     async function saveAllScores() {
       const code  = document.getElementById('enterCourse').value;
       const test  = document.getElementById('enterTest').value;
@@ -643,12 +959,14 @@
         { name: 'อังกฤษ',  idSuffix: 'eng',  full: engF,  topic: engTopic }
       ];
 
-      allStudents.forEach(s => {
+      // CRUCIAL: Only process SELECTED students
+      const selectedStudents = allStudents.filter(s => selectedStudentIds.has(s.id));
+
+      selectedStudents.forEach(s => {
         subjects.forEach(sub => {
-          const val = document.getElementById(`${pfx}-${sub.idSuffix}-${s.id}`)?.value;
+          const input = document.getElementById(`${pfx}-${sub.idSuffix}-${s.id}`);
+          const val = input?.value;
           
-          // ส่งข้อมูลทุกแถวที่ "เคย" มี input หรือถูกล้างค่าให้ว่าง
-          // ถ้าช่องว่าง (val === '') จะส่งเป็น null เข้า Database ทันที
           rows.push({ 
             course_code: code, 
             student_id: s.id, 
@@ -676,6 +994,7 @@
           opt.textContent = `ครั้งที่ ${test}`;
         }
         refreshRankings(code);
+        backToSelection();
       } else {
         console.error(error);
         showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
@@ -746,20 +1065,32 @@
 
       Object.values(grouped).forEach(g => {
         const rowId = `inline-${g.student_id}-${g.test_number}`;
+        
+        // Display null as "—" (muted grey) and 0 as bold "0"
+        const displayScore = (score, full) => {
+          if (score === null || score === undefined) {
+            return `<span class="null-score">—</span><span class="text-slate-400 font-normal">/${full ?? 50}</span>`;
+          }
+          if (score === 0) {
+            return `<span class="zero-score">0</span><span class="text-slate-400 font-normal">/${full ?? 50}</span>`;
+          }
+          return `<span>${score}</span><span class="text-slate-400 font-normal">/${full ?? 50}</span>`;
+        };
+
         html += `<tr id="${rowId}" class="border-b border-slate-50 hover:bg-slate-50">
           <td class="p-3 font-bold">${g.nickname}</td>
           <td class="p-3 text-center font-black text-indigo-600">${g.test_number}</td>
           <td class="p-3 text-center" data-subj="วิทย์">
-            <span class="v-m">${g['วิทย์']?.score ?? 0}<span class="text-slate-400 font-normal">/${g['วิทย์']?.full ?? 50}</span></span>
-            <input type="number" class="e-m hidden edit-field" value="${g['วิทย์']?.score ?? 0}" data-f="${g['วิทย์']?.full ?? 50}">
+            <span class="v-m">${displayScore(g['วิทย์']?.score, g['วิทย์']?.full)}</span>
+            <input type="number" class="e-m hidden edit-field" value="${g['วิทย์']?.score ?? ''}" data-f="${g['วิทย์']?.full ?? 50}">
           </td>
           <td class="p-3 text-center" data-subj="คณิต">
-            <span class="v-m">${g['คณิต']?.score ?? 0}<span class="text-slate-400 font-normal">/${g['คณิต']?.full ?? 50}</span></span>
-            <input type="number" class="e-m hidden edit-field" value="${g['คณิต']?.score ?? 0}" data-f="${g['คณิต']?.full ?? 50}">
+            <span class="v-m">${displayScore(g['คณิต']?.score, g['คณิต']?.full)}</span>
+            <input type="number" class="e-m hidden edit-field" value="${g['คณิต']?.score ?? ''}" data-f="${g['คณิต']?.full ?? 50}">
           </td>
           <td class="p-3 text-center" data-subj="อังกฤษ">
-            <span class="v-m">${g['อังกฤษ']?.score ?? 0}<span class="text-slate-400 font-normal">/${g['อังกฤษ']?.full ?? 50}</span></span>
-            <input type="number" class="e-m hidden edit-field" value="${g['อังกฤษ']?.score ?? 0}" data-f="${g['อังกฤษ']?.full ?? 50}">
+            <span class="v-m">${displayScore(g['อังกฤษ']?.score, g['อังกฤษ']?.full)}</span>
+            <input type="number" class="e-m hidden edit-field" value="${g['อังกฤษ']?.score ?? ''}" data-f="${g['อังกฤษ']?.full ?? 50}">
           </td>
           <td class="p-3 text-center">
             <div class="v-m flex justify-center gap-3">
@@ -790,14 +1121,14 @@
       
       r.querySelectorAll('td[data-subj]').forEach(td => {
         const input = td.querySelector('input');
-        const val = input.value; // ค่าจากช่อง Input ที่แก้ไข
+        const val = input.value;
         
         upserts.push({ 
           student_id: sid, 
           test_number: test, 
           course_code: code, 
           subject: td.dataset.subj, 
-          score: (val === '' || val === null) ? null : +val, // ดักค่าว่างตรงนี้
+          score: (val === '' || val === null) ? null : +val,
           full_score: +input.dataset.f 
         });
       });
@@ -942,7 +1273,6 @@
         <path d="M24 10.304c0-5.691-5.383-10.304-12-10.304s-12 4.613-12 10.304c0 5.097 4.272 9.353 10.068 10.106.392.085.924.258 1.18.59.244.316.16.811.078 1.132l-.396 1.763c-.118.513.056.666.368.666.305 0 .614-.158.854-.428l2.61-4.148c2.155-.544 4.223-1.637 5.76-3.298 1.543-1.666 2.48-3.564 2.48-5.383z"/>
       </svg>
     </div>
-
     <span class="whitespace-nowrap pr-6 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
       สอบถามปัญหา
     </span>
