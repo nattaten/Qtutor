@@ -931,36 +931,21 @@
 
     init();
 
-    function sendLineInquiry() {
-      // 1. ดึงค่าจากหน้าเว็บมาทำข้อความ
-      const courseCode = document.getElementById('enterCourse').value || 'ไม่ระบุคอร์ส';
-      const testNum = document.getElementById('enterTest').value || '-';
-      
-      // 2. สร้างข้อความที่จะส่ง (ปรับแต่งตามใจชอบ)
-      const baseText = `สวัสดีครับคุณครู อยากสอบถามเรื่องคะแนน\n📌 คอร์ส: ${courseCode}\n📝 การสอบครั้งที่: ${testNum}\n(ส่งจากระบบ Qtutor)`;
-      
-      // 3. แปลงข้อความให้เป็นรูปแบบที่ URL รองรับ (Encoding)
-      const encodedText = encodeURIComponent(baseText);
-      
-      // 4. ลิงก์ไปที่แอป LINE
-      // หมายเหตุ: ตรงนี้ถ้าคุณมี LINE OA ให้เปลี่ยนเป็น https://line.me/R/oaMessage/@ไอดีของคุณ/?${encodedText}
-      // แต่ถ้าเป็นไลน์ส่วนตัว ให้ใช้ระบบส่งข้อความมาตรฐาน:
-      window.open(`https://line.me/R/msg/text/?${encodedText}`, '_blank');
-    }
+    
   </script>
 
-  <button onclick="sendLineInquiry()" 
-    class="fixed bottom-6 right-6 z-[9999] group flex items-center shadow-2xl overflow-hidden max-w-[56px] hover:max-w-[250px] h-[56px] bg-[#06C755] text-white rounded-full transition-all duration-300 ease-in-out">
+    <a href="https://line.me/ti/p/1122082543" target="_blank" 
+    class="fixed bottom-6 right-6 z-[9999] group flex items-center shadow-2xl overflow-hidden max-w-[56px] hover:max-w-[200px] h-[56px] bg-[#06C755] text-white rounded-full transition-all duration-300 ease-in-out">
     
-    <div class="flex-shrink-0 w-[56px] h-[56px] flex items-center justify-center bg-[#05b34c]">
+    <div class="flex-shrink-0 w-[56px] h-[56px] flex items-center justify-center">
       <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
         <path d="M24 10.304c0-5.691-5.383-10.304-12-10.304s-12 4.613-12 10.304c0 5.097 4.272 9.353 10.068 10.106.392.085.924.258 1.18.59.244.316.16.811.078 1.132l-.396 1.763c-.118.513.056.666.368.666.305 0 .614-.158.854-.428l2.61-4.148c2.155-.544 4.223-1.637 5.76-3.298 1.543-1.666 2.48-3.564 2.48-5.383z"/>
       </svg>
     </div>
 
-    <span class="whitespace-nowrap pr-6 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2">
-      สอบถามเรื่องคะแนน
+    <span class="whitespace-nowrap pr-6 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      สอบถามปัญหา
     </span>
-  </button>
+    </a>
 </body>
 </html>
