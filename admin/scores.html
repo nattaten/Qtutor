@@ -1082,15 +1082,15 @@
           <td class="p-3 text-center font-black text-indigo-600">${g.test_number}</td>
           <td class="p-3 text-center" data-subj="วิทย์">
             <span class="v-m">${displayScore(g['วิทย์']?.score, g['วิทย์']?.full)}</span>
-            <input type="number" class="e-m hidden edit-field" value="${g['วิทย์']?.score ?? ''}" data-f="${g['วิทย์']?.full ?? 50}">
+            <input type="number" class="e-m hidden edit-field" value="${g['วิทย์']?.score ?? ''}" data-f="${g['วิทย์']?.full ?? 50}" oninput="validateViewTableInput(this)">
           </td>
           <td class="p-3 text-center" data-subj="คณิต">
             <span class="v-m">${displayScore(g['คณิต']?.score, g['คณิต']?.full)}</span>
-            <input type="number" class="e-m hidden edit-field" value="${g['คณิต']?.score ?? ''}" data-f="${g['คณิต']?.full ?? 50}">
+            <input type="number" class="e-m hidden edit-field" value="${g['คณิต']?.score ?? ''}" data-f="${g['คณิต']?.full ?? 50}" oninput="validateViewTableInput(this)">
           </td>
           <td class="p-3 text-center" data-subj="อังกฤษ">
             <span class="v-m">${displayScore(g['อังกฤษ']?.score, g['อังกฤษ']?.full)}</span>
-            <input type="number" class="e-m hidden edit-field" value="${g['อังกฤษ']?.score ?? ''}" data-f="${g['อังกฤษ']?.full ?? 50}">
+            <input type="number" class="e-m hidden edit-field" value="${g['อังกฤษ']?.score ?? ''}" data-f="${g['อังกฤษ']?.full ?? 50}" oninput="validateViewTableInput(this)">
           </td>
           <td class="p-3 text-center">
             <div class="v-m flex justify-center gap-3">
@@ -1118,6 +1118,27 @@
     async function saveInline(rowId, sid, test, code) {
       const r = document.getElementById(rowId);
       const upserts = [];
+      
+      // BUG FIX #2: Validate all inputs before saving
+      let hasInvalidScore = false;
+      r.querySelectorAll('td[data-subj]').forEach(td => {
+        const input = td.querySelector('input');
+        const val = input.value.trim();
+        const fullScore = parseFloat(input.dataset.f);
+        
+        if (val !== '' && !isNaN(val)) {
+          const numVal = parseFloat(val);
+          if (numVal < 0 || numVal > fullScore) {
+            hasInvalidScore = true;
+            input.style.backgroundColor = '#fee2e2';
+          }
+        }
+      });
+      
+      if (hasInvalidScore) {
+        showToast('มีคะแนนที่ไม่ถูกต้อง (เกินคะแนนเต็มหรือติดลบ)', 'error');
+        return;
+      }
       
       r.querySelectorAll('td[data-subj]').forEach(td => {
         const input = td.querySelector('input');
@@ -1150,6 +1171,37 @@
       const { error } = await db.from('test_scores').delete().eq('student_id', sid).eq('test_number', test).eq('course_code', code);
       if (!error) { showToast('ลบข้อมูลเรียบร้อย'); loadScoreTable(); refreshRankings(code); }
       else showToast('ลบไม่สำเร็จ', 'error');
+    }
+
+    // ── BUG FIX #2: Validate View/Edit Table Inputs ───────────────────────────────
+    function validateViewTableInput(input) {
+      const value = input.value.trim();
+      const fullScore = parseFloat(input.dataset.f);
+      const row = input.closest('tr');
+      const saveBtn = row?.querySelector('button[onclick*="saveInline"]');
+      
+      // Reset background color by default
+      input.style.backgroundColor = '';
+      if (saveBtn) saveBtn.disabled = false;
+      
+      // Empty or non-numeric: allow (valid)
+      if (value === '' || isNaN(value)) {
+        return true;
+      }
+      
+      const numValue = parseFloat(value);
+      
+      // Check if score exceeds full score or is negative
+      if (numValue < 0 || numValue > fullScore) {
+        input.style.backgroundColor = '#fee2e2';  // light red background
+        if (saveBtn) saveBtn.disabled = true;
+        return false;
+      }
+      
+      // Valid score
+      input.style.backgroundColor = '';
+      if (saveBtn) saveBtn.disabled = false;
+      return true;
     }
 
     // ── View Topics ──────────────────────────────────────────────────────────────
