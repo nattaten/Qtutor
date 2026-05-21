@@ -3,320 +3,2039 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Admin Report - Qtutor</title>
+  <title>Qtutor Admin Report</title>
+  
+  <!-- Fonts & CDN -->
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
   <style>
-    * { font-family: 'Kanit', sans-serif !important; -webkit-tap-highlight-color: transparent; }
-    body { background-color: #f8fafc; overflow-x: hidden; }
-    
-    /* Sidebar Mobile */
-    .sidebar { background: #0f172a; width: 240px; position: fixed; height: 100vh; z-index: 200; transition: 0.3s; left: -240px; }
-    .sidebar.open { left: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px); }
-    .sidebar.open + .overlay { display: block; }
-    
-    @media (min-width: 1024px) { 
-      .sidebar { left: 0; } 
-      .content-area { margin-left: 240px; } 
-      .overlay { display: none !important; }
+    /* ===== BASE & RESET ===== */
+    * {
+      font-family: 'Kanit', sans-serif !important;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* Test Chips Scroll */
-    .test-strip-container { overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; display: flex; gap: 8px; }
-    .test-strip-container::-webkit-scrollbar { display: none; }
-    .test-chip { flex: 0 0 auto; min-width: 55px; height: 48px; border-radius: 14px; background: #334155; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; }
-    .test-chip.active { background: #ffffff; color: #0f172a; transform: scale(1.05); }
+    :root {
+      /* Emerald - Excellent */
+      --color-excellent: #10b981;
+      --color-excellent-light: #ecfdf5;
+      --color-excellent-border: #d1fae5;
+      
+      /* Blue - Good */
+      --color-good: #3b82f6;
+      --color-good-light: #eff6ff;
+      --color-good-border: #dbeafe;
+      
+      /* Orange - Pass */
+      --color-pass: #f97316;
+      --color-pass-light: #fff7ed;
+      --color-pass-border: #fed7aa;
+      
+      /* Red - Needs Improvement */
+      --color-alert: #ef4444;
+      --color-alert-light: #fef2f2;
+      --color-alert-border: #fecaca;
+      
+      /* Neutrals */
+      --color-dark: #0f172a;
+      --color-light: #f8fafc;
+      --color-sidebar: #0f172a;
+      
+      /* Shadows */
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
 
-    /* UI Components */
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; }
-    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
-    .subject-btn { padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 800; border: 1px solid #e2e8f0; transition: 0.2s; opacity: 0.4; }
-    .subject-btn.active { opacity: 1; color: white; }
-    .btn-total.active { background: #0f172a; }
-    .btn-sci.active { background: #10b981; }
-    .btn-math.active { background: #3b82f6; }
-    .btn-eng.active { background: #a855f7; }
-    .avg-card { background: #fff; border-radius: 24px; padding: 16px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--color-light);
+      overflow-x: hidden;
+    }
 
-    /* Canvas Smoothing */
-    #exportContent { letter-spacing: 0.01rem !important; -webkit-font-smoothing: subpixel-antialiased !important; }
+    body {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== SIDEBAR NAVIGATION ===== */
+    .sidebar {
+      background: linear-gradient(135deg, var(--color-dark) 0%, #1e293b 100%);
+      width: 260px;
+      position: fixed;
+      height: 100vh;
+      z-index: 200;
+      left: -260px;
+      transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow-y: auto;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 150;
+      backdrop-filter: blur(3px);
+    }
+
+    .sidebar.open ~ .sidebar-overlay {
+      display: block;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-brand h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-brand p {
+      color: #94a3b8;
+      font-size: 12px;
+      margin: 4px 0 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-close {
+      display: none;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 24px;
+      padding: 8px;
+      transition: color 0.2s;
+    }
+
+    .sidebar-close:hover {
+      color: #fff;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .nav-item span {
+      font-size: 18px;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logout-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    /* ===== DESKTOP LAYOUT ===== */
+    @media (min-width: 1024px) {
+      .sidebar {
+        left: 0;
+      }
+
+      .sidebar-close {
+        display: none !important;
+      }
+
+      .sidebar-overlay {
+        display: none !important;
+      }
+
+      .content-area {
+        margin-left: 260px;
+      }
+    }
+
+    /* ===== MOBILE NAVIGATION ===== */
+    @media (max-width: 1023px) {
+      .sidebar-close {
+        display: block;
+      }
+
+      .sidebar {
+        box-shadow: 6px 0 20px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    /* ===== HEADER & CONTROLS ===== */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      transition: margin-left 0.3s;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px;
+      /* แก้ไข 2 บรรทัดนี้ */
+      position: sticky; 
+      top: 0;           
+      /* ---------------- */
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+
+    @media (min-width: 768px) {
+      header {
+        padding: 20px 24px;
+      }
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: #f1f5f9;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .menu-toggle:hover {
+      background: #e2e8f0;
+    }
+
+    @media (max-width: 1023px) {
+      .menu-toggle {
+        display: flex;
+      }
+    }
+
+    .export-btn {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .export-btn:active {
+      transform: translateY(0);
+    }
+
+    .header-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .header-controls {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .control-select {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #475569;
+    }
+
+    .control-select:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .control-select:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .student-select-wrapper {
+      display: none;
+      grid-column: 1 / -1;
+    }
+
+    .student-select-wrapper.active {
+      display: block;
+    }
+
+    .student-select {
+      width: 100%;
+      background: linear-gradient(135deg, #eef2ff 0%, #f0f4ff 100%);
+      border: 2px solid #6366f1;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #4f46e5;
+      cursor: pointer;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+    }
+
+    @media (min-width: 768px) {
+      main {
+        padding: 32px 24px;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      main {
+        padding: 40px 32px;
+      }
+    }
+
+    .content-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ===== CLASS SUMMARY CARDS ===== */
+    .class-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .class-summary {
+        gap: 16px;
+      }
+    }
+
+    .summary-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #f1f5f9;
+      transition: all 0.3s;
+    }
+
+    .summary-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .summary-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .summary-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .summary-icon {
+      display: inline-block;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    /* ===== TEST PILL NAVIGATION ===== */
+    .test-strip-wrapper {
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .test-strip-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 12px 8px;
+      margin-top: 8px;
+    }
+
+    .test-strip-container {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .test-strip-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .test-chip {
+      flex: 0 0 auto;
+      min-width: 56px;
+      height: 48px;
+      border-radius: 24px;
+      background: #f1f5f9;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 2px solid transparent;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+
+    .test-chip:hover {
+      background: #e2e8f0;
+      transform: scale(1.05);
+    }
+
+    .test-chip.active {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+      border-color: #0f172a;
+    }
+
+    /* ===== RANKING VIEW ===== */
+    .hero-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-radius: 28px;
+      padding: 28px 24px;
+      color: #fff;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .hero-card {
+        padding: 36px 32px;
+      }
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .hero-icon {
+      font-size: 48px;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 0 0 4px;
+      letter-spacing: -0.5px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-title {
+        font-size: 36px;
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: #a5b4fc;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 0;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-metrics {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .metric-item {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #fff;
+      margin: 0;
+    }
+
+    /* ===== TOPICS SECTION ===== */
+    .topics-section {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #f1f5f9;
+    }
+
+    .topics-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .topics-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .topics-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .topic-item {
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .topic-subject {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .topic-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ===== RANKING TABLE / CARDS ===== */
+    .ranking-container {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #f1f5f9;
+    }
+
+    .ranking-header {
+      background: #f8fafc;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .ranking-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Desktop Table */
+    .ranking-table {
+      display: none;
+      width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+      .ranking-table {
+        display: table;
+      }
+    }
+
+    .ranking-table thead {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .ranking-table th {
+      padding: 16px 20px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .ranking-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+
+    .ranking-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .ranking-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .rank-badge {
+      font-weight: 900;
+      font-size: 16px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .rank-badge.top-1 {
+      background: #fef3c7;
+      color: #d97706;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .rank-badge.top-2 {
+      background: #e5e7eb;
+      color: #4b5563;
+      font-weight: 900;
+    }
+
+    .rank-badge.top-3 {
+      background: #fed7aa;
+      color: #b45309;
+      font-weight: 900;
+    }
+
+    .student-name {
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .score-cell {
+      text-align: center;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .overall-score {
+      text-align: right;
+      font-weight: 900;
+      font-size: 16px;
+      color: #6366f1;
+    }
+
+    /* Mobile Cards */
+    .ranking-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .ranking-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        padding: 16px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .ranking-cards {
+        display: none;
+      }
+    }
+
+    .ranking-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .ranking-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+      border-color: #cbd5e1;
+    }
+
+    .card-rank {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .card-badge.top-1 {
+      background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+
+    .card-badge.top-2 {
+      background: linear-gradient(135deg, #c7d2e0 0%, #94a3b8 100%);
+      box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
+    }
+
+    .card-badge.top-3 {
+      background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
+      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
+    }
+
+    .card-badge.other {
+      background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+      font-size: 16px;
+    }
+
+    .card-name {
+      flex: 1;
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 15px;
+    }
+
+    .card-overall {
+      font-weight: 900;
+      font-size: 18px;
+      color: #6366f1;
+    }
+
+    .card-subjects {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .subject-badge {
+      text-align: center;
+      padding: 8px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .subject-badge-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .subject-badge-score {
+      font-size: 14px;
+      color: #0f172a;
+    }
+
+    /* Status/Color Coding */
+    .status-excellent {
+      background: var(--color-excellent-light);
+      color: var(--color-excellent);
+      border: 1px solid var(--color-excellent-border);
+    }
+
+    .status-good {
+      background: var(--color-good-light);
+      color: var(--color-good);
+      border: 1px solid var(--color-good-border);
+    }
+
+    .status-pass {
+      background: var(--color-pass-light);
+      color: var(--color-pass);
+      border: 1px solid var(--color-pass-border);
+    }
+
+    .status-alert {
+      background: var(--color-alert-light);
+      color: var(--color-alert);
+      border: 1px solid var(--color-alert-border);
+    }
+
+    /* ===== INDIVIDUAL VIEW ===== */
+    .individual-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-radius: 24px;
+      padding: 28px 24px;
+      color: #fff;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .individual-hero {
+        padding: 32px;
+      }
+    }
+
+    .individual-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .individual-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .individual-info {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .individual-info {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+    }
+
+    .student-profile {
+      flex: 1;
+    }
+
+    .student-profile h2 {
+      font-size: 32px;
+      font-weight: 900;
+      margin: 0 0 8px;
+      letter-spacing: -0.5px;
+    }
+
+    @media (min-width: 768px) {
+      .student-profile h2 {
+        font-size: 40px;
+      }
+    }
+
+    .student-profile p {
+      font-size: 13px;
+      color: #a5b4fc;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 0;
+    }
+
+    .overall-average {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 20px 24px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .overall-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .overall-percentage {
+      font-size: 40px;
+      font-weight: 900;
+      margin: 0;
+      letter-spacing: -1px;
+    }
+
+    .progress-chart-container {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #f1f5f9;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin: 0 0 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #progressChart {
+      max-height: 300px;
+    }
+
+    .subject-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn:hover {
+      border-color: #cbd5e1;
+    }
+
+    .toggle-btn.active {
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .toggle-btn.active.total {
+      background: #0f172a;
+    }
+
+    .toggle-btn.active.science {
+      background: var(--color-excellent);
+    }
+
+    .toggle-btn.active.math {
+      background: var(--color-good);
+    }
+
+    .toggle-btn.active.english {
+      background: #a855f7;
+    }
+
+    /* ===== SUBJECT SECTIONS ===== */
+    .subject-section {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #f1f5f9;
+    }
+
+    .subject-header {
+      padding: 20px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .subject-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .subject-indicator {
+      width: 4px;
+      height: 24px;
+      border-radius: 2px;
+    }
+
+    .subject-export {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .subject-export:hover {
+      background: #e2e8f0;
+    }
+
+    /* Subject Tables */
+    .subject-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .subject-table thead {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .subject-table th {
+      padding: 14px 20px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .subject-table td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .subject-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .subject-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .topic-number {
+      color: #94a3b8;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    .topic-text {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .score-number {
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .percentage-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #6366f1;
+      background: #eef2ff;
+    }
+
+    .status-label {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== PRINT / PDF STYLES ===== */
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      header,
+      .sidebar,
+      .sidebar-overlay,
+      .no-print,
+      .export-btn {
+        display: none !important;
+      }
+
+      main {
+        padding: 0;
+        margin: 0;
+      }
+
+      .content-area {
+        margin-left: 0;
+      }
+
+      .ranking-cards {
+        display: none !important;
+      }
+
+      .ranking-table {
+        display: table !important;
+      }
+    }
+
+    /* ===== RESPONSIVE UTILITIES ===== */
+    .hide-mobile {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .hide-mobile {
+        display: block;
+      }
+    }
+
+    .hide-desktop {
+      display: block;
+    }
+
+    @media (min-width: 1024px) {
+      .hide-desktop {
+        display: none;
+      }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .summary-card {
+      animation: slideInLeft 0.5s ease-out forwards;
+    }
+
+    .ranking-card {
+      animation: fadeIn 0.4s ease-out;
+    }
   </style>
 </head>
-<body class="flex">
 
-  <aside id="sidebar" class="sidebar flex flex-col">
-    <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-black text-white">Qtutor</h1>
-        <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+<body>
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <h1>Qtutor</h1>
+        <p>Admin Panel</p>
       </div>
-      <button onclick="closeSidebar()" class="md:hidden text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <button class="sidebar-close" onclick="closeSidebar()">✕</button>
     </div>
 
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item "><span>📊</span> ภาพรวม</a>
-      <a href="scores.html" class="nav-item"><span>📝</span> จัดการคะแนน</a>
-      <a href="students.html" class="nav-item"><span>👥</span> นักเรียน</a>
-      <a href="courses.html" class="nav-item"><span>📚</span> คอร์สเรียน</a>
-      <a href="content.html" class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
-      <a href="export.html" class="nav-item active"><span>📤</span> Export รายงาน</a>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span>📊</span> ภาพรวม
+      </a>
+      <a href="scores.html" class="nav-item">
+        <span>📝</span> จัดการคะแนน
+      </a>
+      <a href="students.html" class="nav-item">
+        <span>👥</span> นักเรียน
+      </a>
+      <a href="courses.html" class="nav-item">
+        <span>📚</span> คอร์สเรียน
+      </a>
+      <a href="content.html" class="nav-item">
+        <span>🎬</span> เนื้อหา
+      </a>
+      <a href="export.html" class="nav-item active">
+        <span>📤</span> Export รายงาน
+      </a>
     </nav>
 
-    <div class="px-3 py-4 border-t border-slate-800">
-      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300">
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">
         <span>🚪</span> ออกจากระบบ
       </button>
     </div>
   </aside>
-  <div class="overlay" onclick="toggleSidebar()"></div>
 
-  <div class="content-area flex-1 flex flex-col min-w-0">
-    <header class="bg-white border-b p-3 flex flex-col gap-3 sticky top-0 z-40 no-print">
-      <div class="flex justify-between items-center">
-        <button onclick="toggleSidebar()" class="lg:hidden p-2 bg-slate-100 rounded-lg text-xl">☰</button>
-        <button onclick="saveImage()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg">📸 บันทึกรูป</button>
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Main Content -->
+  <div class="content-area">
+    <!-- Header -->
+    <header>
+      <div class="header-top">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <button class="export-btn" onclick="exportToPDF()">📊 Export PDF</button>
       </div>
-      <div class="flex gap-2">
-        <select id="courseSelect" onchange="loadData()" class="flex-1 bg-slate-100 rounded-xl px-3 py-2.5 font-bold text-sm outline-none"></select>
-        <select id="viewSelect" onchange="switchView()" class="flex-1 bg-slate-100 rounded-xl px-3 py-2.5 font-bold text-sm outline-none">
+
+      <div class="header-controls">
+        <select id="courseSelect" onchange="loadData()" class="control-select">
+          <option value="">-- เลือกคอร์ส --</option>
+        </select>
+
+        <select id="viewSelect" onchange="switchView()" class="control-select">
           <option value="ranking">🏆 อันดับห้อง</option>
           <option value="individual">👤 รายบุคคล</option>
         </select>
       </div>
-      <select id="studentSelect" onchange="renderIndividual()" class="hidden w-full bg-indigo-50 rounded-xl px-3 py-2.5 font-bold text-indigo-700 outline-none"></select>
+
+      <div class="student-select-wrapper" id="studentSelectWrapper">
+        <select id="studentSelect" onchange="renderIndividual()" class="student-select">
+          <option value="">-- เลือกนักเรียน --</option>
+        </select>
+      </div>
     </header>
 
-    <main id="exportContent" class="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
-      
-      <div id="rankingView" class="space-y-6">
-        <div class="bg-[#0f172a] rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
-          <div class="flex flex-col gap-6 relative z-10">
-            <div class="flex items-center gap-4">
-              <div class="bg-yellow-400 p-4 rounded-3xl text-3xl shadow-lg shadow-yellow-400/20">🏆</div>
-              <div>
-                <h2 id="rankTestTitle" class="text-3xl font-black italic">Dashboard</h2>
-                <p id="rankCourseLabel" class="text-indigo-400 font-bold uppercase tracking-widest text-sm"></p>
+    <!-- Main Content -->
+    <main id="exportContent">
+      <div class="content-wrapper">
+        <!-- Ranking View -->
+        <div id="rankingView">
+          <!-- Class Summary Metrics -->
+          <div class="class-summary">
+            <div class="summary-card">
+              <div class="summary-icon">👥</div>
+              <div class="summary-label">นักเรียนทั้งหมด</div>
+              <p class="summary-value" id="totalStudents">0</p>
+              <p class="summary-subtitle">คน</p>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-icon">📊</div>
+              <div class="summary-label">ค่าเฉลี่ยห้อง</div>
+              <p class="summary-value" id="classAverage">0%</p>
+              <p class="summary-subtitle">โดยรวม</p>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-icon">🥇</div>
+              <div class="summary-label">ผู้เรียนเก่ง</div>
+              <p class="summary-value" id="topPerformer">-</p>
+              <p class="summary-subtitle" id="topScore">0%</p>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-icon">⚠️</div>
+              <div class="summary-label">ที่ต้องช่วยเหลือ (คน)</div>
+              <p class="summary-value" id="needsHelp">0</p>
+              <p class="summary-subtitle">น้อยกว่า 50%</p>
+            </div>
+          </div>
+
+          <!-- Test Strip Navigation -->
+          <div class="test-strip-wrapper">
+            <div class="test-strip-label">📋 เลือกการสอบ</div>
+            <div class="test-strip-container" id="testStrip"></div>
+          </div>
+
+          <!-- Hero Section -->
+          <div class="hero-card">
+            <div class="hero-content">
+              <div class="hero-header">
+                <div class="hero-icon">🏆</div>
+                <div>
+                  <h2 class="hero-title" id="rankTestTitle">Dashboard</h2>
+                  <p class="hero-subtitle" id="rankCourseLabel"></p>
+                </div>
+              </div>
+
+              <div class="hero-metrics">
+                <div class="metric-item">
+                  <div class="metric-label">ค่าเฉลี่ย</div>
+                  <p class="metric-value" id="avgTotal">-</p>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">วิทย์</div>
+                  <p class="metric-value" id="avgSci">-</p>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">คณิต</div>
+                  <p class="metric-value" id="avgMath">-</p>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">อังกฤษ</div>
+                  <p class="metric-value" id="avgEng">-</p>
+                </div>
               </div>
             </div>
-            <div>
-              <p class="text-[11px] text-slate-400 uppercase font-black mb-3 ml-1">เลือกครั้งที่สอบ</p>
-              <div class="test-strip-container" id="testStrip"></div>
+          </div>
+
+          <!-- Topics Section -->
+          <div class="topics-section" id="rankingTopicsArea"></div>
+
+          <!-- Ranking List -->
+          <div class="ranking-container">
+            <div class="ranking-header">
+              <p class="ranking-title">📈 อันดับนักเรียน</p>
             </div>
+
+            <!-- Desktop Table -->
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px">อันดับ</th>
+                  <th>ชื่อนักเรียน</th>
+                  <th style="width: 80px; text-align: center">วิทย์</th>
+                  <th style="width: 80px; text-align: center">คณิต</th>
+                  <th style="width: 80px; text-align: center">อังกฤษ</th>
+                  <th style="width: 100px; text-align: right">คะแนน</th>
+                </tr>
+              </thead>
+              <tbody id="rankingList"></tbody>
+            </table>
+
+            <!-- Mobile Cards -->
+            <div class="ranking-cards" id="rankingCards"></div>
           </div>
         </div>
 
-        <div id="rankingTopicsArea"></div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="avg-card border-b-4 border-slate-800"><p class="text-[10px] font-black text-slate-400 uppercase">รวม</p><p id="avgTotal" class="text-2xl font-black text-slate-800">0%</p></div>
-          <div class="avg-card border-b-4 border-emerald-500"><p class="text-[10px] font-black text-emerald-600 uppercase">วิทย์</p><p id="avgSci" class="text-2xl font-black text-emerald-700">-%</p></div>
-          <div class="avg-card border-b-4 border-blue-500"><p class="text-[10px] font-black text-blue-600 uppercase">คณิต</p><p id="avgMath" class="text-2xl font-black text-blue-700">-%</p></div>
-          <div class="avg-card border-b-4 border-purple-500"><p class="text-[10px] font-black text-purple-600 uppercase">อังกฤษ</p><p id="avgEng" class="text-2xl font-black text-purple-700">-%</p></div>
-        </div>
-
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-          <div class="overflow-x-auto min-w-full">
-            <div style="min-width: 600px;">
-              <div class="grid grid-cols-[60px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
-                <span>Rank</span><span>Student</span><span class="text-center">Sci %</span><span class="text-center">Math %</span><span class="text-center">Eng %</span><span class="text-right">Total %</span>
+        <!-- Individual View -->
+        <div id="individualView" style="display: none;">
+          <!-- Individual Hero -->
+          <div class="individual-hero">
+            <div class="individual-content">
+              <div class="individual-info">
+                <div class="student-profile">
+                  <h2 id="iStudentName">-</h2>
+                  <p id="iCourseLabel">-</p>
+                </div>
+                <div class="overall-average">
+                  <div class="overall-label">คะแนนรวม</div>
+                  <p class="overall-percentage" id="iTotalPct">0%</p>
+                </div>
               </div>
-              <div id="rankingList" class="divide-y divide-slate-50"></div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div id="individualView" class="hidden space-y-6">
-        <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-xl flex justify-between items-center">
-          <div><h2 id="iStudentName" class="text-3xl font-black italic leading-tight">Student Name</h2><p id="iCourseLabel" class="opacity-80 text-sm font-bold"></p></div>
-          <div class="bg-white/20 p-4 rounded-2xl text-center min-w-[120px]"><p class="text-[10px] font-bold uppercase">Average</p><p id="iTotalPct" class="text-4xl font-black">0%</p></div>
-        </div>
-
-        <div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="font-black text-slate-800 italic">Performance Graph</h3>
-            <div class="flex gap-1 no-print">
-              <button onclick="toggleLine(0)" class="subject-btn active btn-total">รวม</button>
-              <button onclick="toggleLine(1)" class="subject-btn active btn-sci">วิทย์</button>
-              <button onclick="toggleLine(2)" class="subject-btn active btn-math">คณิต</button>
-              <button onclick="toggleLine(3)" class="subject-btn active btn-eng">อังกฤษ</button>
+          <!-- Progress Chart -->
+          <div class="progress-chart-container">
+            <p class="chart-title">📈 แนวโน้มคะแนน</p>
+            <canvas id="progressChart" height="100"></canvas>
+            <div class="subject-toggle">
+              <button class="toggle-btn active total" onclick="toggleLine(0)">รวม</button>
+              <button class="toggle-btn science" onclick="toggleLine(1)">วิทย์</button>
+              <button class="toggle-btn math" onclick="toggleLine(2)">คณิต</button>
+              <button class="toggle-btn english" onclick="toggleLine(3)">อังกฤษ</button>
             </div>
           </div>
-          <div class="h-[300px] w-full"><canvas id="progressChart"></canvas></div>
+
+          <!-- Subject Sections -->
+          <div id="iScoreList"></div>
         </div>
-        <div id="iScoreList" class="flex flex-col gap-8"></div>
       </div>
     </main>
   </div>
 
+  <!-- Scripts -->
   <script>
+    // ===== CONFIG & STATE =====
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const SUPABASE_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allScores = [], students = [], activeTest = 0, chart = null;
+    let allStudents = [];   // ALL students from DB
+    let students = [];      // students filtered to selected course
+    let allScores = [];
+    let allCourses = [];
+    let activeTest = 0;
+    let chart = null;
+    let currentView = 'ranking';
 
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-
-    function getStatus(pct) {
-      if (pct >= 80) return { text: 'ดีเยี่ยม', color: 'text-emerald-600' };
-      if (pct >= 70) return { text: 'ดี', color: 'text-blue-600' };
-      if (pct >= 50) return { text: 'ผ่านเกณฑ์', color: 'text-orange-500' };
-      return { text: 'ควรปรับปรุง', color: 'text-red-500' };
+    // ===== INITIALIZATION =====
+    async function init() {
+      try {
+        await Promise.all([fetchCourses(), fetchStudents(), fetchAllScores()]);
+        if (allCourses.length > 0) {
+          // เปลี่ยนจาก .id เป็น .course_code ให้ตรงกับในรูปตาราง
+          document.getElementById('courseSelect').value = allCourses[0].course_code; 
+          await loadData();
+        }
+      } catch (err) {
+        console.error('Init error:', err);
+      }
     }
 
-    async function init() {
-      const { data } = await db.from('courses').select('*').order('created_at', { ascending: false });
-      document.getElementById('courseSelect').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + data.map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
+    async function fetchCourses() {
+      const { data } = await db.from('courses').select('*');
+      allCourses = data || [];
+      const select = document.getElementById('courseSelect');
+      select.innerHTML = allCourses.map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
+    }
+
+    async function fetchStudents() {
+      const { data } = await db.from('students').select('*');
+      allStudents = data || [];
+      // students will be set in filterStudentsByCourse()
+    }
+
+    async function fetchAllScores() {
+      const { data } = await db.from('test_scores').select('*');
+      allScores = data || [];
+    }
+
+    // Filter students to only those who have scores in the selected course
+    function filterStudentsByCourse(courseCode) {
+      const studentIdsInCourse = new Set(
+        allScores.filter(s => s.course_code == courseCode).map(s => s.student_id)
+      );
+      students = allStudents.filter(s => studentIdsInCourse.has(s.id));
+    }
+
+    function updateStudentSelect() {
+      const select = document.getElementById('studentSelect');
+      select.innerHTML = `<option value="">-- เลือกนักเรียน --</option>` +
+        students.map(s => `<option value="${s.id}">${s.nickname}</option>`).join('');
     }
 
     async function loadData() {
-      const code = document.getElementById('courseSelect').value;
-      if (!code) return;
-      const [resS, resSc] = await Promise.all([
-        db.from('students').select('*').eq('course_code', code).order('nickname'),
-        db.from('test_scores').select('*').eq('course_code', code).order('test_number')
-      ]);
-      students = resS.data; allScores = resSc.data;
-      document.getElementById('studentSelect').innerHTML = '<option value="">-- เลือกนักเรียน --</option>' + students.map(s => `<option value="${s.id}">${s.nickname}</option>`).join('');
-      buildTestStrip(); renderRanking();
+      const courseId = document.getElementById('courseSelect').value;
+      if (!courseId) return;
+
+      // Filter students to those in this course, then refresh dropdown
+      filterStudentsByCourse(courseId);
+      updateStudentSelect();
+
+      const filtered = allScores.filter(s => s.course_code == courseId);
+      
+      activeTest = 0;
+      const testNumbers = [...new Set(filtered.map(s => s.test_number))].sort((a, b) => a - b);
+      
+      renderTestStrip(testNumbers);
+      renderRanking();
     }
 
-    function buildTestStrip() {
-      const tests = [...new Set(allScores.map(s => s.test_number))].sort((a,b)=>a-b);
-      document.getElementById('testStrip').innerHTML = `<div class="test-chip active" onclick="setTest(0, this)">รวม</div>` + tests.map(t => `<div class="test-chip" onclick="setTest(${t}, this)">${t}</div>`).join('');
+    function renderTestStrip(tests) {
+      const container = document.getElementById('testStrip');
+      container.innerHTML = `
+        <div class="test-chip active" onclick="switchTest(0)">รวม</div>
+        ${tests.map(t => `<div class="test-chip" onclick="switchTest(${t})">Test ${t}</div>`).join('')}
+      `;
     }
 
-    function setTest(t, el) {
-      activeTest = t;
-      document.querySelectorAll('.test-chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active'); renderRanking();
-    }
-
-    function switchView() {
-      const v = document.getElementById('viewSelect').value;
-      document.getElementById('rankingView').style.display = v === 'ranking' ? 'block' : 'none';
-      document.getElementById('individualView').style.display = v === 'individual' ? 'block' : 'none';
-      document.getElementById('studentSelect').classList.toggle('hidden', v !== 'individual');
-      if(v === 'individual') renderIndividual();
+    function switchTest(testNum) {
+      activeTest = testNum;
+      document.querySelectorAll('.test-chip').forEach((chip, i) => {
+        chip.classList.toggle('active', (i === 0 && testNum === 0) || chip.innerText === `Test ${testNum}`);
+      });
+      renderRanking();
     }
 
     function renderRanking() {
-      const sel = document.getElementById('courseSelect');
-      if(!sel.value) return;
-      document.getElementById('rankCourseLabel').innerText = sel.options[sel.selectedIndex].text;
-      document.getElementById('rankTestTitle').innerText = activeTest === 0 ? "Dashboard" : `Test #${activeTest}`;
-      let filtered = activeTest === 0 ? allScores : allScores.filter(s => s.test_number === activeTest);
+      const courseId = document.getElementById('courseSelect').value;
+      const filtered = activeTest === 0 
+        ? allScores.filter(s => s.course_code == courseId)
+        : allScores.filter(s => s.course_code == courseId && s.test_number === activeTest);
+
       const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
-      
-      let topicHTML = '';
-      if (activeTest !== 0) {
-        topicHTML = `<div class="bg-white p-5 rounded-3xl mb-6 shadow-sm border border-slate-100"><p class="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">เนื้อหาที่สอบครั้งนี้</p><div class="grid grid-cols-3 gap-4">${subjects.map(sub => { const item = filtered.find(f => f.subject === sub && f.topic); return `<div><p class="text-[9px] font-bold text-slate-400 mb-0.5">${sub}</p><p class="text-sm font-bold text-slate-700 truncate">${item?.topic || '-'}</p></div>`; }).join('')}</div></div>`;
-      } else {
-        topicHTML = `<div class="bg-slate-900 rounded-[2rem] mb-6 p-6 shadow-xl"><p class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">ภาพรวมเนื้อหาการสอบทั้งหมด</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6">${subjects.map(sub => { const uniqueTopics = [...new Set(allScores.filter(f => f.subject === sub && f.topic).map(f => f.topic))]; return `<div class="space-y-2"><p class="text-xs font-black text-white flex items-center gap-2"><span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> ${sub}</p><div class="bg-slate-800/50 rounded-2xl p-3 border border-slate-700/50 min-h-[60px]">${uniqueTopics.length > 0 ? uniqueTopics.map((t, idx) => `<p class="text-[11px] text-slate-300 leading-relaxed mb-1 truncate font-medium">${idx+1}. ${t}</p>`).join('') : '<p class="text-[11px] text-slate-500 italic font-medium">ยังไม่มีข้อมูลเนื้อหา</p>'}</div></div>`; }).join('')}</div></div>`;
-      }
-      document.getElementById('rankingTopicsArea').innerHTML = topicHTML;
-      
-      let rows = students.map(s => {
+      document.getElementById('rankTestTitle').innerText = activeTest === 0 ? 'Dashboard' : `Test #${activeTest}`;
+      document.getElementById('rankCourseLabel').innerText = 
+        document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+
+      // Calculate rankings
+      const rows = students.map(s => {
         const sc = filtered.filter(f => f.student_id === s.id);
-        const getPct = (sub) => { const items = sc.filter(f => f.subject === sub); const sSum = items.reduce((a,b)=>a+b.score,0); const fSum = items.reduce((a,b)=>a+b.full_score,0); return fSum > 0 ? (sSum/fSum*100).toFixed(1) : null; };
-        const sumS = sc.reduce((a,b)=>a+b.score,0); const sumF = sc.reduce((a,b)=>a+b.full_score,0);
-        return { nickname: s.nickname, sci: getPct('วิทย์'), math: getPct('คณิต'), eng: getPct('อังกฤษ'), pct: sumF > 0 ? (sumS/sumF*100) : 0 };
-      }).sort((a,b) => b.pct - a.pct);
+        const getPct = (sub) => {
+          const items = sc.filter(f => f.subject === sub);
+          const sSum = items.reduce((a, b) => a + b.score, 0);
+          const fSum = items.reduce((a, b) => a + b.full_score, 0);
+          return fSum > 0 ? (sSum / fSum * 100).toFixed(1) : null;
+        };
+        const sumS = sc.reduce((a, b) => a + b.score, 0);
+        const sumF = sc.reduce((a, b) => a + b.full_score, 0);
+        return {
+          id: s.id,
+          nickname: s.nickname,
+          sci: getPct('วิทย์'),
+          math: getPct('คณิต'),
+          eng: getPct('อังกฤษ'),
+          pct: sumF > 0 ? (sumS / sumF * 100) : 0
+        };
+      }).sort((a, b) => b.pct - a.pct);
+
+      // Update metrics
+      const getAvg = (key) => {
+        const values = rows.map(r => r[key]).filter(x => x !== null);
+        return values.length ? (values.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / values.length).toFixed(1) + '%' : '-';
+      };
+
+      document.getElementById('totalStudents').innerText = students.length;
+      document.getElementById('classAverage').innerText = getAvg('pct').replace('%', '') + '%';
       
-      const getAvg = (k) => { const v = rows.map(r => r[k]).filter(x => x !== null); return v.length ? (v.reduce((a,b)=>parseFloat(a)+parseFloat(b),0)/v.length).toFixed(1)+'%' : '-%'; };
+      if (rows.length > 0) {
+        document.getElementById('topPerformer').innerText = rows[0].nickname;
+        document.getElementById('topScore').innerText = rows[0].pct.toFixed(1) + '%';
+      }
+
+      const needsHelpCount = rows.filter(r => r.pct < 50).length;
+      document.getElementById('needsHelp').innerText = needsHelpCount;
+
       document.getElementById('avgTotal').innerText = getAvg('pct');
       document.getElementById('avgSci').innerText = getAvg('sci');
       document.getElementById('avgMath').innerText = getAvg('math');
       document.getElementById('avgEng').innerText = getAvg('eng');
-      
-      document.getElementById('rankingList').innerHTML = rows.map((r, i) => `<div class="grid grid-cols-[60px_1fr_65px_65px_65px_80px] gap-2 px-6 py-4 items-center ${i==0?'bg-yellow-50/50':''}"><div class="font-black text-slate-400">#${i+1}</div><div class="font-bold text-slate-800 text-sm truncate">${r.nickname}</div><div class="text-center text-xs font-bold text-slate-500">${r.sci||'-'}</div><div class="text-center text-xs font-bold text-slate-500">${r.math||'-'}</div><div class="text-center text-xs font-bold text-slate-500">${r.eng||'-'}</div><div class="text-right font-black text-indigo-600">${r.pct.toFixed(1)}%</div></div>`).join('');
+
+      // Render topics
+      renderTopics(filtered, subjects);
+
+      // Render table
+      renderRankingTable(rows);
+
+      // Render cards
+      renderRankingCards(rows);
+    }
+
+    function renderTopics(filtered, subjects) {
+      const container = document.getElementById('rankingTopicsArea');
+      let html = '';
+
+      if (activeTest === 0) {
+        html = `<div class="topics-label">📚 ภาพรวมเนื้อหาการสอบ</div>
+          <div class="topics-grid">
+            ${subjects.map(sub => {
+              const uniqueTopics = [...new Set(filtered.filter(f => f.subject === sub && f.topic).map(f => f.topic))];
+              return `<div class="topic-item">
+                <div class="topic-subject">${sub}</div>
+                <div style="space-y: 2px;">
+                  ${uniqueTopics.length > 0 
+                    ? uniqueTopics.map((t, idx) => `<div class="text-[11px] text-slate-600 mb-1">${idx + 1}. ${t}</div>`).join('')
+                    : '<div class="text-[11px] text-slate-400 italic">ยังไม่มีข้อมูล</div>'
+                  }
+                </div>
+              </div>`;
+            }).join('')}
+          </div>`;
+      } else {
+        html = `<div class="topics-label">📖 เนื้อหาการสอบ</div>
+          <div class="topics-grid">
+            ${subjects.map(sub => {
+              const item = filtered.find(f => f.subject === sub && f.topic);
+              return `<div class="topic-item">
+                <div class="topic-subject">${sub}</div>
+                <div class="topic-name">${item?.topic || '-'}</div>
+              </div>`;
+            }).join('')}
+          </div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function renderRankingTable(rows) {
+      const tbody = document.getElementById('rankingList');
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td><div class="rank-badge ${i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : ''}">#${i + 1}</div></td>
+          <td><span class="student-name">${r.nickname}</span></td>
+          <td class="score-cell">${r.sci || '-'}</td>
+          <td class="score-cell">${r.math || '-'}</td>
+          <td class="score-cell">${r.eng || '-'}</td>
+          <td class="overall-score">${r.pct.toFixed(1)}%</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRankingCards(rows) {
+      const container = document.getElementById('rankingCards');
+      container.innerHTML = rows.map((r, i) => {
+        const getBadgeClass = () => i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : 'other';
+        return `
+          <div class="ranking-card">
+            <div class="card-rank">
+              <div class="card-badge ${getBadgeClass()}">#${i + 1}</div>
+              <div class="card-name">${r.nickname}</div>
+              <div class="card-overall">${r.pct.toFixed(1)}%</div>
+            </div>
+            <div class="card-subjects">
+              <div class="subject-badge">
+                <div class="subject-badge-label">วิทย์</div>
+                <div class="subject-badge-score">${r.sci || '-'}</div>
+              </div>
+              <div class="subject-badge">
+                <div class="subject-badge-label">คณิต</div>
+                <div class="subject-badge-score">${r.math || '-'}</div>
+              </div>
+              <div class="subject-badge">
+                <div class="subject-badge-label">อังกฤษ</div>
+                <div class="subject-badge-score">${r.eng || '-'}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchView() {
+      const view = document.getElementById('viewSelect').value;
+      currentView = view;
+      const rankingView = document.getElementById('rankingView');
+      const individualView = document.getElementById('individualView');
+      const studentWrapper = document.getElementById('studentSelectWrapper');
+
+      if (view === 'individual') {
+        rankingView.style.display = 'none';
+        individualView.style.display = 'block';
+        studentWrapper.classList.add('active');
+        updateStudentSelect();
+      } else {
+        rankingView.style.display = 'block';
+        individualView.style.display = 'none';
+        studentWrapper.classList.remove('active');
+      }
     }
 
     function renderIndividual() {
-      const sid = document.getElementById('studentSelect').value; 
-      if(!sid) return;
+      const sid = document.getElementById('studentSelect').value;
+      if (!sid) return;
+
       const s = students.find(x => x.id == sid);
-      const mySc = allScores.filter(sc => sc.student_id == sid);
+      if (!s) return; // guard: student not found in filtered list
+
+      const courseId = document.getElementById('courseSelect').value;
+      const mySc = allScores.filter(sc => sc.student_id == sid && sc.course_code == courseId);
       const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
-      const tests = [...new Set(mySc.map(m => m.test_number))].sort((a,b)=>a-b);
-      document.getElementById('iStudentName').innerText = s.nickname;
-      document.getElementById('iCourseLabel').innerText = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
-      
+      const tests = [...new Set(mySc.map(m => m.test_number))].sort((a, b) => a - b);
+
+      document.getElementById('iStudentName').innerText = `รายงานของ: ${s.nickname}`;
+      document.getElementById('iCourseLabel').innerText = 
+        document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+
+      // Render subject sections
       const scoreListEl = document.getElementById('iScoreList');
       scoreListEl.innerHTML = subjects.map(sub => {
-        const subRows = mySc.filter(m => m.subject === sub).sort((a,b) => a.test_number - b.test_number);
+        const subRows = mySc.filter(m => m.subject === sub).sort((a, b) => a.test_number - b.test_number);
         if (subRows.length === 0) return '';
-        const colors = { 'วิทย์': 'emerald', 'คณิต': 'blue', 'อังกฤษ': 'purple' };
-        const c = colors[sub] || 'indigo';
-        return `<div id="capture-${sub}" class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden px-2 pb-2"><div class="px-6 py-5 flex justify-between items-center"><h3 class="text-xl font-black text-slate-800 italic flex items-center gap-3"><span class="w-3 h-8 bg-${c}-500 rounded-full"></span>วิชา${sub}</h3><button onclick="saveSubjectImage('${sub}', '${s.nickname}')" class="no-print flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold"><span>📸</span> บันทึกเฉพาะวิชา</button></div><div class="overflow-x-auto rounded-[1.5rem] border border-slate-100"><table class="w-full text-left border-collapse min-w-[500px]"><thead><tr class="bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider"><th class="px-6 py-4">เนื้อหาการสอบ</th><th class="px-4 py-4 text-center w-20">ได้</th><th class="px-4 py-4 text-center w-20">เต็ม</th><th class="px-4 py-4 text-center w-24">ร้อยละ</th><th class="px-6 py-4 text-right w-32">สถานะ</th></tr></thead><tbody class="divide-y divide-slate-100">${subRows.map((row, idx) => { const pct = (row.score/row.full_score*100); const status = getStatus(pct); return `<tr><td class="px-6 py-4 font-bold text-slate-700"><span class="text-slate-300 font-black mr-2">${idx + 1}.</span>${row.topic || '-'}</td><td class="px-4 py-4 text-center font-bold text-slate-600">${row.score}</td><td class="px-4 py-4 text-center text-slate-400 font-bold">${row.full_score}</td><td class="px-4 py-4 text-center"><span class="text-indigo-600 font-black">${pct.toFixed(0)}%</span></td><td class="px-6 py-4 text-right"><span class="inline-block px-3 py-1.5 rounded-lg font-black text-[11px] border ${status.color} bg-white">${status.text}</span></td></tr>`; }).join('')}</tbody></table></div></div>`;
+
+        const colorMap = { 'วิทย์': '#10b981', 'คณิต': '#3b82f6', 'อังกฤษ': '#a855f7' };
+        const color = colorMap[sub] || '#6366f1';
+
+        return `
+          <div class="subject-section" id="capture-${sub}">
+            <div class="subject-header">
+              <h3 class="subject-title">
+                <span class="subject-indicator" style="background-color: ${color}"></span>
+                วิชา${sub}
+              </h3>
+              <button class="subject-export no-print" onclick="saveSubjectImage('${sub}', '${s.nickname}')">
+                📸 บันทึกวิชา
+              </button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="subject-table">
+                <thead>
+                  <tr>
+                    <th>เนื้อหา</th>
+                    <th style="text-align: center; width: 80px;">ได้</th>
+                    <th style="text-align: center; width: 80px;">เต็ม</th>
+                    <th style="text-align: center; width: 100px;">ร้อยละ</th>
+                    <th style="text-align: right; width: 120px;">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${subRows.map((row, idx) => {
+                    const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
+                    const status = getScoreStatus(pct);
+                    return `
+                      <tr>
+                        <td><span class="topic-number">${idx + 1}.</span><span class="topic-text">${row.topic || '-'}</span></td>
+                        <td style="text-align: center;" class="score-number">${row.score}</td>
+                        <td style="text-align: center;" class="score-number">${row.full_score}</td>
+                        <td style="text-align: center;"><span class="percentage-badge">${pct.toFixed(0)}%</span></td>
+                        <td style="text-align: right;"><span class="status-label ${status.class}">${status.text}</span></td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
       }).join('');
 
-      const ds = { labels: tests.map(t => 'T'+t), total: [], sci: [], math: [], eng: [] };
+      // Render chart
+      renderProgressChart(mySc, tests);
+    }
+
+    function getScoreStatus(pct) {
+      if (pct >= 80) return { text: 'ดีมาก', class: 'status-excellent' };
+      if (pct >= 70) return { text: 'ดี', class: 'status-good' };
+      if (pct >= 50) return { text: 'ผ่าน', class: 'status-pass' };
+      return { text: 'ต้องปรับปรุง', class: 'status-alert' };
+    }
+
+    function renderProgressChart(mySc, tests) {
+      const ds = {
+        labels: tests.map(t => `Test ${t}`),
+        total: [],
+        sci: [],
+        math: [],
+        eng: []
+      };
+
       tests.forEach(t => {
         const rows = mySc.filter(m => m.test_number === t);
-        const getP = (sub) => { const f = rows.find(r => r.subject === sub); return f ? (f.score/f.full_score*100).toFixed(1) : null; };
-        const sS = rows.reduce((a,b)=>a+b.score,0), sF = rows.reduce((a,b)=>a+b.full_score,0);
-        ds.total.push(sF > 0 ? (sS/sF*100).toFixed(1) : 0); ds.sci.push(getP('วิทย์')); ds.math.push(getP('คณิต')); ds.eng.push(getP('อังกฤษ'));
+        const getP = (sub) => {
+          const f = rows.find(r => r.subject === sub);
+          return f ? (f.score / f.full_score * 100).toFixed(1) : null;
+        };
+        const sS = rows.reduce((a, b) => a + b.score, 0);
+        const sF = rows.reduce((a, b) => a + b.full_score, 0);
+        ds.total.push(sF > 0 ? (sS / sF * 100).toFixed(1) : 0);
+        ds.sci.push(getP('วิทย์'));
+        ds.math.push(getP('คณิต'));
+        ds.eng.push(getP('อังกฤษ'));
       });
-      if(ds.total.length > 0) document.getElementById('iTotalPct').innerText = (ds.total.reduce((a,b)=>+a + +b,0)/ds.total.length).toFixed(1) + '%';
-      if(chart) chart.destroy();
+
+      if (ds.total.length > 0) {
+        const avg = ds.total.reduce((a, b) => +a + +b, 0) / ds.total.length;
+        document.getElementById('iTotalPct').innerText = avg.toFixed(1) + '%';
+      }
+
+      if (chart) chart.destroy();
       chart = new Chart(document.getElementById('progressChart'), {
         type: 'line',
         data: {
           labels: ds.labels,
           datasets: [
-            { label: 'รวม', data: ds.total, borderColor: '#0f172a', borderWidth: 4, tension: 0.4, pointRadius: 5 },
-            { label: 'วิทย์', data: ds.sci, borderColor: '#10b981', borderDash: [5,5], tension: 0.4 },
-            { label: 'คณิต', data: ds.math, borderColor: '#3b82f6', borderDash: [5,5], tension: 0.4 },
-            { label: 'อังกฤษ', data: ds.eng, borderColor: '#a855f7', borderDash: [5,5], tension: 0.4 }
+            { label: 'รวม', data: ds.total, borderColor: '#0f172a', borderWidth: 4, tension: 0.4, pointRadius: 6, fill: false },
+            { label: 'วิทย์', data: ds.sci, borderColor: '#10b981', borderDash: [5, 5], tension: 0.4, fill: false },
+            { label: 'คณิต', data: ds.math, borderColor: '#3b82f6', borderDash: [5, 5], tension: 0.4, fill: false },
+            { label: 'อังกฤษ', data: ds.eng, borderColor: '#a855f7', borderDash: [5, 5], tension: 0.4, fill: false }
           ]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100 }
+          },
+          plugins: {
+            legend: { display: true, position: 'bottom' }
+          }
+        }
       });
-    }
-
-    async function saveSubjectImage(subject, nickname) {
-      const target = document.getElementById(`capture-${subject}`);
-      const btn = target.querySelector('button');
-      if(btn) btn.style.visibility = 'hidden';
-      try {
-        const canvas = await html2canvas(target, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
-        const link = document.createElement('a');
-        link.download = `คะแนนวิชา${subject}_${nickname}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
-      } catch (err) { console.error(err); } finally { if(btn) btn.style.visibility = 'visible'; }
-    }
-
-    async function saveImage() {
-      const element = document.getElementById('exportContent');
-      const buttons = document.querySelectorAll('.no-print');
-      buttons.forEach(b => b.style.display = 'none');
-      try {
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
-        const link = document.createElement('a'); 
-        link.download = `Report_Full.png`; 
-        link.href = canvas.toDataURL('image/png', 1.0); 
-        link.click();
-      } catch (err) { console.error(err); } finally { buttons.forEach(b => b.style.display = 'flex'); }
     }
 
     function toggleLine(idx) {
       if (!chart) return;
       chart.getDatasetMeta(idx).hidden = !chart.getDatasetMeta(idx).hidden;
-      event.target.classList.toggle('active'); 
+      event.target.classList.toggle('active');
       chart.update();
     }
 
+    async function saveSubjectImage(subject, nickname) {
+      const target = document.getElementById(`capture-${subject}`);
+      const btn = target.querySelector('button');
+      if (btn) btn.style.visibility = 'hidden';
+
+      try {
+        const canvas = await html2canvas(target, {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        const link = document.createElement('a');
+        link.download = `คะแนน${subject}_${nickname}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      } catch (err) {
+        console.error('Error saving subject image:', err);
+      } finally {
+        if (btn) btn.style.visibility = 'visible';
+      }
+    }
+
+    // ===== PDF EXPORT =====
+    // NOTE: jsPDF does not natively support Thai (Kanit) font without embedding.
+    // Thai text sections use html2canvas capture for accurate rendering.
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+
+      if (currentView === 'ranking') {
+        await exportRankingToPDF(doc);
+      } else {
+        await exportIndividualToPDF(doc);
+      }
+
+      // Build a descriptive filename
+      const courseLabel = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex]?.text || 'Course';
+      const studentLabel = currentView === 'individual'
+        ? (document.getElementById('studentSelect').options[document.getElementById('studentSelect').selectedIndex]?.text || 'Student')
+        : 'Ranking';
+      doc.save(`Qtutor_${courseLabel}_${studentLabel}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.pdf`);
+    }
+
+    // Capture an element as a PDF page image (handles Thai font correctly via html2canvas)
+    async function captureElementToPage(doc, element, isFirstPage) {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      const imgData = canvas.toDataURL('image/png', 0.95);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 10;
+      const availW = pageWidth - margin * 2;
+      const imgH = (canvas.height / canvas.width) * availW;
+
+      if (!isFirstPage) doc.addPage();
+
+      // If image is taller than a page, scale to fit
+      const finalH = imgH > (pageHeight - margin * 2) ? (pageHeight - margin * 2) : imgH;
+      doc.addImage(imgData, 'PNG', margin, margin, availW, finalH);
+    }
+
+    async function exportRankingToPDF(doc) {
+      // Capture hero + topics area
+      const heroEl = document.querySelector('.hero-card');
+      const summaryEl = document.querySelector('.class-summary');
+      const rankingEl = document.querySelector('.ranking-container');
+
+      // Hide no-print elements temporarily
+      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'hidden');
+
+      try {
+        await captureElementToPage(doc, summaryEl, true);
+        await captureElementToPage(doc, heroEl, false);
+        if (rankingEl) await captureElementToPage(doc, rankingEl, false);
+      } finally {
+        document.querySelectorAll('.no-print').forEach(el => el.style.visibility = '');
+      }
+    }
+
+    async function exportIndividualToPDF(doc) {
+      const heroEl = document.querySelector('.individual-hero');
+      const chartEl = document.querySelector('.progress-chart-container');
+      const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
+
+      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'hidden');
+
+      try {
+        if (heroEl) await captureElementToPage(doc, heroEl, true);
+        if (chartEl) await captureElementToPage(doc, chartEl, false);
+
+        for (const sub of subjects) {
+          const section = document.getElementById(`capture-${sub}`);
+          if (section) await captureElementToPage(doc, section, false);
+        }
+      } finally {
+        document.querySelectorAll('.no-print').forEach(el => el.style.visibility = '');
+      }
+
+      return doc;
+    }
+
+    // ===== UI INTERACTIONS =====
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function logout() {
+      if (confirm('ออกจากระบบ?')) {
+        window.location.href = 'login.html';
+      }
+    }
+
+    // Initialize
     init();
   </script>
 </body>
