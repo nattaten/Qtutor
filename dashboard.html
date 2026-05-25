@@ -11,98 +11,71 @@
         * { font-family: 'Kanit', sans-serif; }
         .hero-gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); }
         .card-hover { transition: all 0.2s ease; }
-        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.10); }
-        .card-hover:active { transform: scale(0.97); }
-        .score-gradient { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .ranking-gradient { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-        .answer-gradient { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-        .video-gradient { background: linear-gradient(135deg, #10b981, #059669); }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .card-hover:active { transform: scale(0.98); }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-50 min-h-screen pb-20">
 
-    <!-- NAVBAR -->
-    <nav class="bg-white/80 backdrop-blur-md shadow-sm px-4 py-3 sticky top-0 z-20 border-b border-slate-100">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-black text-indigo-600 tracking-tight">Qtutor</h1>
-            <div class="text-right">
-                <p id="userName" class="text-sm font-bold text-slate-800">👤 ...</p>
-                <p id="courseName" class="text-xs text-slate-400 mt-0.5">...</p>
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+            <h1 class="text-2xl font-black text-indigo-600 tracking-tighter">Qtutor</h1>
+            <div class="flex items-center gap-3">
+                <span id="userName" class="text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">👤 -</span>
+                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- MAIN -->
-    <main class="max-w-2xl mx-auto px-4 pb-20">
-
-        <!-- HERO GREETING -->
-        <div class="hero-gradient rounded-3xl mt-5 p-6 text-white shadow-xl shadow-indigo-200">
-            <p id="greetingLabel" class="text-indigo-200 text-sm font-semibold"></p>
-            <h2 id="greetingName" class="text-3xl font-black mt-1">...</h2>
-            <p class="text-indigo-200 text-sm mt-1">พร้อมเรียนวันนี้ไหมครับ? 🚀</p>
-
-            <div class="grid grid-cols-3 gap-3 mt-5">
-                <div class="bg-white/15 rounded-2xl p-3 text-center">
-                    <p class="text-indigo-100 text-xs">เฉลย</p>
-                    <p id="lessonCount" class="text-2xl font-black mt-0.5">—</p>
-                </div>
-                <div class="bg-white/15 rounded-2xl p-3 text-center">
-                    <p class="text-indigo-100 text-xs">วิดีโอ</p>
-                    <p id="videoCount" class="text-2xl font-black mt-0.5">—</p>
-                </div>
-                <div class="bg-white/15 rounded-2xl p-3 text-center">
-                    <p class="text-indigo-100 text-xs">อันดับ</p>
-                    <p id="myRank" class="text-2xl font-black mt-0.5">—</p>
-                </div>
+    <main class="max-w-md mx-auto px-4">
+        <div class="hero-gradient rounded-3xl mt-5 p-7 text-white shadow-xl shadow-indigo-100">
+            <p id="greetingLabel" class="text-indigo-100 text-sm font-semibold opacity-90"></p>
+            <h2 id="greetingName" class="text-3xl font-black mt-1 leading-tight">...</h2>
+            
+            <div class="mt-6">
+                <label class="text-[10px] font-bold text-indigo-200 uppercase tracking-widest block mb-1">เลือกคอร์สเรียน</label>
+                <select id="courseSelect" onchange="selectCourse(this.value)" class="w-full bg-white/20 border border-white/30 text-white rounded-xl p-3 outline-none focus:bg-white focus:text-slate-800 transition-all font-bold">
+                    <option value="" class="text-slate-800">-- กำลังโหลดคอร์สของคุณ --</option>
+                </select>
             </div>
         </div>
 
-        <!-- SCORE & RANKING (featured) -->
-        <div class="grid grid-cols-2 gap-4 mt-5">
-            <!-- คะแนนรายบุคคล -->
-            <button onclick="goTo('score.html')"
-                class="score-gradient card-hover rounded-3xl p-5 text-white text-left shadow-lg shadow-indigo-200 col-span-1">
-                <div class="text-3xl mb-3">📊</div>
-                <h3 class="font-black text-lg leading-tight">คะแนน<br>รายบุคคล</h3>
-                <p class="text-indigo-200 text-xs mt-1">ดูคะแนน + กราฟพัฒนาการ</p>
-                <div class="mt-3 bg-white/20 rounded-full px-3 py-1 text-xs font-bold inline-block">ดูเลย →</div>
-            </button>
+        <div class="mt-8">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">เมนูการเรียน</p>
+                <span id="currentCourseLabel" class="text-[10px] text-indigo-500 font-bold hidden">กำลังเรียน: ...</span>
+            </div>
 
-            <!-- อันดับห้อง -->
-            <button onclick="goTo('ranking.html')"
-                class="ranking-gradient card-hover rounded-3xl p-5 text-white text-left shadow-lg shadow-amber-200 col-span-1">
-                <div class="text-3xl mb-3">🏆</div>
-                <h3 class="font-black text-lg leading-tight">อันดับ<br>ห้อง</h3>
-                <p class="text-amber-100 text-xs mt-1">เปรียบเทียบคะแนนกับเพื่อน</p>
-                <div class="mt-3 bg-white/20 rounded-full px-3 py-1 text-xs font-bold inline-block">ดูเลย →</div>
-            </button>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="goTo('score.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📊</div>
+                    <h3 class="font-bold text-slate-800 leading-tight">คะแนนรายบุคคล</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Personal Score</p>
+                </button>
+
+                <button onclick="goTo('ranking.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🏆</div>
+                    <h3 class="font-bold text-slate-800 leading-tight">อันดับห้อง</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Class Ranking</p>
+                </button>
+
+                <button onclick="goTo('answers.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                    <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📚</div>
+                    <h3 class="font-bold text-slate-800 leading-tight">คลังเฉลย</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Solutions</p>
+                </button>
+
+                <button onclick="goTo('videos.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                    <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📽️</div>
+                    <h3 class="font-bold text-slate-800 leading-tight">บทเรียนวิดีโอ</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Video Lessons</p>
+                </button>
+            </div>
         </div>
-
-        <!-- MENU GRID -->
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-3 px-1">เมนูหลัก</p>
-        <div class="grid grid-cols-2 gap-4">
-            <!-- คลังเฉลย -->
-            <button onclick="goTo('answers.html')"
-                class="bg-white card-hover rounded-3xl p-5 shadow-sm border border-slate-100 text-left group">
-                <div class="answer-gradient w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-md shadow-cyan-200 group-hover:scale-105 transition-transform">📖</div>
-                <h3 class="font-black text-slate-800 text-base">คลังเฉลย</h3>
-                <p class="text-xs text-slate-400 mt-0.5">ดูเอกสารที่จดแล้ว</p>
-            </button>
-
-            <!-- บทเรียนวิดีโอ -->
-            <button onclick="goTo('videos.html')"
-                class="bg-white card-hover rounded-3xl p-5 shadow-sm border border-slate-100 text-left group">
-                <div class="video-gradient w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-md shadow-emerald-200 group-hover:scale-105 transition-transform">🎬</div>
-                <h3 class="font-black text-slate-800 text-base">บทเรียนวิดีโอ</h3>
-                <p class="text-xs text-slate-400 mt-0.5">วิดีโอเพิ่มเติม</p>
-            </button>
-        </div>
-
-        <!-- LOGOUT -->
-        <button onclick="logout()"
-            class="w-full mt-10 text-slate-300 text-xs font-bold py-3 hover:text-red-400 transition-colors tracking-widest uppercase">
-            ♦ ออกจากระบบ
-        </button>
     </main>
 
     <script>
@@ -110,48 +83,93 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const userData = JSON.parse(sessionStorage.getItem('student_user'));
+        let userData = JSON.parse(sessionStorage.getItem('student_user'));
+        let userEnrollments = [];
 
         async function init() {
-            if (!userData) return (location.href = 'index.html');
+            if (!userData) {
+                location.href = 'index.html';
+                return;
+            }
 
             document.getElementById('userName').textContent = `👤 ${userData.nickname}`;
-            document.getElementById('courseName').textContent = userData.course_name;
             updateGreeting(userData.nickname);
-            loadStats();
-            loadRank();
+            await loadCourses();
         }
 
         function updateGreeting(name) {
             const hour = new Date().getHours();
-            let greeting = 'ยินดีต้อนรับ';
-            if (hour >= 5 && hour < 12) greeting = 'สวัสดีตอนเช้า';
-            else if (hour >= 12 && hour < 17) greeting = 'สวัสดีตอนบ่าย';
+            let greeting = 'สวัสดีตอนเช้า';
+            if (hour >= 12 && hour < 17) greeting = 'สวัสดีตอนบ่าย';
             else if (hour >= 17) greeting = 'สวัสดีตอนเย็น';
             document.getElementById('greetingLabel').textContent = greeting + ' 👋';
-            document.getElementById('greetingName').textContent = name;
+            document.getElementById('greetingName').textContent = `น้อง${name}`;
         }
 
-        async function loadStats() {
-            const [solutionsRes, videosRes] = await Promise.all([
-                db.from('solutions').select('id', { count: 'exact' }).eq('course_code', userData.course_code),
-                db.from('videos').select('id', { count: 'exact' }).eq('course_code', userData.course_code),
-            ]);
-            document.getElementById('lessonCount').textContent = solutionsRes.count ?? 0;
-            document.getElementById('videoCount').textContent = videosRes.count ?? 0;
+        async function loadCourses() {
+            try {
+                const { data, error } = await db
+                    .from('enrollments')
+                    .select('course_code, courses(course_name)')
+                    .eq('student_id', userData.id);
+
+                if (error) throw error;
+                
+                userEnrollments = data;
+                const select = document.getElementById('courseSelect');
+                select.innerHTML = '<option value="" class="text-slate-800">-- กรุณาเลือกคอร์สเพื่อเริ่มต้น --</option>';
+
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.course_code;
+                    opt.textContent = item.courses.course_name;
+                    opt.className = "text-slate-800";
+                    // ถ้าใน session มีคอร์สเดิมอยู่แล้ว ให้เลือกไว้อัตโนมัติ
+                    if(userData.course_code === item.course_code) opt.selected = true;
+                    select.appendChild(opt);
+                });
+
+                if (userData.course_code) {
+                    updateCurrentCourseLabel(userData.course_name);
+                }
+
+            } catch (err) {
+                console.error('Load Error:', err);
+            }
         }
 
-        async function loadRank() {
-            const { data } = await db
-                .from('class_rankings')
-                .select('rank_number')
-                .eq('course_code', userData.course_code)
-                .eq('student_id', userData.id)
-                .single();
-            document.getElementById('myRank').textContent = data ? `#${data.rank_number}` : '—';
+        function selectCourse(code) {
+            if (!code) return;
+            
+            const selected = userEnrollments.find(e => e.course_code === code);
+            const courseName = selected.courses.course_name;
+
+            // บันทึกค่าลง sessionStorage ทันทีเพื่อให้หน้าอื่นดึงไปใช้ได้
+            userData.course_code = code;
+            userData.course_name = courseName;
+            sessionStorage.setItem('student_user', JSON.stringify(userData));
+
+            updateCurrentCourseLabel(courseName);
+            
+            // แสดง Feedback เล็กน้อย
+            console.log("Selected:", code);
         }
 
-        function goTo(page) { location.href = page; }
+        function updateCurrentCourseLabel(name) {
+            const label = document.getElementById('currentCourseLabel');
+            label.textContent = `กำลังเรียน: ${name}`;
+            label.classList.remove('hidden');
+        }
+
+        function goTo(page) { 
+            // ตรวจสอบความชัวร์ก่อนไปหน้าอื่น
+            const currentData = JSON.parse(sessionStorage.getItem('student_user'));
+            if (!currentData || !currentData.course_code) {
+                alert('กรุณาเลือกคอร์สเรียนในช่องดรอปดาวน์ด้านบนก่อนครับ');
+                return;
+            }
+            location.href = page; 
+        }
 
         function logout() {
             if (confirm('ยืนยันการออกจากระบบใช่ไหม?')) {

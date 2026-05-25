@@ -18,7 +18,6 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-    <!-- NAVBAR -->
     <div class="bg-white shadow-sm p-4 sticky top-0 z-20">
         <div class="max-w-2xl mx-auto flex items-center">
             <button onclick="goBack()" class="mr-4 text-slate-400 hover:text-blue-500 transition-colors">
@@ -30,7 +29,6 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <main class="max-w-2xl mx-auto p-4 pb-20">
         <div id="courseBadge" class="mb-5 inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm font-bold">
             ⏳ กำลังโหลด...
@@ -42,9 +40,7 @@
         </div>
     </main>
 
-    <!-- PDF MODAL -->
     <div id="pdfModal" class="modal">
-        <!-- Top bar -->
         <div class="w-full max-w-[820px] flex justify-between items-center px-2 pb-3">
             <p id="modalTitle" class="text-white font-bold text-sm truncate max-w-[60%]"></p>
             <div class="flex items-center gap-2">
@@ -61,12 +57,10 @@
                 </button>
             </div>
         </div>
-        <!-- Viewer -->
         <div class="modal-content">
             <iframe id="pdfViewer" width="100%" height="100%" src="" frameborder="0"
                 allow="autoplay" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
         </div>
-        <!-- Load error hint -->
         <p class="text-white/50 text-xs text-center mt-3 px-4">
             หากไฟล์ไม่โหลด กด "เปิดแท็บใหม่" เพื่อดูในเบราว์เซอร์โดยตรงครับ
         </p>
@@ -78,38 +72,22 @@
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const userData = JSON.parse(sessionStorage.getItem('student_user'));
 
-        // ─── Convert any Google Drive URL → embeddable preview URL ───
         function toGDrivePreview(url) {
-            // Possible formats:
-            // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-            // https://drive.google.com/file/d/FILE_ID/view
-            // https://drive.google.com/open?id=FILE_ID
-            // https://docs.google.com/document/d/FILE_ID/edit
-
             let fileId = null;
-
             const matchFile = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             if (matchFile) { fileId = matchFile[1]; }
-
             const matchOpen = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
             if (!fileId && matchOpen) { fileId = matchOpen[1]; }
-
-            if (fileId) {
-                return `https://drive.google.com/file/d/${fileId}/preview`;
-            }
-
-            // Not a Google Drive URL — return as-is
-            return url;
+            return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
         }
 
-        // ─── Init ─────────────────────────────────────────────────────
         async function init() {
             if (!userData) return (location.href = 'index.html');
             document.getElementById('courseBadge').textContent = userData.course_name;
 
             try {
                 const { data, error } = await db
-                    .from('solutions')
+                    .from('solutions') // แก้ไขชื่อตารางเป็น solutions
                     .select('*')
                     .eq('course_code', userData.course_code)
                     .order('week', { ascending: true })
@@ -122,30 +100,30 @@
             }
         }
 
-        // ─── Subject color ────────────────────────────────────────────
         function getSubjectColor(subject) {
             const colors = {
-                'คณิต':  { text:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200',  pill:'bg-blue-100'  },
-                'วิทย':  { text:'text-green-600', bg:'bg-green-50', border:'border-green-200', pill:'bg-green-100' },
-                'อังกฤษ':{ text:'text-pink-600',  bg:'bg-pink-50',  border:'border-pink-200',  pill:'bg-pink-100'  },
-                'ไทย':   { text:'text-red-600',   bg:'bg-red-50',   border:'border-red-200',   pill:'bg-red-100'   },
+                'MATH':  { text:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200',  pill:'bg-blue-100'  },
+                'SCI':   { text:'text-green-600', bg:'bg-green-50', border:'border-green-200', pill:'bg-green-100' },
+                'ENG':   { text:'text-pink-600',  bg:'bg-pink-50',  border:'border-pink-200',  pill:'bg-pink-100'  },
+                'THAI':  { text:'text-red-600',   bg:'bg-red-50',   border:'border-red-200',   pill:'bg-red-100'   },
             };
-            for (const [key, color] of Object.entries(colors)) {
-                if (subject && subject.includes(key)) return color;
-            }
+            
+            const upperSub = (subject || '').toUpperCase();
+            if (upperSub.includes('MATH')) return colors.MATH; // รองรับ MATH-M1
+            if (upperSub.includes('SCI') || upperSub.includes('วิท')) return colors.SCI;
+            if (upperSub.includes('ENG') || upperSub.includes('อังก')) return colors.ENG;
+            if (upperSub.includes('THAI') || upperSub.includes('ไทย')) return colors.THAI;
+            
             return { text:'text-slate-600', bg:'bg-slate-50', border:'border-slate-200', pill:'bg-slate-100' };
         }
 
-        // ─── Render ───────────────────────────────────────────────────
         function renderSolutions(data) {
             const container = document.getElementById('mainContent');
-
             if (!data.length) {
                 container.innerHTML = `
                     <div class="text-center py-20">
                         <p class="text-5xl mb-3">📭</p>
                         <p class="text-slate-400">ยังไม่มีเฉลยในหลักสูตรนี้</p>
-                        <p class="text-xs text-slate-300 mt-2">กรุณาติดต่อครูผู้สอนสำหรับข้อมูลเพิ่มเติม</p>
                     </div>`;
                 return;
             }
@@ -199,7 +177,6 @@
             });
         }
 
-        // ─── Toggle week ──────────────────────────────────────────────
         function toggleWeek(id) {
             const content = document.getElementById(`week-${id}`);
             const icon = document.getElementById(`icon-${id}`);
@@ -208,37 +185,27 @@
             icon.classList.toggle('rotate-icon', !isOpen);
         }
 
-        // ─── Open PDF ─────────────────────────────────────────────────
         function openPDF(url, title) {
-            const previewUrl = toGDrivePreview(url);
-
-            document.getElementById('pdfViewer').src   = previewUrl;
-            document.getElementById('openTabBtn').href = url;          // original URL for new tab
+            document.getElementById('pdfViewer').src   = toGDrivePreview(url);
+            document.getElementById('openTabBtn').href = url;
             document.getElementById('modalTitle').textContent = title || '';
             document.getElementById('pdfModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
-        // ─── Close PDF ────────────────────────────────────────────────
         function closePDF() {
             document.getElementById('pdfModal').classList.remove('active');
             document.getElementById('pdfViewer').src = '';
             document.body.style.overflow = 'auto';
         }
 
-        // ─── Close on backdrop click ──────────────────────────────────
         document.getElementById('pdfModal').addEventListener('click', function (e) {
             if (e.target === this) closePDF();
         });
 
-        // ─── Helpers ──────────────────────────────────────────────────
         function goBack() { location.href = 'dashboard.html'; }
         function showError(msg) {
-            document.getElementById('mainContent').innerHTML = `
-                <div class="text-center py-20">
-                    <p class="text-5xl mb-3">⚠️</p>
-                    <p class="text-slate-600">${msg}</p>
-                </div>`;
+            document.getElementById('mainContent').innerHTML = `<div class="text-center py-20"><p class="text-slate-600">${msg}</p></div>`;
         }
 
         init();

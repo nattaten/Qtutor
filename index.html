@@ -3,232 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qtutor - ล็อกอิน</title>
+    <title>Qtutor - เข้าสู่ระบบ</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Kanit', sans-serif; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center min-h-screen p-4 gap-6">
+<body class="bg-gradient-to-br from-blue-50 to-slate-100 min-h-screen flex items-center justify-center p-4">
 
-    <div class="w-full max-w-sm">
-        <!-- Header -->
+    <div class="w-full max-w-md">
         <div class="text-center mb-8">
-            <div class="text-6xl mb-3 animate-bounce">🎓</div>
+            <div class="text-6xl mb-3">🎓</div>
             <h1 class="text-4xl font-black text-blue-600 tracking-tighter">Qtutor</h1>
-            <p class="text-slate-500 text-sm mt-2">เลือกหลักสูตรและเข้าสู่ระบบ</p>
+            <p class="text-slate-500 text-sm mt-2">กรอกเบอร์โทรศัพท์เพื่อเข้าสู่บทเรียน</p>
         </div>
 
-        <!-- Login Form -->
-        <div class="bg-white p-8 rounded-3xl shadow-2xl shadow-blue-100">
-            <form id="loginForm" class="space-y-5">
-
-                <!-- Step 1: Select Course -->
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">
-                        📚 เลือกหลักสูตร
-                    </label>
-                    <select id="courseSelect" required
-                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                        <option value="">-- เลือกหลักสูตร --</option>
-                    </select>
-                    <p class="text-xs text-slate-400 mt-2">ระบบจะดึงข้อมูลนักเรียนตามหลักสูตรที่เลือก</p>
-                </div>
-
-                <!-- Step 2: Select Student -->
-                <div id="studentStep" class="hidden">
-                    <label class="block text-sm font-bold text-slate-700 mb-2">
-                        👤 เลือกชื่อเล่นนักเรียน
-                    </label>
-                    <select id="studentSelect" required disabled
-                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                        <option value="">-- กรุณาเลือกหลักสูตรก่อน --</option>
-                    </select>
-                    <p class="text-xs text-slate-400 mt-2">ไม่พบชื่อของคุณ? ติดต่อครูผู้สอนครับ</p>
-                </div>
-
-                <!-- Step 3: Password (phone) -->
-                <div id="phoneStep" class="hidden">
-                    <label class="block text-sm font-bold text-slate-700 mb-2">
-                        🔒 รหัสผ่าน
-                    </label>
-                    <input type="tel" id="phoneInput"
-                        placeholder="xxxx"
-                        maxlength="4"
-                        class="w-full p-3.5 border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all tracking-widest font-bold">
-                    <p class="text-xs text-slate-400 mt-2">รหัสผ่านคือเลข 4 หลักสุดท้ายของเบอร์โทรที่ลงทะเบียนไว้</p>
-                </div>
-
-                <!-- Error Message -->
-                <div id="errorBox" class="hidden p-4 bg-red-50 border border-red-200 rounded-2xl">
-                    <p id="errorText" class="text-sm text-red-600 font-medium"></p>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" id="loginBtn"
-                    class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                    ✓ เข้าสู่ระบบ
+        <div class="bg-white p-8 rounded-3xl shadow-2xl shadow-blue-100 border border-white">
+            <div id="loginStep">
+                <label class="block text-sm font-bold text-slate-700 mb-2">📱 เบอร์โทรศัพท์ที่ลงทะเบียน</label>
+                <input type="tel" id="phoneInput" placeholder="08XXXXXXXX" maxlength="10"
+                    class="w-full p-4 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-xl font-bold tracking-widest text-center">
+                
+                <button id="checkBtn" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95">
+                    ตรวจสอบข้อมูล
                 </button>
+            </div>
 
-                <p class="text-xs text-center text-slate-400">
-                    ข้อมูลถูกเก็บในเบราว์เซอร์เท่านั้น
-                </p>
-            </form>
+            <div id="previewStep" class="hidden space-y-4 animate-fade-in">
+                <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <p class="text-xs text-blue-500 font-bold uppercase tracking-wider">ชื่อนักเรียน</p>
+                    <p id="studentName" class="text-xl font-bold text-slate-800">-</p>
+                </div>
+
+                <div>
+                    <p class="text-xs text-slate-400 font-bold mb-2 uppercase tracking-wider">คอร์สของคุณ</p>
+                    <div id="courseList" class="flex flex-wrap gap-2">
+                        </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button id="cancelBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl transition-all">
+                        ไม่ใช่ฉัน
+                    </button>
+                    <button id="confirmBtn" class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-100 transition-all active:scale-95">
+                        ยืนยันเข้าเรียน
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <p class="text-xs text-slate-400 text-center mt-8">
+            พัฒนาโดย <span class="font-bold text-slate-500">พี่เท็น</span> · กวดวิชาคิวติวเตอร์
+        </p>
     </div>
 
-    <!-- CREDIT -->
-    <p class="text-xs text-slate-400 text-center">
-        พัฒนาโดย <span class="font-bold text-slate-500">พี่เท็น</span> · กวดวิชาคิวติวเตอร์
-    </p>
-
-    <script>
-        const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let courses = [];
-        let selectedCourse = null;
-        let students = [];
-
-        async function init() {
-            try {
-                const { data, error } = await db
-                    .from('courses')
-                    .select('id, course_code, course_name')
-                    .eq('is_active', true)
-                    .order('course_name');
-                if (error) throw error;
-                courses = data || [];
-                renderCourses();
-            } catch (err) {
-                showError('ไม่สามารถโหลดข้อมูลหลักสูตร: ' + err.message);
-            }
-        }
-
-        function renderCourses() {
-            const select = document.getElementById('courseSelect');
-            select.innerHTML = '<option value="">-- เลือกหลักสูตร --</option>';
-            courses.forEach(course => {
-                const opt = document.createElement('option');
-                opt.value = course.course_code;
-                opt.textContent = course.course_name;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('courseSelect').addEventListener('change', async (e) => {
-            const courseCode = e.target.value;
-            document.getElementById('studentStep').classList.add('hidden');
-            document.getElementById('phoneStep').classList.add('hidden');
-            document.getElementById('phoneInput').value = '';
-            hideError();
-
-            if (!courseCode) return;
-
-            selectedCourse = courses.find(c => c.course_code === courseCode);
-            document.getElementById('studentStep').classList.remove('hidden');
-
-            try {
-                const { data, error } = await db
-                    .from('students')
-                    .select('id, nickname, phone, course_code')
-                    .eq('course_code', courseCode)
-                    .order('nickname');
-                if (error) throw error;
-                students = data || [];
-                renderStudents();
-            } catch (err) {
-                showError('ไม่สามารถโหลดข้อมูลนักเรียน: ' + err.message);
-            }
-        });
-
-        function renderStudents() {
-            const select = document.getElementById('studentSelect');
-            select.innerHTML = '<option value="">-- เลือกชื่อเล่น --</option>';
-            select.disabled = false;
-            students.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.nickname;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('studentSelect').addEventListener('change', (e) => {
-            hideError();
-            document.getElementById('phoneInput').value = '';
-            if (!e.target.value) {
-                document.getElementById('phoneStep').classList.add('hidden');
-                return;
-            }
-            document.getElementById('phoneStep').classList.remove('hidden');
-            document.getElementById('phoneInput').focus();
-        });
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-
-            const courseCode = document.getElementById('courseSelect').value;
-            const studentId  = document.getElementById('studentSelect').value;
-            const phone      = document.getElementById('phoneInput').value.trim();
-
-            if (!courseCode || !studentId) {
-                showError('กรุณาเลือกหลักสูตรและชื่อเล่นครับ');
-                return;
-            }
-            if (!phone) {
-                showError('กรุณากรอกรหัสผ่าน (เบอร์โทรที่ลงทะเบียน)');
-                return;
-            }
-
-            const btn = document.getElementById('loginBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ กำลังตรวจสอบ...';
-
-            try {
-                const selectedStudent = students.find(s => s.id == studentId);
-
-                // ตรวจสอบเบอร์โทรกับข้อมูลใน database
-                if (!selectedStudent.phone || selectedStudent.phone.trim() !== phone) {
-                    showError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ครับ');
-                    btn.disabled = false;
-                    btn.textContent = '✓ เข้าสู่ระบบ';
-                    return;
-                }
-
-                const userData = {
-                    id: studentId,
-                    nickname: selectedStudent.nickname,
-                    phone: selectedStudent.phone,
-                    course_code: courseCode,
-                    course_name: selectedCourse.course_name,
-                    login_time: new Date().toISOString(),
-                };
-                sessionStorage.setItem('student_user', JSON.stringify(userData));
-
-                setTimeout(() => { window.location.href = 'dashboard.html'; }, 400);
-            } catch (err) {
-                showError('เกิดข้อผิดพลาด: ' + err.message);
-                btn.disabled = false;
-                btn.textContent = '✓ เข้าสู่ระบบ';
-            }
-        });
-
-        function showError(msg) {
-            document.getElementById('errorText').textContent = msg;
-            document.getElementById('errorBox').classList.remove('hidden');
-            setTimeout(hideError, 5000);
-        }
-        function hideError() {
-            document.getElementById('errorBox').classList.add('hidden');
-        }
-
-        
-        init();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
