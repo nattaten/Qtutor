@@ -21,14 +21,14 @@ checkBtn.addEventListener('click', async () => {
     checkBtn.textContent = '⏳ กำลังค้นหา...';
 
     try {
-        // ดึงข้อมูลนักเรียนพร้อมกับคอร์สที่ลงทะเบียน (เชื่อมตาราง)
+        // แก้ไข: ดึงค่า is_active มาจากตาราง courses ด้วย
         const { data, error } = await db
             .from('students')
             .select(`
                 id, nickname, full_name, school,
                 enrollments (
                     course_code,
-                    courses (course_name)
+                    courses (course_name, is_active)
                 )
             `)
             .eq('phone', phone)
@@ -38,7 +38,10 @@ checkBtn.addEventListener('click', async () => {
             throw new Error('ไม่พบข้อมูลเบอร์โทรศัพท์นี้ในระบบ');
         }
 
+        // เก็บข้อมูลลงตัวแปร global
         currentStudent = data;
+        
+        // ส่งข้อมูลไปแสดงผล
         showPreview(data);
 
     } catch (err) {
@@ -49,19 +52,40 @@ checkBtn.addEventListener('click', async () => {
     }
 });
 
-// 2. แสดงผล Preview
+// 2. แสดงผล Preview (กรองเฉพาะคอร์สที่เปิดอยู่)
 function showPreview(student) {
     document.getElementById('studentName').textContent = `น้อง${student.nickname} (${student.full_name})`;
     
     const courseList = document.getElementById('courseList');
     courseList.innerHTML = '';
 
-    student.enrollments.forEach(item => {
-        const badge = document.createElement('span');
-        badge.className = 'px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs font-bold border border-blue-200';
-        badge.textContent = item.courses.course_name;
-        courseList.appendChild(badge);
-    });
+    // แก้ไข: กรองเอาเฉพาะคอร์สที่ courses.is_active เป็น true เท่านั้น
+    const activeEnrollments = student.enrollments.filter(item => 
+        item.courses && item.courses.is_active === true
+    );
+
+    if (activeEnrollments.length > 0) {
+        activeEnrollments.forEach(item => {
+            const badge = document.createElement('span');
+            badge.className = 'px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs font-bold border border-blue-200';
+            badge.textContent = item.courses.course_name;
+            courseList.appendChild(badge);
+        });
+        
+        // เปิดปุ่มยืนยันถ้ามีคอร์สที่เข้าเรียนได้
+        document.getElementById('confirmBtn').disabled = false;
+        document.getElementById('confirmBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        // กรณีไม่มีคอร์สที่เปิดอยู่เลย
+        const emptyMsg = document.createElement('p');
+        emptyMsg.className = 'text-slate-400 text-xs italic';
+        emptyMsg.textContent = 'ไม่มีคอร์สที่กำลังเปิดเรียนในขณะนี้';
+        courseList.appendChild(emptyMsg);
+
+        // ปิดปุ่มยืนยัน (optional)
+        document.getElementById('confirmBtn').disabled = true;
+        document.getElementById('confirmBtn').classList.add('opacity-50', 'cursor-not-allowed');
+    }
 
     loginStep.classList.add('hidden');
     previewStep.classList.remove('hidden');
@@ -77,8 +101,20 @@ document.getElementById('cancelBtn').addEventListener('click', () => {
 
 // 4. ปุ่มยืนยันเข้าเรียน
 document.getElementById('confirmBtn').addEventListener('click', () => {
-    // เก็บข้อมูลลง Session และไปที่หน้า Dashboard
-    sessionStorage.setItem('student_user', JSON.stringify(currentStudent));
+    if (!currentStudent) return;
+
+    // กรองคอร์สอีกครั้งก่อนเซฟลง Session เพื่อความถูกต้อง
+    const activeEnrollments = currentStudent.enrollments.filter(item => 
+        item.courses && item.courses.is_active === true
+    );
+
+    // สร้าง Object ใหม่สำหรับเก็บใน Session ที่มีเฉพาะคอร์สที่ Active
+    const sessionData = {
+        ...currentStudent,
+        enrollments: activeEnrollments
+    };
+
+    sessionStorage.setItem('student_user', JSON.stringify(sessionData));
     
     Swal.fire({
         title: 'สำเร็จ!',

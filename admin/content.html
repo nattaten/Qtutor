@@ -176,7 +176,7 @@
     }
 
     async function init() {
-      const { data: courses } = await db.from('courses').select('course_code, course_name').order('created_at', {ascending: false});
+      const { data: courses } = await db.from('courses').select('course_code, course_name').eq('is_active', true).order('created_at', {ascending: false});
       const fCourse = document.getElementById('filterCourse');
       const mCourse = document.getElementById('modalCourse');
       fCourse.innerHTML = '<option value="">-- แสดงคอร์สทั้งหมด --</option>';

@@ -404,9 +404,9 @@
         </div>
         
         <div class="stat-card">
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Test ล่าสุด</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">จำนวน Test ทั้งหมด</p>
           <p id="statLatestTest" class="stat-value text-indigo-600 mt-2">—</p>
-          <p class="text-[10px] text-slate-400 mt-2">ครั้งที่ทำ</p>
+          <p class="text-[10px] text-slate-400 mt-2">ชุดการทดสอบ</p>
         </div>
         
         <div class="stat-card">
@@ -474,7 +474,7 @@
                 <th>
                   <span class="flex items-center gap-1">
                     <span style="width:7px;height:7px;border-radius:50%;background:#a78bfa;display:inline-block"></span>
-                    ENG
+                    อังกฤษ
                   </span>
                 </th>
                 <th style="width:90px" class="c-center">จัดการ</th>
@@ -498,7 +498,7 @@
           <a href="scores.html" 
             class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all">
             <span class="text-2xl mb-2">📝</span>
-            <p class="text-xs font-black text-slate-700">ใส่คะแนน</p>
+            <p class="text-xs font-black text-slate-700">จัดการคะแนน</p>
           </a>
         </div>
       </div>
@@ -651,6 +651,7 @@
         const { data: courses, error } = await db
           .from('courses')
           .select('course_code, course_name')
+          .eq('is_active', true)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -659,7 +660,7 @@
         (courses || []).forEach(course => {
           const option = document.createElement('option');
           option.value = course.course_code;
-          option.textContent = `${course.course_name} (${course.course_code})`;
+          option.textContent = `${course.course_name}`;
           select.appendChild(option);
         });
 
@@ -706,7 +707,7 @@
     async function loadStats(code) {
       try {
         const [studRes, scoresRes, solRes, vidRes] = await Promise.all([
-          db.from('students').select('id', { count: 'exact' }).eq('course_code', code),
+          db.from('enrollments').select('id', { count: 'exact' }).eq('course_code', code),
           db.from('test_scores').select('test_number,score_percent').eq('course_code', code),
           db.from('solutions').select('id', { count: 'exact' }).eq('course_code', code),
           db.from('videos').select('id', { count: 'exact' }).eq('course_code', code),

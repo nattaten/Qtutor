@@ -130,7 +130,7 @@
 
     async function init() {
       // 1. โหลดข้อมูลคอร์สก่อนเพื่อนำมาทำ Checkbox และ Map ชื่อ
-      const { data: courses } = await db.from('courses').select('course_code, course_name').order('sort_order', { ascending: true });
+      const { data: courses } = await db.from('courses').select('course_code, course_name').eq('is_active', true).order('sort_order', { ascending: true });
       coursesList = courses || [];
       
       const filterSel = document.getElementById('filterCourse');

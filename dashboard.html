@@ -108,29 +108,55 @@
 
         async function loadCourses() {
             try {
+                // แก้ไข: เพิ่มการดึงสถานะ is_active จากตาราง courses
                 const { data, error } = await db
                     .from('enrollments')
-                    .select('course_code, courses(course_name)')
+                    .select(`
+                        course_code, 
+                        courses(course_name, is_active)
+                    `)
                     .eq('student_id', userData.id);
 
                 if (error) throw error;
                 
-                userEnrollments = data;
+                // แก้ไข: กรองเฉพาะคอร์สที่กำลังเปิดใช้งาน (is_active === true)
+                const activeCourses = (data || []).filter(item => 
+                    item.courses && item.courses.is_active === true
+                );
+                
+                userEnrollments = activeCourses; // เก็บเฉพาะคอร์สที่ active ไว้ใช้งานต่อ
+
                 const select = document.getElementById('courseSelect');
                 select.innerHTML = '<option value="" class="text-slate-800">-- กรุณาเลือกคอร์สเพื่อเริ่มต้น --</option>';
 
-                data.forEach(item => {
+                if (activeCourses.length === 0) {
+                    select.innerHTML = '<option value="" class="text-slate-800">-- ไม่มีคอร์สที่กำลังเปิดเรียน --</option>';
+                    return;
+                }
+
+                activeCourses.forEach(item => {
                     const opt = document.createElement('option');
                     opt.value = item.course_code;
                     opt.textContent = item.courses.course_name;
                     opt.className = "text-slate-800";
+                    
                     // ถ้าใน session มีคอร์สเดิมอยู่แล้ว ให้เลือกไว้อัตโนมัติ
                     if(userData.course_code === item.course_code) opt.selected = true;
                     select.appendChild(opt);
                 });
 
+                // ตรวจสอบว่าคอร์สที่เคยเลือกไว้เดิม ยังคง active อยู่หรือไม่
                 if (userData.course_code) {
-                    updateCurrentCourseLabel(userData.course_name);
+                    const stillActive = activeCourses.find(c => c.course_code === userData.course_code);
+                    if (stillActive) {
+                        updateCurrentCourseLabel(userData.course_name);
+                    } else {
+                        // ถ้าคอร์สเดิมที่เคยเลือกไว้โดนปิดไปแล้ว ให้ล้างค่าใน session
+                        userData.course_code = null;
+                        userData.course_name = null;
+                        sessionStorage.setItem('student_user', JSON.stringify(userData));
+                        document.getElementById('currentCourseLabel').classList.add('hidden');
+                    }
                 }
 
             } catch (err) {
