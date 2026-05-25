@@ -167,7 +167,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
 
       subjects.forEach(sub => {
-        const topics = [...new Set(filtered.filter(f => f.subject === sub && f.topic).map(f => f.topic))];
+        const topics = filtered
+        .filter(f => f.subject === sub && f.topic)
+        .sort((a, b) => a.test_number - b.test_number) // เรียงครั้งที่สอบน้อยไปมาก
+        .map(f => f.topic)
+        .reduce((acc, current) => acc.includes(current) ? acc : [...acc, current], []);
         html += `<div class="space-y-2">
                   <p class="text-[11px] font-black text-white flex items-center gap-2">
                     <span class="w-1 h-3 bg-indigo-500 rounded-full"></span>${sub}
