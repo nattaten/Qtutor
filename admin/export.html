@@ -3,2039 +3,795 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Qtutor Admin Report</title>
-  
-  <!-- Fonts & CDN -->
+  <title>Qtutor Admin Export</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
   <style>
-    /* ===== BASE & RESET ===== */
-    * {
-      font-family: 'Kanit', sans-serif !important;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { font-family: 'Kanit', sans-serif !important; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #f8fafc; overflow-x: hidden; }
+    body { display: flex; min-height: 100vh; }
 
     :root {
-      /* Emerald - Excellent */
-      --color-excellent: #10b981;
-      --color-excellent-light: #ecfdf5;
-      --color-excellent-border: #d1fae5;
-      
-      /* Blue - Good */
-      --color-good: #3b82f6;
-      --color-good-light: #eff6ff;
-      --color-good-border: #dbeafe;
-      
-      /* Orange - Pass */
-      --color-pass: #f97316;
-      --color-pass-light: #fff7ed;
-      --color-pass-border: #fed7aa;
-      
-      /* Red - Needs Improvement */
-      --color-alert: #ef4444;
-      --color-alert-light: #fef2f2;
-      --color-alert-border: #fecaca;
-      
-      /* Neutrals */
-      --color-dark: #0f172a;
-      --color-light: #f8fafc;
-      --color-sidebar: #0f172a;
-      
-      /* Shadows */
-      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+      --sidebar-w: 240px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
     }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--color-light);
-      overflow-x: hidden;
-    }
-
-    body {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    /* ===== SIDEBAR NAVIGATION ===== */
+    /* ===== SIDEBAR ===== */
     .sidebar {
-      background: linear-gradient(135deg, var(--color-dark) 0%, #1e293b 100%);
-      width: 260px;
-      position: fixed;
-      height: 100vh;
-      z-index: 200;
-      left: -260px;
-      transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      overflow-y: auto;
+      background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+      width: var(--sidebar-w); position: fixed; height: 100vh; z-index: 200;
+      left: calc(-1 * var(--sidebar-w)); transition: left 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column; overflow-y: auto;
     }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(3px); }
+    .sidebar.open ~ .sidebar-overlay { display: block; }
+    .sidebar-header { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-brand h1 { font-size: 22px; font-weight: 900; color: #fff; margin: 0; }
+    .sidebar-brand p { color: #94a3b8; font-size: 10px; margin: 2px 0 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .sidebar-close { display: none; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 20px; padding: 6px; }
+    .sidebar-close:hover { color: #fff; }
+    .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: #cbd5e1; font-weight: 600; font-size: 13px; text-decoration: none; cursor: pointer; transition: all 0.2s; margin-bottom: 3px; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+    .sidebar-footer { padding: 12px 10px 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: none; background: rgba(239,68,68,0.1); color: #f87171; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { background: rgba(239,68,68,0.2); }
 
-    .sidebar.open {
-      left: 0;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 150;
-      backdrop-filter: blur(3px);
-    }
-
-    .sidebar.open ~ .sidebar-overlay {
-      display: block;
-    }
-
-    .sidebar-header {
-      padding: 24px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .sidebar-brand h1 {
-      font-size: 26px;
-      font-weight: 900;
-      color: #fff;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-
-    .sidebar-brand p {
-      color: #94a3b8;
-      font-size: 12px;
-      margin: 4px 0 0;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .sidebar-close {
-      display: none;
-      background: none;
-      border: none;
-      color: #94a3b8;
-      cursor: pointer;
-      font-size: 24px;
-      padding: 8px;
-      transition: color 0.2s;
-    }
-
-    .sidebar-close:hover {
-      color: #fff;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 16px 12px;
-      overflow-y: auto;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      color: #cbd5e1;
-      font-weight: 600;
-      font-size: 14px;
-      text-decoration: none;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 4px;
-    }
-
-    .nav-item:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: #fff;
-    }
-
-    .nav-item.active {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-    }
-
-    .nav-item span {
-      font-size: 18px;
-    }
-
-    .sidebar-footer {
-      padding: 16px 12px 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .logout-btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: none;
-      background: rgba(239, 68, 68, 0.1);
-      color: #f87171;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .logout-btn:hover {
-      background: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
-    }
-
-    /* ===== DESKTOP LAYOUT ===== */
     @media (min-width: 1024px) {
-      .sidebar {
-        left: 0;
-      }
-
-      .sidebar-close {
-        display: none !important;
-      }
-
-      .sidebar-overlay {
-        display: none !important;
-      }
-
-      .content-area {
-        margin-left: 260px;
-      }
+      .sidebar { left: 0; }
+      .sidebar-close { display: none !important; }
+      .sidebar-overlay { display: none !important; }
+      .content-area { margin-left: var(--sidebar-w); }
     }
+    @media (max-width: 1023px) { .sidebar-close { display: block; } }
 
-    /* ===== MOBILE NAVIGATION ===== */
-    @media (max-width: 1023px) {
-      .sidebar-close {
-        display: block;
-      }
+    /* ===== LAYOUT ===== */
+    .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    main { flex: 1; padding: 16px; overflow-x: hidden; }
+    @media (min-width: 768px) { main { padding: 20px 24px; } }
+    .content-wrapper { max-width: 900px; margin: 0 auto; }
 
-      .sidebar {
-        box-shadow: 6px 0 20px rgba(0, 0, 0, 0.3);
-      }
-    }
-
-    /* ===== HEADER & CONTROLS ===== */
-    .content-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      transition: margin-left 0.3s;
-    }
-
+    /* ===== HEADER ===== */
     header {
-      background: #fff;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 16px;
-      /* แก้ไข 2 บรรทัดนี้ */
-      position: sticky; 
-      top: 0;           
-      /* ---------------- */
-      z-index: 40;
+      background: #fff; border-bottom: 1px solid #e2e8f0;
+      padding: 12px 16px; position: sticky; top: 0; z-index: 40;
       box-shadow: var(--shadow-sm);
     }
+    .hdr-row1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .menu-toggle { display: none; background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+    @media (max-width: 1023px) { .menu-toggle { display: flex; } }
+    .hdr-title { font-size: 15px; font-weight: 900; color: #0f172a; }
+    .save-btn {
+      background: #0f172a; color: #fff; padding: 8px 16px;
+      border-radius: 10px; border: none; font-weight: 700; font-size: 12px;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .save-btn:hover { opacity: 0.85; }
+    .save-btn:active { opacity: 0.7; transform: scale(0.97); }
 
-    @media (min-width: 768px) {
-      header {
-        padding: 20px 24px;
-      }
+    /* Course select row */
+    .hdr-row2 { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .ctrl-select {
+      flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+      padding: 9px 12px; border-radius: 10px; font-weight: 600;
+      font-size: 13px; cursor: pointer; color: #475569;
+    }
+    .ctrl-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+    /* Tab toggle */
+    .view-tabs { display: flex; background: #f1f5f9; border-radius: 12px; padding: 3px; gap: 2px; }
+    .tab-btn {
+      flex: 1; padding: 8px 14px; border-radius: 10px; border: none;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      background: transparent; color: #64748b;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .tab-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+    /* Student select (individual mode) */
+    .student-row { display: none; }
+    .student-row.show { display: block; }
+    .student-sel {
+      width: 100%; background: linear-gradient(135deg, #eef2ff, #f0f4ff);
+      border: 2px solid #6366f1; padding: 9px 14px; border-radius: 10px;
+      font-weight: 700; font-size: 13px; color: #4f46e5; cursor: pointer;
     }
 
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 16px;
+    /* ===== TEST STRIP ===== */
+    .strip-wrap { background: #fff; border-radius: 14px; padding: 8px 10px; box-shadow: var(--shadow-sm); margin-bottom: 16px; }
+    .strip-lbl { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 4px 6px; }
+    .strip-scroll { display: flex; gap: 6px; overflow-x: auto; padding: 2px 4px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .strip-scroll::-webkit-scrollbar { display: none; }
+    .t-chip {
+      flex: 0 0 auto; height: 38px; border-radius: 19px;
+      background: #f1f5f9; color: #64748b; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 12px; cursor: pointer;
+      border: 2px solid transparent; white-space: nowrap; padding: 0 14px;
+      transition: all 0.2s; touch-action: manipulation;
+    }
+    .t-chip:hover { background: #e2e8f0; }
+    .t-chip.active {
+      background: #0f172a; color: #fff; border-color: #0f172a;
+      box-shadow: 0 3px 10px rgba(15,23,42,0.2);
     }
 
-    .menu-toggle {
-      display: none;
-      background: #f1f5f9;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 20px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .menu-toggle:hover {
-      background: #e2e8f0;
-    }
-
-    @media (max-width: 1023px) {
-      .menu-toggle {
-        display: flex;
-      }
-    }
-
-    .export-btn {
+    /* ===== HERO DARK CARD ===== */
+    .hero-dark {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: none;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: var(--shadow-sm);
+      border-radius: 20px; padding: 20px; color: #fff;
+      margin-bottom: 16px; box-shadow: var(--shadow-md);
+      position: relative; overflow: hidden;
     }
-
-    .export-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .export-btn:active {
-      transform: translateY(0);
-    }
-
-    .header-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (min-width: 768px) {
-      .header-controls {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .control-select {
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-      padding: 12px 14px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: #475569;
-    }
-
-    .control-select:hover {
-      border-color: #cbd5e1;
-      background: #f8fafc;
-    }
-
-    .control-select:focus {
-      outline: none;
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .student-select-wrapper {
-      display: none;
-      grid-column: 1 / -1;
-    }
-
-    .student-select-wrapper.active {
-      display: block;
-    }
-
-    .student-select {
-      width: 100%;
-      background: linear-gradient(135deg, #eef2ff 0%, #f0f4ff 100%);
-      border: 2px solid #6366f1;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 14px;
-      color: #4f46e5;
-      cursor: pointer;
-    }
-
-    /* ===== MAIN CONTENT ===== */
-    main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 16px;
-    }
-
-    @media (min-width: 768px) {
-      main {
-        padding: 32px 24px;
-      }
-    }
-
-    @media (min-width: 1280px) {
-      main {
-        padding: 40px 32px;
-      }
-    }
-
-    .content-wrapper {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    /* ===== CLASS SUMMARY CARDS ===== */
-    .class-summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    @media (min-width: 768px) {
-      .class-summary {
-        gap: 16px;
-      }
-    }
-
-    .summary-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid #f1f5f9;
-      transition: all 0.3s;
-    }
-
-    .summary-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
-    }
-
-    .summary-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .summary-value {
-      font-size: 28px;
-      font-weight: 900;
-      color: #0f172a;
-      margin: 0;
-    }
-
-    .summary-subtitle {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 6px;
-      font-weight: 500;
-    }
-
-    .summary-icon {
-      display: inline-block;
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    /* ===== TEST PILL NAVIGATION ===== */
-    .test-strip-wrapper {
-      background: #fff;
-      border-radius: 16px;
-      padding: 12px;
-      box-shadow: var(--shadow-sm);
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-
-    .test-strip-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 0 12px 8px;
-      margin-top: 8px;
-    }
-
-    .test-strip-container {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 8px;
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .test-strip-container::-webkit-scrollbar {
-      display: none;
-    }
-
-    .test-chip {
-      flex: 0 0 auto;
-      min-width: 56px;
-      height: 48px;
-      border-radius: 24px;
-      background: #f1f5f9;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 2px solid transparent;
-      white-space: nowrap;
-      touch-action: manipulation;
-    }
-
-    .test-chip:hover {
-      background: #e2e8f0;
-      transform: scale(1.05);
-    }
-
-    .test-chip.active {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
-      border-color: #0f172a;
-    }
-
-    /* ===== RANKING VIEW ===== */
-    .hero-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border-radius: 28px;
-      padding: 28px 24px;
-      color: #fff;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-      overflow: hidden;
-    }
-
-    @media (min-width: 768px) {
-      .hero-card {
-        padding: 36px 32px;
-      }
-    }
-
-    .hero-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    .hero-dark::before {
+      content: ''; position: absolute; top: -40%; right: -5%;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
       border-radius: 50%;
     }
+    .hero-inner { position: relative; z-index: 1; }
+    .hero-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .hero-icon { width: 44px; height: 44px; background: rgba(255,255,255,0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .hero-ttl { font-size: 20px; font-weight: 900; margin: 0 0 2px; }
+    .hero-sub { font-size: 9px; color: #a5b4fc; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; }
+    .hero-metrics { display: grid; gap: 8px; }
+    .metric-box { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; text-align: center; }
+    .metric-lbl { font-size: 9px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 4px; }
+    .metric-val { font-size: 18px; font-weight: 900; color: #fff; margin: 0; }
 
-    .hero-content {
-      position: relative;
-      z-index: 1;
+    /* ===== STAT CARDS ===== */
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    @media (min-width: 600px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card { background: #fff; border-radius: 12px; padding: 12px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; }
+    .stat-icon { font-size: 20px; margin-bottom: 4px; }
+    .stat-lbl { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 22px; font-weight: 900; color: #0f172a; }
+    .stat-note { font-size: 11px; color: #94a3b8; margin-top: 2px; font-weight: 500; }
+
+    /* ===== TOPICS ===== */
+    .topics-card { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; }
+    .topics-lbl { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .topics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+    .topic-box { background: #f8fafc; border-radius: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; }
+    .topic-sub { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+    .topic-nm { font-size: 12px; font-weight: 700; color: #0f172a; line-height: 1.4; }
+
+    /* ===== RANKING SECTION ===== */
+    .rank-section { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; margin-bottom: 16px; }
+    .rank-header { background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .rank-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
+    .save-small { padding: 6px 12px; border-radius: 8px; border: none; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .save-small:hover { background: #e2e8f0; }
+
+    /* Desktop Table ≥768px */
+    .rank-table-wrap { display: none; }
+    @media (min-width: 768px) { .rank-table-wrap { display: block; } }
+    .rank-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .rank-table thead { background: #0f172a; color: #fff; }
+    .rank-table th { padding: 10px 14px; text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .rank-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .rank-table tbody tr:hover { background: #f8fafc; }
+    .rank-table tbody tr:last-child td { border-bottom: none; }
+    .rank-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; background: #f1f5f9; color: #64748b; }
+    .rank-badge.r1 { background: #fef3c7; color: #d97706; }
+    .rank-badge.r2 { background: #e5e7eb; color: #4b5563; }
+    .rank-badge.r3 { background: #fed7aa; color: #b45309; }
+
+    /* Mobile Cards <768px */
+    .rank-cards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+    @media (min-width: 768px) { .rank-cards { display: none; } }
+    .rank-card { background: #fff; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; }
+    .rank-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .card-badge { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; flex-shrink: 0; }
+    .card-badge.r1 { background: linear-gradient(135deg, #fbbf24, #f97316); }
+    .card-badge.r2 { background: linear-gradient(135deg, #c7d2e0, #94a3b8); }
+    .card-badge.r3 { background: linear-gradient(135deg, #fdba74, #fb923c); }
+    .card-badge.rn { background: linear-gradient(135deg, #cbd5e1, #94a3b8); font-size: 12px; }
+    .card-nm { flex: 1; font-weight: 700; color: #0f172a; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-overall { font-weight: 900; font-size: 17px; color: #6366f1; white-space: nowrap; }
+    .card-subs { display: grid; gap: 5px; }
+    .sub-box { text-align: center; padding: 5px 4px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; }
+    .sub-lbl { font-size: 9px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 1px; }
+    .sub-score { font-size: 13px; font-weight: 900; }
+
+    /* ===== INDIVIDUAL HERO ===== */
+    .ind-hero {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border-radius: 20px; padding: 20px; color: #fff;
+      margin-bottom: 16px; box-shadow: var(--shadow-md);
+      position: relative; overflow: hidden;
     }
-
-    .hero-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .hero-icon {
-      font-size: 48px;
-      width: 64px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      flex-shrink: 0;
-    }
-
-    .hero-title {
-      font-size: 28px;
-      font-weight: 900;
-      margin: 0 0 4px;
-      letter-spacing: -0.5px;
-    }
-
-    @media (min-width: 768px) {
-      .hero-title {
-        font-size: 36px;
-      }
-    }
-
-    .hero-subtitle {
-      font-size: 13px;
-      color: #a5b4fc;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin: 0;
-    }
-
-    .hero-metrics {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
-
-    @media (min-width: 768px) {
-      .hero-metrics {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    .metric-item {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      padding: 16px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-    }
-
-    .metric-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #cbd5e1;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .metric-value {
-      font-size: 24px;
-      font-weight: 900;
-      color: #fff;
-      margin: 0;
-    }
-
-    /* ===== TOPICS SECTION ===== */
-    .topics-section {
-      background: #fff;
-      border-radius: 20px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid #f1f5f9;
-    }
-
-    .topics-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-    }
-
-    .topics-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    @media (min-width: 768px) {
-      .topics-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    .topic-item {
-      background: #f8fafc;
-      border-radius: 14px;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .topic-subject {
-      font-size: 10px;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-
-    .topic-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #0f172a;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* ===== RANKING TABLE / CARDS ===== */
-    .ranking-container {
-      background: #fff;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid #f1f5f9;
-    }
-
-    .ranking-header {
-      background: #f8fafc;
-      padding: 16px 20px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .ranking-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #334155;
-      margin: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    /* Desktop Table */
-    .ranking-table {
-      display: none;
-      width: 100%;
-    }
-
-    @media (min-width: 1024px) {
-      .ranking-table {
-        display: table;
-      }
-    }
-
-    .ranking-table thead {
-      background: #0f172a;
-      color: #fff;
-    }
-
-    .ranking-table th {
-      padding: 16px 20px;
-      text-align: left;
-      font-weight: 700;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .ranking-table td {
-      padding: 16px 20px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 14px;
-    }
-
-    .ranking-table tbody tr:hover {
-      background: #f8fafc;
-    }
-
-    .ranking-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    .rank-badge {
-      font-weight: 900;
-      font-size: 16px;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: #f1f5f9;
-      color: #64748b;
-    }
-
-    .rank-badge.top-1 {
-      background: #fef3c7;
-      color: #d97706;
-      font-weight: 900;
-      font-size: 18px;
-    }
-
-    .rank-badge.top-2 {
-      background: #e5e7eb;
-      color: #4b5563;
-      font-weight: 900;
-    }
-
-    .rank-badge.top-3 {
-      background: #fed7aa;
-      color: #b45309;
-      font-weight: 900;
-    }
-
-    .student-name {
-      font-weight: 700;
-      color: #0f172a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .score-cell {
-      text-align: center;
-      font-weight: 700;
-      color: #475569;
-    }
-
-    .overall-score {
-      text-align: right;
-      font-weight: 900;
-      font-size: 16px;
-      color: #6366f1;
-    }
-
-    /* Mobile Cards */
-    .ranking-cards {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      padding: 12px;
-    }
-
-    @media (min-width: 768px) {
-      .ranking-cards {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        padding: 16px;
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .ranking-cards {
-        display: none;
-      }
-    }
-
-    .ranking-card {
-      background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
-      border-radius: 16px;
-      padding: 16px;
-      border: 1px solid #e2e8f0;
-      transition: all 0.3s;
-      cursor: pointer;
-    }
-
-    .ranking-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-4px);
-      border-color: #cbd5e1;
-    }
-
-    .card-rank {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .card-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 18px;
-      color: #fff;
-    }
-
-    .card-badge.top-1 {
-      background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
-      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-    }
-
-    .card-badge.top-2 {
-      background: linear-gradient(135deg, #c7d2e0 0%, #94a3b8 100%);
-      box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
-    }
-
-    .card-badge.top-3 {
-      background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
-      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
-    }
-
-    .card-badge.other {
-      background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-      font-size: 16px;
-    }
-
-    .card-name {
-      flex: 1;
-      font-weight: 700;
-      color: #0f172a;
-      font-size: 15px;
-    }
-
-    .card-overall {
-      font-weight: 900;
-      font-size: 18px;
-      color: #6366f1;
-    }
-
-    .card-subjects {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .subject-badge {
-      text-align: center;
-      padding: 8px;
-      background: #f1f5f9;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .subject-badge-label {
-      font-size: 10px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-    }
-
-    .subject-badge-score {
-      font-size: 14px;
-      color: #0f172a;
-    }
-
-    /* Status/Color Coding */
-    .status-excellent {
-      background: var(--color-excellent-light);
-      color: var(--color-excellent);
-      border: 1px solid var(--color-excellent-border);
-    }
-
-    .status-good {
-      background: var(--color-good-light);
-      color: var(--color-good);
-      border: 1px solid var(--color-good-border);
-    }
-
-    .status-pass {
-      background: var(--color-pass-light);
-      color: var(--color-pass);
-      border: 1px solid var(--color-pass-border);
-    }
-
-    .status-alert {
-      background: var(--color-alert-light);
-      color: var(--color-alert);
-      border: 1px solid var(--color-alert-border);
-    }
-
-    /* ===== INDIVIDUAL VIEW ===== */
-    .individual-hero {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border-radius: 24px;
-      padding: 28px 24px;
-      color: #fff;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-      overflow: hidden;
-    }
-
-    @media (min-width: 768px) {
-      .individual-hero {
-        padding: 32px;
-      }
-    }
-
-    .individual-hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 250px;
-      height: 250px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    .ind-hero::before {
+      content: ''; position: absolute; top: -40%; right: -5%;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
       border-radius: 50%;
     }
+    .ind-inner { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
+    @media (min-width: 560px) { .ind-inner { flex-direction: row; align-items: center; justify-content: space-between; } }
+    .ind-name { font-size: 24px; font-weight: 900; margin: 0 0 3px; }
+    .ind-course { font-size: 10px; color: #a5b4fc; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    .ind-avg-box { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 14px 18px; text-align: center; min-width: 90px; flex-shrink: 0; }
+    .ind-avg-lbl { font-size: 9px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 4px; }
+    .ind-avg-val { font-size: 30px; font-weight: 900; margin: 0; }
 
-    .individual-content {
-      position: relative;
-      z-index: 1;
-    }
+    /* ===== CHART CARD ===== */
+    .chart-card { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; }
+    .chart-hdr { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .chart-ttl { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .chart-canvas-wrap { position: relative; height: 200px; }
 
-    .individual-info {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+    /* ===== SCORE TABLE ===== */
+    .subj-section { background: #fff; border-radius: 14px; overflow: hidden; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; }
+    .subj-head { padding: 11px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .subj-ttl { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #0f172a; }
+    .subj-line { width: 4px; height: 18px; border-radius: 2px; flex-shrink: 0; }
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-    @media (min-width: 768px) {
-      .individual-info {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-      }
-    }
+    /* Compact score table */
+    .score-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .score-tbl thead { background: #0f172a; color: #fff; }
+    .score-tbl th { padding: 9px 12px; text-align: left; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .score-tbl td { padding: 9px 12px; border-bottom: 1px solid #f8fafc; }
+    .score-tbl tbody tr:hover { background: #fafcff; }
+    .score-tbl tbody tr:last-child td { border-bottom: none; }
+    .pct-text { font-weight: 900; font-size: 13px; }
+    .pct-pass { color: #10b981; }
+    .pct-fail { color: #ef4444; }
+    .pct-total { color: #6366f1; font-weight: 900; }
 
-    .student-profile {
-      flex: 1;
-    }
-
-    .student-profile h2 {
-      font-size: 32px;
-      font-weight: 900;
-      margin: 0 0 8px;
-      letter-spacing: -0.5px;
-    }
-
-    @media (min-width: 768px) {
-      .student-profile h2 {
-        font-size: 40px;
-      }
-    }
-
-    .student-profile p {
-      font-size: 13px;
-      color: #a5b4fc;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin: 0;
-    }
-
-    .overall-average {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 16px;
-      padding: 20px 24px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-    }
-
-    .overall-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #cbd5e1;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .overall-percentage {
-      font-size: 40px;
-      font-weight: 900;
-      margin: 0;
-      letter-spacing: -1px;
-    }
-
-    .progress-chart-container {
-      background: #fff;
-      border-radius: 20px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid #f1f5f9;
-    }
-
-    .chart-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #334155;
-      margin: 0 0 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    #progressChart {
-      max-height: 300px;
-    }
-
-    .subject-toggle {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .toggle-btn {
-      padding: 8px 14px;
-      border-radius: 10px;
-      border: 2px solid #e2e8f0;
-      background: #fff;
-      color: #475569;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .toggle-btn:hover {
-      border-color: #cbd5e1;
-    }
-
-    .toggle-btn.active {
-      color: #fff;
-      border-color: transparent;
-    }
-
-    .toggle-btn.active.total {
-      background: #0f172a;
-    }
-
-    .toggle-btn.active.science {
-      background: var(--color-excellent);
-    }
-
-    .toggle-btn.active.math {
-      background: var(--color-good);
-    }
-
-    .toggle-btn.active.english {
-      background: #a855f7;
-    }
-
-    /* ===== SUBJECT SECTIONS ===== */
-    .subject-section {
-      background: #fff;
-      border-radius: 20px;
-      overflow: hidden;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid #f1f5f9;
-    }
-
-    .subject-header {
-      padding: 20px 24px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .subject-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0;
-    }
-
-    .subject-indicator {
-      width: 4px;
-      height: 24px;
-      border-radius: 2px;
-    }
-
-    .subject-export {
-      padding: 8px 16px;
-      border-radius: 10px;
-      border: none;
-      background: #f1f5f9;
-      color: #475569;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .subject-export:hover {
-      background: #e2e8f0;
-    }
-
-    /* Subject Tables */
-    .subject-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    .subject-table thead {
-      background: #0f172a;
-      color: #fff;
-    }
-
-    .subject-table th {
-      padding: 14px 20px;
-      text-align: left;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .subject-table td {
-      padding: 14px 20px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .subject-table tbody tr:hover {
-      background: #f8fafc;
-    }
-
-    .subject-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    .topic-number {
-      color: #94a3b8;
-      font-weight: 700;
-      margin-right: 8px;
-    }
-
-    .topic-text {
-      color: #0f172a;
-      font-weight: 700;
-    }
-
-    .score-number {
-      font-weight: 700;
-      color: #475569;
-    }
-
-    .percentage-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      color: #6366f1;
-      background: #eef2ff;
-    }
-
-    .status-label {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    /* ===== PRINT / PDF STYLES ===== */
-    @media print {
-      body {
-        background: #fff;
-      }
-
-      header,
-      .sidebar,
-      .sidebar-overlay,
-      .no-print,
-      .export-btn {
-        display: none !important;
-      }
-
-      main {
-        padding: 0;
-        margin: 0;
-      }
-
-      .content-area {
-        margin-left: 0;
-      }
-
-      .ranking-cards {
-        display: none !important;
-      }
-
-      .ranking-table {
-        display: table !important;
-      }
-    }
-
-    /* ===== RESPONSIVE UTILITIES ===== */
-    .hide-mobile {
-      display: none;
-    }
-
-    @media (min-width: 768px) {
-      .hide-mobile {
-        display: block;
-      }
-    }
-
-    .hide-desktop {
-      display: block;
-    }
-
-    @media (min-width: 1024px) {
-      .hide-desktop {
-        display: none;
-      }
-    }
-
-    /* ===== ANIMATIONS ===== */
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    .summary-card {
-      animation: slideInLeft 0.5s ease-out forwards;
-    }
-
-    .ranking-card {
-      animation: fadeIn 0.4s ease-out;
-    }
+    /* ===== ANIM ===== */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .anim { animation: fadeUp 0.3s ease-out forwards; }
   </style>
 </head>
-
 <body>
-  <!-- Sidebar Navigation -->
+
+  <!-- Sidebar -->
   <aside id="sidebar" class="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-brand">
-        <h1>Qtutor</h1>
-        <p>Admin Panel</p>
-      </div>
+      <div class="sidebar-brand"><h1>Qtutor</h1><p>Admin Panel</p></div>
       <button class="sidebar-close" onclick="closeSidebar()">✕</button>
     </div>
-
     <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item">
-        <span>📊</span> ภาพรวม
-      </a>
-      <a href="scores.html" class="nav-item">
-        <span>📝</span> จัดการคะแนน
-      </a>
-      <a href="students.html" class="nav-item">
-        <span>👥</span> นักเรียน
-      </a>
-      <a href="courses.html" class="nav-item">
-        <span>📚</span> คอร์สเรียน
-      </a>
-      <a href="content.html" class="nav-item">
-        <span>🎬</span> เนื้อหา
-      </a>
-      <a href="export.html" class="nav-item active">
-        <span>📤</span> Export รายงาน
-      </a>
+      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
+      <a href="scores.html" class="nav-item"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html" class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html" class="nav-item"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html" class="nav-item"><span>🎬</span> เนื้อหา</a>
+      <a href="export.html" class="nav-item active"><span>📤</span> Export รายงาน</a>
     </nav>
-
     <div class="sidebar-footer">
-      <button class="logout-btn" onclick="logout()">
-        <span>🚪</span> ออกจากระบบ
-      </button>
+      <button class="logout-btn" onclick="logout()"><span>🚪</span> ออกจากระบบ</button>
     </div>
   </aside>
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-  <!-- Main Content -->
+  <!-- Content -->
   <div class="content-area">
-    <!-- Header -->
     <header>
-      <div class="header-top">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <button class="export-btn" onclick="exportToPDF()">📊 Export PDF</button>
+      <!-- Row 1: menu + title + save -->
+      <div class="hdr-row1">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <span class="hdr-title">📤 Export รายงาน</span>
+        </div>
+        <button class="save-btn" onclick="saveCurrentView()">📸 บันทึกรูป</button>
       </div>
 
-      <div class="header-controls">
-        <select id="courseSelect" onchange="loadData()" class="control-select">
+      <!-- Row 2: course select + view tabs -->
+      <div class="hdr-row2">
+        <select id="courseSelect" onchange="onCourseChange()" class="ctrl-select">
           <option value="">-- เลือกคอร์ส --</option>
         </select>
-
-        <select id="viewSelect" onchange="switchView()" class="control-select">
-          <option value="ranking">🏆 อันดับห้อง</option>
-          <option value="individual">👤 รายบุคคล</option>
-        </select>
+        <div class="view-tabs">
+          <button class="tab-btn active" onclick="switchView('ranking', this)">🏆 อันดับ</button>
+          <button class="tab-btn" onclick="switchView('individual', this)">👤 รายบุคคล</button>
+        </div>
       </div>
 
-      <div class="student-select-wrapper" id="studentSelectWrapper">
-        <select id="studentSelect" onchange="renderIndividual()" class="student-select">
+      <!-- Row 3: student select (individual only) -->
+      <div class="student-row" id="studentRow">
+        <select id="studentSelect" onchange="renderIndividual()" class="student-sel">
           <option value="">-- เลือกนักเรียน --</option>
         </select>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main id="exportContent">
+    <main>
       <div class="content-wrapper">
-        <!-- Ranking View -->
+
+        <!-- ===== RANKING VIEW ===== -->
         <div id="rankingView">
-          <!-- Class Summary Metrics -->
-          <div class="class-summary">
-            <div class="summary-card">
-              <div class="summary-icon">👥</div>
-              <div class="summary-label">นักเรียนทั้งหมด</div>
-              <p class="summary-value" id="totalStudents">0</p>
-              <p class="summary-subtitle">คน</p>
-            </div>
+          <div class="stat-grid" id="statGrid"></div>
 
-            <div class="summary-card">
-              <div class="summary-icon">📊</div>
-              <div class="summary-label">ค่าเฉลี่ยห้อง</div>
-              <p class="summary-value" id="classAverage">0%</p>
-              <p class="summary-subtitle">โดยรวม</p>
-            </div>
-
-            <div class="summary-card">
-              <div class="summary-icon">🥇</div>
-              <div class="summary-label">ผู้เรียนเก่ง</div>
-              <p class="summary-value" id="topPerformer">-</p>
-              <p class="summary-subtitle" id="topScore">0%</p>
-            </div>
-
-            <div class="summary-card">
-              <div class="summary-icon">⚠️</div>
-              <div class="summary-label">ที่ต้องช่วยเหลือ (คน)</div>
-              <p class="summary-value" id="needsHelp">0</p>
-              <p class="summary-subtitle">น้อยกว่า 50%</p>
-            </div>
+          <div class="strip-wrap">
+            <div class="strip-lbl">📋 เลือกการสอบ</div>
+            <div class="strip-scroll" id="testStrip"></div>
           </div>
 
-          <!-- Test Strip Navigation -->
-          <div class="test-strip-wrapper">
-            <div class="test-strip-label">📋 เลือกการสอบ</div>
-            <div class="test-strip-container" id="testStrip"></div>
-          </div>
-
-          <!-- Hero Section -->
-          <div class="hero-card">
-            <div class="hero-content">
-              <div class="hero-header">
+          <div class="hero-dark">
+            <div class="hero-inner">
+              <div class="hero-head">
                 <div class="hero-icon">🏆</div>
                 <div>
-                  <h2 class="hero-title" id="rankTestTitle">Dashboard</h2>
-                  <p class="hero-subtitle" id="rankCourseLabel"></p>
+                  <h2 class="hero-ttl" id="rankTitle">Dashboard</h2>
+                  <p class="hero-sub" id="rankCourse"></p>
                 </div>
               </div>
-
-              <div class="hero-metrics">
-                <div class="metric-item">
-                  <div class="metric-label">ค่าเฉลี่ย</div>
-                  <p class="metric-value" id="avgTotal">-</p>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">วิทย์</div>
-                  <p class="metric-value" id="avgSci">-</p>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">คณิต</div>
-                  <p class="metric-value" id="avgMath">-</p>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-label">อังกฤษ</div>
-                  <p class="metric-value" id="avgEng">-</p>
-                </div>
-              </div>
+              <div class="hero-metrics" id="heroMetrics"></div>
             </div>
           </div>
 
-          <!-- Topics Section -->
-          <div class="topics-section" id="rankingTopicsArea"></div>
+          <div class="topics-card" id="topicsCard" style="display:none;">
+            <div class="topics-lbl" id="topicsLbl">📖 เนื้อหาที่สอบ</div>
+            <div class="topics-grid" id="topicsGrid"></div>
+          </div>
 
-          <!-- Ranking List -->
-          <div class="ranking-container">
-            <div class="ranking-header">
-              <p class="ranking-title">📈 อันดับนักเรียน</p>
+          <div class="rank-section" id="rankSection">
+            <div class="rank-header">
+              <span class="rank-title">📈 อันดับนักเรียน</span>
+              <button class="save-small" onclick="saveElement('rankSection','อันดับ')">📸 บันทึก</button>
             </div>
-
-            <!-- Desktop Table -->
-            <table class="ranking-table">
-              <thead>
-                <tr>
-                  <th style="width: 60px">อันดับ</th>
-                  <th>ชื่อนักเรียน</th>
-                  <th style="width: 80px; text-align: center">วิทย์</th>
-                  <th style="width: 80px; text-align: center">คณิต</th>
-                  <th style="width: 80px; text-align: center">อังกฤษ</th>
-                  <th style="width: 100px; text-align: right">คะแนน</th>
-                </tr>
-              </thead>
-              <tbody id="rankingList"></tbody>
-            </table>
-
-            <!-- Mobile Cards -->
-            <div class="ranking-cards" id="rankingCards"></div>
+            <div class="rank-table-wrap">
+              <table class="rank-table">
+                <thead id="rankTableHead"></thead>
+                <tbody id="rankTableBody"></tbody>
+              </table>
+            </div>
+            <div class="rank-cards" id="rankCards"></div>
           </div>
         </div>
 
-        <!-- Individual View -->
-        <div id="individualView" style="display: none;">
-          <!-- Individual Hero -->
-          <div class="individual-hero">
-            <div class="individual-content">
-              <div class="individual-info">
-                <div class="student-profile">
-                  <h2 id="iStudentName">-</h2>
-                  <p id="iCourseLabel">-</p>
-                </div>
-                <div class="overall-average">
-                  <div class="overall-label">คะแนนรวม</div>
-                  <p class="overall-percentage" id="iTotalPct">0%</p>
-                </div>
+        <!-- ===== INDIVIDUAL VIEW ===== -->
+        <div id="individualView" style="display:none;">
+          <div class="ind-hero" id="indHero">
+            <div class="ind-inner">
+              <div>
+                <h2 class="ind-name" id="iName">กรุณาเลือกนักเรียน</h2>
+                <p class="ind-course" id="iCourse"></p>
+              </div>
+              <div class="ind-avg-box">
+                <div class="ind-avg-lbl">คะแนนรวม</div>
+                <p class="ind-avg-val" id="iTotalPct">—%</p>
               </div>
             </div>
           </div>
 
-          <!-- Progress Chart -->
-          <div class="progress-chart-container">
-            <p class="chart-title">📈 แนวโน้มคะแนน</p>
-            <canvas id="progressChart" height="100"></canvas>
-            <div class="subject-toggle">
-              <button class="toggle-btn active total" onclick="toggleLine(0)">รวม</button>
-              <button class="toggle-btn science" onclick="toggleLine(1)">วิทย์</button>
-              <button class="toggle-btn math" onclick="toggleLine(2)">คณิต</button>
-              <button class="toggle-btn english" onclick="toggleLine(3)">อังกฤษ</button>
+          <div class="chart-card" id="chartCard">
+            <div class="chart-hdr">
+              <p class="chart-ttl">
+                <span style="width:4px;height:16px;background:#6366f1;border-radius:2px;display:inline-block;"></span>
+                วิเคราะห์พัฒนาการ (%)
+              </p>
+              <button class="save-small" onclick="saveElement('chartCard','กราฟ')">📸 บันทึกกราฟ</button>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="progressChart"></canvas>
             </div>
           </div>
 
-          <!-- Subject Sections -->
           <div id="iScoreList"></div>
         </div>
+
       </div>
     </main>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // ===== CONFIG & STATE =====
+    /* ===== CONFIG ===== */
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
-    const SUPABASE_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allStudents = [];   // ALL students from DB
-    let students = [];      // students filtered to selected course
-    let allScores = [];
-    let allCourses = [];
-    let activeTest = 0;
-    let chart = null;
-    let currentView = 'ranking';
+    /* ===== STATE ===== */
+    let allStudents = [], students = [], allScores = [], allCourses = [];
+    let courseInfo = null, activeTest = 0, chart = null;
+    let currentSubjects = [], currentView = 'ranking';
 
-    // ===== INITIALIZATION =====
+    /* ===== SUBJECT ORDER: วิทย์ → คณิต → อังกฤษ → อื่นๆ ===== */
+    const SUBJECT_ORDER = [
+      'วิทยาศาสตร์','วิทย์',
+      'คณิตศาสตร์','คณิต',
+      'ภาษาอังกฤษ','อังกฤษ',
+      'ภาษาไทย','ไทย',
+      'สังคมศึกษา','สังคม'
+    ];
+    function sortSubjects(subs) {
+      return [...subs].sort((a, b) => {
+        const ia = SUBJECT_ORDER.findIndex(x => x === a);
+        const ib = SUBJECT_ORDER.findIndex(x => x === b);
+        if (ia === -1 && ib === -1) return a.localeCompare(b);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+    }
+
+    /* ===== COLOR MAP ===== */
+    const PALETTE = ['#6366f1','#10b981','#3b82f6','#f59e0b','#a855f7','#ef4444'];
+    function subjectColor(sub, idx) {
+      const map = {'วิทยาศาสตร์':'#10b981','วิทย์':'#10b981','คณิตศาสตร์':'#3b82f6','คณิต':'#3b82f6','ภาษาอังกฤษ':'#a855f7','อังกฤษ':'#a855f7','ภาษาไทย':'#f59e0b','สังคมศึกษา':'#64748b'};
+      return map[sub] || PALETTE[idx % PALETTE.length];
+    }
+
+    /* ===== INIT ===== */
     async function init() {
       try {
-        await Promise.all([fetchCourses(), fetchStudents(), fetchAllScores()]);
-        if (allCourses.length > 0) {
-          // เปลี่ยนจาก .id เป็น .course_code ให้ตรงกับในรูปตาราง
-          document.getElementById('courseSelect').value = allCourses[0].course_code; 
-          await loadData();
-        }
-      } catch (err) {
-        console.error('Init error:', err);
-      }
+        const [cRes, sRes, scRes] = await Promise.all([
+          db.from('courses').select('*'),
+          db.from('students').select('*'),
+          db.from('test_scores').select('*')
+        ]);
+        allCourses = cRes.data || [];
+        allStudents = sRes.data || [];
+        allScores = scRes.data || [];
+
+        const sel = document.getElementById('courseSelect');
+        sel.innerHTML = allCourses.map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
+        if (allCourses.length > 0) await onCourseChange();
+      } catch(e) { console.error('Init error:', e); }
     }
 
-    async function fetchCourses() {
-      const { data } = await db.from('courses').select('*');
-      allCourses = data || [];
-      const select = document.getElementById('courseSelect');
-      select.innerHTML = allCourses.map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
-    }
+    async function onCourseChange() {
+      const code = document.getElementById('courseSelect').value;
+      if (!code) return;
+      courseInfo = allCourses.find(c => c.course_code === code) || null;
 
-    async function fetchStudents() {
-      const { data } = await db.from('students').select('*');
-      allStudents = data || [];
-      // students will be set in filterStudentsByCourse()
-    }
+      const cs = allScores.filter(s => s.course_code === code);
+      currentSubjects = sortSubjects([...new Set(cs.map(s => s.subject))]);
 
-    async function fetchAllScores() {
-      const { data } = await db.from('test_scores').select('*');
-      allScores = data || [];
-    }
+      const ids = new Set(cs.map(s => s.student_id));
+      students = allStudents.filter(s => ids.has(s.id));
 
-    // Filter students to only those who have scores in the selected course
-    function filterStudentsByCourse(courseCode) {
-      const studentIdsInCourse = new Set(
-        allScores.filter(s => s.course_code == courseCode).map(s => s.student_id)
-      );
-      students = allStudents.filter(s => studentIdsInCourse.has(s.id));
+      updateStudentSelect();
+      activeTest = 0;
+
+      const tests = [...new Set(cs.map(s => s.test_number))].sort((a,b) => a-b);
+      renderTestStrip(tests);
+
+      if (currentView === 'ranking') renderRanking();
+      else renderIndividual();
     }
 
     function updateStudentSelect() {
-      const select = document.getElementById('studentSelect');
-      select.innerHTML = `<option value="">-- เลือกนักเรียน --</option>` +
+      const sel = document.getElementById('studentSelect');
+      sel.innerHTML = `<option value="">-- เลือกนักเรียน --</option>` +
         students.map(s => `<option value="${s.id}">${s.nickname}</option>`).join('');
     }
 
-    async function loadData() {
-      const courseId = document.getElementById('courseSelect').value;
-      if (!courseId) return;
+    /* ===== VIEW SWITCH (tab) ===== */
+    function switchView(view, btn) {
+      currentView = view;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
 
-      // Filter students to those in this course, then refresh dropdown
-      filterStudentsByCourse(courseId);
-      updateStudentSelect();
+      const isInd = view === 'individual';
+      document.getElementById('rankingView').style.display = isInd ? 'none' : 'block';
+      document.getElementById('individualView').style.display = isInd ? 'block' : 'none';
+      document.getElementById('studentRow').classList.toggle('show', isInd);
+      document.getElementById('testStrip').closest('.strip-wrap').style.display = isInd ? 'none' : 'block';
 
-      const filtered = allScores.filter(s => s.course_code == courseId);
-      
-      activeTest = 0;
-      const testNumbers = [...new Set(filtered.map(s => s.test_number))].sort((a, b) => a - b);
-      
-      renderTestStrip(testNumbers);
+      if (isInd) renderIndividual();
+    }
+
+    /* ===== TEST STRIP ===== */
+    function renderTestStrip(tests) {
+      const strip = document.getElementById('testStrip');
+      strip.innerHTML = `<div class="t-chip active" onclick="selectTest(0, this)">รวม</div>` +
+        tests.map(t => `<div class="t-chip" onclick="selectTest(${t}, this)">ครั้งที่ ${t}</div>`).join('');
+    }
+
+    function selectTest(val, btn) {
+      activeTest = val;
+      document.querySelectorAll('.t-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       renderRanking();
     }
 
-    function renderTestStrip(tests) {
-      const container = document.getElementById('testStrip');
-      container.innerHTML = `
-        <div class="test-chip active" onclick="switchTest(0)">รวม</div>
-        ${tests.map(t => `<div class="test-chip" onclick="switchTest(${t})">Test ${t}</div>`).join('')}
+    /* ===== RANKING ===== */
+    function renderRanking() {
+      const code = document.getElementById('courseSelect').value;
+      if (!code) return;
+
+      const cs = allScores.filter(s => s.course_code === code);
+      const filtered = activeTest === 0 ? cs : cs.filter(s => s.test_number === activeTest);
+      const courseName = document.getElementById('courseSelect').selectedOptions[0]?.text || '';
+
+      document.getElementById('rankTitle').textContent = activeTest === 0 ? 'สรุปภาพรวมสะสม' : `การสอบครั้งที่ ${activeTest}`;
+      document.getElementById('rankCourse').textContent = courseName;
+
+      // Build per-student data
+      const map = {};
+      filtered.forEach(sc => {
+        const sid = sc.student_id;
+        if (!map[sid]) { map[sid] = { totalS:0, totalF:0, subs:{} }; currentSubjects.forEach(s => map[sid].subs[s] = {s:0,f:0}); }
+        if (map[sid].subs[sc.subject]) { map[sid].subs[sc.subject].s += +sc.score; map[sid].subs[sc.subject].f += +sc.full_score; }
+        map[sid].totalS += +sc.score; map[sid].totalF += +sc.full_score;
+      });
+
+      const rows = Object.entries(map).map(([sid, d]) => ({
+        id: +sid,
+        nickname: students.find(s => s.id === +sid)?.nickname || '—',
+        subs: currentSubjects.map(sub => d.subs[sub]?.f > 0 ? d.subs[sub].s / d.subs[sub].f * 100 : null),
+        pct: d.totalF > 0 ? d.totalS / d.totalF * 100 : 0
+      })).sort((a,b) => b.pct - a.pct);
+
+      renderStats(rows, cs);
+      renderHeroMetrics(rows);
+      renderTopics(filtered);
+      renderRankTable(rows);
+      renderRankCards(rows);
+    }
+
+    function renderStats(rows, cs) {
+      const avg = rows.length ? rows.reduce((a,b) => a + b.pct, 0) / rows.length : 0;
+      const top = rows[0];
+      const needsHelp = rows.filter(r => r.pct < 60).length;
+      document.getElementById('statGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-lbl">นักเรียน</div><div class="stat-val">${students.length}</div><div class="stat-note">คน</div></div>
+        <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-lbl">ค่าเฉลี่ย</div><div class="stat-val">${avg.toFixed(1)}%</div><div class="stat-note">โดยรวม</div></div>
+        <div class="stat-card"><div class="stat-icon">🥇</div><div class="stat-lbl">อันดับ 1</div><div class="stat-val" style="font-size:16px;">${top ? top.nickname : '-'}</div><div class="stat-note">${top ? top.pct.toFixed(1)+'%' : ''}</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-lbl">ต้องช่วยเหลือ</div><div class="stat-val">${needsHelp}</div><div class="stat-note">คะแนน < 60%</div></div>
       `;
     }
 
-    function switchTest(testNum) {
-      activeTest = testNum;
-      document.querySelectorAll('.test-chip').forEach((chip, i) => {
-        chip.classList.toggle('active', (i === 0 && testNum === 0) || chip.innerText === `Test ${testNum}`);
+    function renderHeroMetrics(rows) {
+      const overall = rows.length ? (rows.reduce((a,b) => a+b.pct,0)/rows.length).toFixed(1)+'%' : '-';
+      let html = `<div class="metric-box"><div class="metric-lbl">เฉลี่ยรวม</div><p class="metric-val">${overall}</p></div>`;
+      currentSubjects.forEach((sub, idx) => {
+        const vals = rows.map(r => r.subs[idx]).filter(v => v !== null);
+        const avg = vals.length ? (vals.reduce((a,b) => a+b,0)/vals.length).toFixed(1)+'%' : '-';
+        html += `<div class="metric-box"><div class="metric-lbl">${sub}</div><p class="metric-val">${avg}</p></div>`;
       });
-      renderRanking();
+      const grid = document.getElementById('heroMetrics');
+      const cols = Math.min(1 + currentSubjects.length, 4);
+      grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      grid.innerHTML = html;
     }
 
-    function renderRanking() {
-      const courseId = document.getElementById('courseSelect').value;
-      const filtered = activeTest === 0 
-        ? allScores.filter(s => s.course_code == courseId)
-        : allScores.filter(s => s.course_code == courseId && s.test_number === activeTest);
+    function renderTopics(filtered) {
+      const card = document.getElementById('topicsCard');
+      if (courseInfo?.score_display_mode === 'test_summary') { card.style.display = 'none'; return; }
 
-      const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
-      document.getElementById('rankTestTitle').innerText = activeTest === 0 ? 'Dashboard' : `Test #${activeTest}`;
-      document.getElementById('rankCourseLabel').innerText = 
-        document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+      const hasTopics = currentSubjects.some(sub => filtered.some(f => f.subject === sub && f.topic));
+      if (!hasTopics) { card.style.display = 'none'; return; }
 
-      // Calculate rankings
-      const rows = students.map(s => {
-        const sc = filtered.filter(f => f.student_id === s.id);
-        const getPct = (sub) => {
-          const items = sc.filter(f => f.subject === sub);
-          const sSum = items.reduce((a, b) => a + b.score, 0);
-          const fSum = items.reduce((a, b) => a + b.full_score, 0);
-          return fSum > 0 ? (sSum / fSum * 100).toFixed(1) : null;
-        };
-        const sumS = sc.reduce((a, b) => a + b.score, 0);
-        const sumF = sc.reduce((a, b) => a + b.full_score, 0);
-        return {
-          id: s.id,
-          nickname: s.nickname,
-          sci: getPct('วิทย์'),
-          math: getPct('คณิต'),
-          eng: getPct('อังกฤษ'),
-          pct: sumF > 0 ? (sumS / sumF * 100) : 0
-        };
-      }).sort((a, b) => b.pct - a.pct);
-
-      // Update metrics
-      const getAvg = (key) => {
-        const values = rows.map(r => r[key]).filter(x => x !== null);
-        return values.length ? (values.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / values.length).toFixed(1) + '%' : '-';
-      };
-
-      document.getElementById('totalStudents').innerText = students.length;
-      document.getElementById('classAverage').innerText = getAvg('pct').replace('%', '') + '%';
-      
-      if (rows.length > 0) {
-        document.getElementById('topPerformer').innerText = rows[0].nickname;
-        document.getElementById('topScore').innerText = rows[0].pct.toFixed(1) + '%';
-      }
-
-      const needsHelpCount = rows.filter(r => r.pct < 50).length;
-      document.getElementById('needsHelp').innerText = needsHelpCount;
-
-      document.getElementById('avgTotal').innerText = getAvg('pct');
-      document.getElementById('avgSci').innerText = getAvg('sci');
-      document.getElementById('avgMath').innerText = getAvg('math');
-      document.getElementById('avgEng').innerText = getAvg('eng');
-
-      // Render topics
-      renderTopics(filtered, subjects);
-
-      // Render table
-      renderRankingTable(rows);
-
-      // Render cards
-      renderRankingCards(rows);
-    }
-
-    function renderTopics(filtered, subjects) {
-      const container = document.getElementById('rankingTopicsArea');
-      let html = '';
-
-      if (activeTest === 0) {
-        html = `<div class="topics-label">📚 ภาพรวมเนื้อหาการสอบ</div>
-          <div class="topics-grid">
-            ${subjects.map(sub => {
-              const uniqueTopics = [...new Set(filtered.filter(f => f.subject === sub && f.topic).map(f => f.topic))];
-              return `<div class="topic-item">
-                <div class="topic-subject">${sub}</div>
-                <div style="space-y: 2px;">
-                  ${uniqueTopics.length > 0 
-                    ? uniqueTopics.map((t, idx) => `<div class="text-[11px] text-slate-600 mb-1">${idx + 1}. ${t}</div>`).join('')
-                    : '<div class="text-[11px] text-slate-400 italic">ยังไม่มีข้อมูล</div>'
-                  }
-                </div>
-              </div>`;
-            }).join('')}
-          </div>`;
-      } else {
-        html = `<div class="topics-label">📖 เนื้อหาการสอบ</div>
-          <div class="topics-grid">
-            ${subjects.map(sub => {
-              const item = filtered.find(f => f.subject === sub && f.topic);
-              return `<div class="topic-item">
-                <div class="topic-subject">${sub}</div>
-                <div class="topic-name">${item?.topic || '-'}</div>
-              </div>`;
-            }).join('')}
-          </div>`;
-      }
-
-      container.innerHTML = html;
-    }
-
-    function renderRankingTable(rows) {
-      const tbody = document.getElementById('rankingList');
-      tbody.innerHTML = rows.map((r, i) => `
-        <tr>
-          <td><div class="rank-badge ${i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : ''}">#${i + 1}</div></td>
-          <td><span class="student-name">${r.nickname}</span></td>
-          <td class="score-cell">${r.sci || '-'}</td>
-          <td class="score-cell">${r.math || '-'}</td>
-          <td class="score-cell">${r.eng || '-'}</td>
-          <td class="overall-score">${r.pct.toFixed(1)}%</td>
-        </tr>
-      `).join('');
-    }
-
-    function renderRankingCards(rows) {
-      const container = document.getElementById('rankingCards');
-      container.innerHTML = rows.map((r, i) => {
-        const getBadgeClass = () => i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : 'other';
-        return `
-          <div class="ranking-card">
-            <div class="card-rank">
-              <div class="card-badge ${getBadgeClass()}">#${i + 1}</div>
-              <div class="card-name">${r.nickname}</div>
-              <div class="card-overall">${r.pct.toFixed(1)}%</div>
-            </div>
-            <div class="card-subjects">
-              <div class="subject-badge">
-                <div class="subject-badge-label">วิทย์</div>
-                <div class="subject-badge-score">${r.sci || '-'}</div>
-              </div>
-              <div class="subject-badge">
-                <div class="subject-badge-label">คณิต</div>
-                <div class="subject-badge-score">${r.math || '-'}</div>
-              </div>
-              <div class="subject-badge">
-                <div class="subject-badge-label">อังกฤษ</div>
-                <div class="subject-badge-score">${r.eng || '-'}</div>
-              </div>
-            </div>
-          </div>
-        `;
+      card.style.display = 'block';
+      document.getElementById('topicsLbl').textContent = activeTest === 0 ? '📚 ภาพรวมเนื้อหาการสอบ' : '📖 เนื้อหาที่สอบ';
+      document.getElementById('topicsGrid').innerHTML = currentSubjects.map(sub => {
+        const topics = [...new Set(filtered.filter(f => f.subject === sub && f.topic).map(f => f.topic))];
+        return `<div class="topic-box">
+          <div class="topic-sub">${sub}</div>
+          <div class="topic-nm">${topics.length ? (activeTest === 0 ? topics.map((t,i) => `${i+1}. ${t}`).join('<br>') : topics.join(', ')) : '<span style="color:#cbd5e1;font-style:italic;">ไม่มีข้อมูล</span>'}</div>
+        </div>`;
       }).join('');
     }
 
-    function switchView() {
-      const view = document.getElementById('viewSelect').value;
-      currentView = view;
-      const rankingView = document.getElementById('rankingView');
-      const individualView = document.getElementById('individualView');
-      const studentWrapper = document.getElementById('studentSelectWrapper');
-
-      if (view === 'individual') {
-        rankingView.style.display = 'none';
-        individualView.style.display = 'block';
-        studentWrapper.classList.add('active');
-        updateStudentSelect();
-      } else {
-        rankingView.style.display = 'block';
-        individualView.style.display = 'none';
-        studentWrapper.classList.remove('active');
-      }
+    function rankColor(pct) {
+      return pct !== null ? (pct >= 60 ? '#10b981' : '#ef4444') : '#94a3b8';
     }
 
+    function renderRankTable(rows) {
+      const subCols = currentSubjects.map(s => `<th style="text-align:center;min-width:70px;">${s}</th>`).join('');
+      document.getElementById('rankTableHead').innerHTML =
+        `<tr><th style="width:52px;">อันดับ</th><th>ชื่อ</th>${subCols}<th style="text-align:right;">รวม</th></tr>`;
+
+      document.getElementById('rankTableBody').innerHTML = rows.map((r, i) => {
+        const bClass = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+        const subCells = r.subs.map(s => `<td style="text-align:center;font-weight:700;color:${rankColor(s)};">${s !== null ? s.toFixed(1)+'%' : '—'}</td>`).join('');
+        return `<tr>
+          <td><div class="rank-badge ${bClass}">${i+1}</div></td>
+          <td style="font-weight:700;color:#0f172a;">${r.nickname}</td>
+          ${subCells}
+          <td style="text-align:right;font-weight:900;color:#6366f1;">${r.pct.toFixed(1)}%</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderRankCards(rows) {
+      const cols = Math.max(1, Math.min(currentSubjects.length, 4));
+      document.getElementById('rankCards').innerHTML = rows.map((r, i) => {
+        const bClass = i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+        const subBoxes = r.subs.map((s,idx) => `
+          <div class="sub-box">
+            <div class="sub-lbl">${currentSubjects[idx]}</div>
+            <div class="sub-score" style="color:${rankColor(s)};">${s !== null ? s.toFixed(1)+'%' : '—'}</div>
+          </div>`).join('');
+        return `<div class="rank-card anim">
+          <div class="rank-card-top">
+            <div class="card-badge ${bClass}">${i+1}</div>
+            <div class="card-nm">${r.nickname}</div>
+            <div class="card-overall">${r.pct.toFixed(1)}%</div>
+          </div>
+          <div class="card-subs" style="grid-template-columns:repeat(${cols},1fr);">${subBoxes}</div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ===== INDIVIDUAL ===== */
     function renderIndividual() {
       const sid = document.getElementById('studentSelect').value;
       if (!sid) return;
-
       const s = students.find(x => x.id == sid);
-      if (!s) return; // guard: student not found in filtered list
+      if (!s) return;
 
-      const courseId = document.getElementById('courseSelect').value;
-      const mySc = allScores.filter(sc => sc.student_id == sid && sc.course_code == courseId);
-      const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
-      const tests = [...new Set(mySc.map(m => m.test_number))].sort((a, b) => a - b);
+      const code = document.getElementById('courseSelect').value;
+      const mySc = allScores.filter(sc => sc.student_id == sid && sc.course_code === code)
+                            .sort((a,b) => a.test_number - b.test_number);
+      const tests = [...new Set(mySc.map(m => m.test_number))].sort((a,b) => a-b);
+      const subjects = sortSubjects([...new Set(mySc.map(m => m.subject))]);
+      const courseName = document.getElementById('courseSelect').selectedOptions[0]?.text || '';
 
-      document.getElementById('iStudentName').innerText = `รายงานของ: ${s.nickname}`;
-      document.getElementById('iCourseLabel').innerText = 
-        document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex].text;
+      const totalS = mySc.reduce((a,b) => a + +b.score, 0);
+      const totalF = mySc.reduce((a,b) => a + +b.full_score, 0);
 
-      // Render subject sections
-      const scoreListEl = document.getElementById('iScoreList');
-      scoreListEl.innerHTML = subjects.map(sub => {
-        const subRows = mySc.filter(m => m.subject === sub).sort((a, b) => a.test_number - b.test_number);
-        if (subRows.length === 0) return '';
+      document.getElementById('iName').textContent = `น้อง${s.nickname}`;
+      document.getElementById('iCourse').textContent = courseName;
+      document.getElementById('iTotalPct').textContent = totalF > 0 ? (totalS/totalF*100).toFixed(1)+'%' : '—%';
 
-        const colorMap = { 'วิทย์': '#10b981', 'คณิต': '#3b82f6', 'อังกฤษ': '#a855f7' };
-        const color = colorMap[sub] || '#6366f1';
+      renderProgressChart(mySc, tests, subjects);
 
-        return `
-          <div class="subject-section" id="capture-${sub}">
-            <div class="subject-header">
-              <h3 class="subject-title">
-                <span class="subject-indicator" style="background-color: ${color}"></span>
-                วิชา${sub}
-              </h3>
-              <button class="subject-export no-print" onclick="saveSubjectImage('${sub}', '${s.nickname}')">
-                📸 บันทึกวิชา
-              </button>
-            </div>
-            <div style="overflow-x: auto;">
-              <table class="subject-table">
-                <thead>
-                  <tr>
-                    <th>เนื้อหา</th>
-                    <th style="text-align: center; width: 80px;">ได้</th>
-                    <th style="text-align: center; width: 80px;">เต็ม</th>
-                    <th style="text-align: center; width: 100px;">ร้อยละ</th>
-                    <th style="text-align: right; width: 120px;">สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${subRows.map((row, idx) => {
-                    const pct = row.full_score > 0 ? (row.score / row.full_score * 100) : 0;
-                    const status = getScoreStatus(pct);
-                    return `
-                      <tr>
-                        <td><span class="topic-number">${idx + 1}.</span><span class="topic-text">${row.topic || '-'}</span></td>
-                        <td style="text-align: center;" class="score-number">${row.score}</td>
-                        <td style="text-align: center;" class="score-number">${row.full_score}</td>
-                        <td style="text-align: center;"><span class="percentage-badge">${pct.toFixed(0)}%</span></td>
-                        <td style="text-align: right;"><span class="status-label ${status.class}">${status.text}</span></td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      // Render chart
-      renderProgressChart(mySc, tests);
+      if (courseInfo?.score_display_mode === 'test_summary') renderSummaryTable(mySc, tests, subjects);
+      else renderBySubject(mySc, subjects, s.nickname);
     }
 
-    function getScoreStatus(pct) {
-      if (pct >= 80) return { text: 'ดีมาก', class: 'status-excellent' };
-      if (pct >= 70) return { text: 'ดี', class: 'status-good' };
-      if (pct >= 50) return { text: 'ผ่าน', class: 'status-pass' };
-      return { text: 'ต้องปรับปรุง', class: 'status-alert' };
-    }
-
-    function renderProgressChart(mySc, tests) {
-      const ds = {
-        labels: tests.map(t => `Test ${t}`),
-        total: [],
-        sci: [],
-        math: [],
-        eng: []
-      };
-
-      tests.forEach(t => {
-        const rows = mySc.filter(m => m.test_number === t);
-        const getP = (sub) => {
-          const f = rows.find(r => r.subject === sub);
-          return f ? (f.score / f.full_score * 100).toFixed(1) : null;
-        };
-        const sS = rows.reduce((a, b) => a + b.score, 0);
-        const sF = rows.reduce((a, b) => a + b.full_score, 0);
-        ds.total.push(sF > 0 ? (sS / sF * 100).toFixed(1) : 0);
-        ds.sci.push(getP('วิทย์'));
-        ds.math.push(getP('คณิต'));
-        ds.eng.push(getP('อังกฤษ'));
-      });
-
-      if (ds.total.length > 0) {
-        const avg = ds.total.reduce((a, b) => +a + +b, 0) / ds.total.length;
-        document.getElementById('iTotalPct').innerText = avg.toFixed(1) + '%';
-      }
-
+    function renderProgressChart(mySc, tests, subjects) {
       if (chart) chart.destroy();
+      const labels = tests.map(t => `ครั้งที่ ${t}`);
+      const datasets = subjects.map((sub, idx) => ({
+        label: sub,
+        data: tests.map(t => { const r = mySc.find(m => m.test_number===t && m.subject===sub); return r ? +(r.score/r.full_score*100).toFixed(1) : null; }),
+        borderColor: subjectColor(sub, idx), borderWidth: 2, tension: 0.35, pointRadius: 4, spanGaps: true, fill: false
+      }));
+
+      const overallData = tests.map(t => {
+        const rows = mySc.filter(m => m.test_number===t);
+        const s = rows.reduce((a,b) => a + +b.score, 0), f = rows.reduce((a,b) => a + +b.full_score, 0);
+        return f > 0 ? +(s/f*100).toFixed(1) : null;
+      });
+      datasets.push({ label: 'ภาพรวม', data: overallData, borderColor: '#0f172a', borderWidth: 3, pointRadius: 5, fill: false, tension: 0.35, borderDash: [6,4] });
+
+      const allVals = datasets.flatMap(d => d.data).filter(v => v !== null);
+      const minVal = allVals.length ? Math.min(...allVals) : 0;
+      const yMin = minVal > 20 ? Math.floor((minVal-10)/10)*10 : 0;
+
       chart = new Chart(document.getElementById('progressChart'), {
         type: 'line',
-        data: {
-          labels: ds.labels,
-          datasets: [
-            { label: 'รวม', data: ds.total, borderColor: '#0f172a', borderWidth: 4, tension: 0.4, pointRadius: 6, fill: false },
-            { label: 'วิทย์', data: ds.sci, borderColor: '#10b981', borderDash: [5, 5], tension: 0.4, fill: false },
-            { label: 'คณิต', data: ds.math, borderColor: '#3b82f6', borderDash: [5, 5], tension: 0.4, fill: false },
-            { label: 'อังกฤษ', data: ds.eng, borderColor: '#a855f7', borderDash: [5, 5], tension: 0.4, fill: false }
-          ]
-        },
+        data: { labels, datasets },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           scales: {
-            y: { min: 0, max: 100 }
+            y: { min: yMin, max: 100, ticks: { font:{size:10}, callback: v => v+'%' }, grid: { color:'rgba(0,0,0,0.04)' } },
+            x: { ticks: { font:{size:10} }, grid: { display:false } }
           },
-          plugins: {
-            legend: { display: true, position: 'bottom' }
+          plugins: { legend: { position:'bottom', labels: { boxWidth:8, font:{size:10,weight:'bold'}, padding:10 } } }
+        },
+        plugins: [{
+          id: 'line60',
+          beforeDraw(c) {
+            const {ctx, chartArea:{left,right}, scales:{y}} = c;
+            const yPos = y.getPixelForValue(60);
+            ctx.save(); ctx.strokeStyle='#ef4444'; ctx.setLineDash([5,5]); ctx.lineWidth=1.2; ctx.globalAlpha=0.5;
+            ctx.beginPath(); ctx.moveTo(left,yPos); ctx.lineTo(right,yPos); ctx.stroke(); ctx.restore();
           }
-        }
+        }]
       });
     }
 
-    function toggleLine(idx) {
-      if (!chart) return;
-      chart.getDatasetMeta(idx).hidden = !chart.getDatasetMeta(idx).hidden;
-      event.target.classList.toggle('active');
-      chart.update();
+    function renderBySubject(mySc, subjects, nickname) {
+      document.getElementById('iScoreList').innerHTML = subjects.map((sub, idx) => {
+        const subRows = mySc.filter(m => m.subject === sub);
+        if (!subRows.length) return '';
+        const color = subjectColor(sub, idx);
+        const rows = subRows.map(row => {
+          const pct = row.full_score > 0 ? row.score/row.full_score*100 : 0;
+          return `<tr>
+            <td style="color:#94a3b8;font-weight:700;width:46px;">T${row.test_number}</td>
+            <td style="color:#0f172a;">${row.topic || '-'}</td>
+            <td style="text-align:center;color:#475569;font-weight:700;">${row.score}/${row.full_score}</td>
+            <td style="text-align:right;"><span class="pct-text ${pct>=60?'pct-pass':'pct-fail'}">${pct.toFixed(0)}%</span></td>
+          </tr>`;
+        }).join('');
+        const capId = `cap-${sub.replace(/\s/g,'_')}`;
+        return `<div class="subj-section" id="${capId}">
+          <div class="subj-head">
+            <h3 class="subj-ttl"><span class="subj-line" style="background:${color};"></span>วิชา${sub}</h3>
+            <button class="save-small" onclick="saveElement('${capId}','${sub}_${nickname}')">📸 บันทึก</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="score-tbl">
+              <thead><tr><th style="width:46px;">ครั้ง</th><th>เนื้อหา</th><th style="text-align:center;">คะแนน</th><th style="text-align:right;">%</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join('');
     }
 
-    async function saveSubjectImage(subject, nickname) {
-      const target = document.getElementById(`capture-${subject}`);
-      const btn = target.querySelector('button');
-      if (btn) btn.style.visibility = 'hidden';
+    function renderSummaryTable(mySc, tests, subjects) {
+      const headerHtml = `<tr>
+        <th style="width:60px;">ครั้งที่</th>
+        ${subjects.map(s => `<th style="text-align:center;">${s}</th>`).join('')}
+        <th style="text-align:right;">รวม</th>
+      </tr>`;
 
+      const rowsHtml = tests.map(t => {
+        let rs=0, rf=0;
+        const cells = subjects.map(sub => {
+          const row = mySc.find(m => m.test_number===t && m.subject===sub);
+          if (row) {
+            const p = row.score/row.full_score*100;
+            rs += +row.score; rf += +row.full_score;
+            return `<td style="text-align:center;"><span class="pct-text ${p>=60?'pct-pass':'pct-fail'}">${p.toFixed(0)}%</span></td>`;
+          }
+          return `<td style="text-align:center;color:#cbd5e1;">-</td>`;
+        }).join('');
+        const tp = rf>0 ? (rs/rf*100).toFixed(0) : 0;
+        return `<tr>
+          <td style="font-weight:700;color:#0f172a;">ครั้งที่ ${t}</td>
+          ${cells}
+          <td style="text-align:right;"><span class="pct-text pct-total">${tp}%</span></td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('iScoreList').innerHTML = `<div class="subj-section" id="cap-summary">
+        <div class="subj-head">
+          <h3 class="subj-ttl"><span class="subj-line" style="background:#6366f1;"></span>ตารางสรุปคะแนน</h3>
+          <button class="save-small" onclick="saveElement('cap-summary','สรุปคะแนน')">📸 บันทึก</button>
+        </div>
+        <div class="tbl-wrap">
+          <table class="score-tbl">
+            <thead>${headerHtml}</thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+
+    /* ===== SAVE IMAGE ===== */
+    async function saveElement(id, name) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const btns = el.querySelectorAll('button');
+      btns.forEach(b => b.style.visibility = 'hidden');
       try {
-        const canvas = await html2canvas(target, {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false
-        });
+        const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#ffffff', logging: false });
         const link = document.createElement('a');
-        link.download = `คะแนน${subject}_${nickname}.png`;
+        link.download = `Qtutor_${name}.png`;
         link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
-      } catch (err) {
-        console.error('Error saving subject image:', err);
-      } finally {
-        if (btn) btn.style.visibility = 'visible';
-      }
+      } finally { btns.forEach(b => b.style.visibility = 'visible'); }
     }
 
-    // ===== PDF EXPORT =====
-    // NOTE: jsPDF does not natively support Thai (Kanit) font without embedding.
-    // Thai text sections use html2canvas capture for accurate rendering.
-    async function exportToPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'mm', 'a4');
-
-      if (currentView === 'ranking') {
-        await exportRankingToPDF(doc);
-      } else {
-        await exportIndividualToPDF(doc);
-      }
-
-      // Build a descriptive filename
-      const courseLabel = document.getElementById('courseSelect').options[document.getElementById('courseSelect').selectedIndex]?.text || 'Course';
-      const studentLabel = currentView === 'individual'
-        ? (document.getElementById('studentSelect').options[document.getElementById('studentSelect').selectedIndex]?.text || 'Student')
-        : 'Ranking';
-      doc.save(`Qtutor_${courseLabel}_${studentLabel}_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.pdf`);
-    }
-
-    // Capture an element as a PDF page image (handles Thai font correctly via html2canvas)
-    async function captureElementToPage(doc, element, isFirstPage) {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-      const imgData = canvas.toDataURL('image/png', 0.95);
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 10;
-      const availW = pageWidth - margin * 2;
-      const imgH = (canvas.height / canvas.width) * availW;
-
-      if (!isFirstPage) doc.addPage();
-
-      // If image is taller than a page, scale to fit
-      const finalH = imgH > (pageHeight - margin * 2) ? (pageHeight - margin * 2) : imgH;
-      doc.addImage(imgData, 'PNG', margin, margin, availW, finalH);
-    }
-
-    async function exportRankingToPDF(doc) {
-      // Capture hero + topics area
-      const heroEl = document.querySelector('.hero-card');
-      const summaryEl = document.querySelector('.class-summary');
-      const rankingEl = document.querySelector('.ranking-container');
-
-      // Hide no-print elements temporarily
-      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'hidden');
-
+    async function saveCurrentView() {
+      const elId = currentView === 'ranking' ? 'rankingView' : 'individualView';
+      const el = document.getElementById(elId);
+      const btns = el.querySelectorAll('button');
+      btns.forEach(b => b.style.visibility = 'hidden');
+      const code = document.getElementById('courseSelect').value;
+      const sid = document.getElementById('studentSelect').value;
+      const s = students.find(x => x.id == sid);
+      const name = currentView === 'ranking' ? `Ranking_${code}` : `Individual_${s ? s.nickname : 'Student'}`;
       try {
-        await captureElementToPage(doc, summaryEl, true);
-        await captureElementToPage(doc, heroEl, false);
-        if (rankingEl) await captureElementToPage(doc, rankingEl, false);
-      } finally {
-        document.querySelectorAll('.no-print').forEach(el => el.style.visibility = '');
-      }
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#f8fafc', logging: false });
+        const link = document.createElement('a');
+        link.download = `${name}.png`;
+        link.href = canvas.toDataURL('image/png', 0.95);
+        link.click();
+      } finally { btns.forEach(b => b.style.visibility = 'visible'); }
     }
 
-    async function exportIndividualToPDF(doc) {
-      const heroEl = document.querySelector('.individual-hero');
-      const chartEl = document.querySelector('.progress-chart-container');
-      const subjects = ['วิทย์', 'คณิต', 'อังกฤษ'];
+    /* ===== SIDEBAR ===== */
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+    function logout() { if (confirm('ออกจากระบบ?')) location.href = 'login.html'; }
 
-      document.querySelectorAll('.no-print').forEach(el => el.style.visibility = 'hidden');
-
-      try {
-        if (heroEl) await captureElementToPage(doc, heroEl, true);
-        if (chartEl) await captureElementToPage(doc, chartEl, false);
-
-        for (const sub of subjects) {
-          const section = document.getElementById(`capture-${sub}`);
-          if (section) await captureElementToPage(doc, section, false);
-        }
-      } finally {
-        document.querySelectorAll('.no-print').forEach(el => el.style.visibility = '');
-      }
-
-      return doc;
-    }
-
-    // ===== UI INTERACTIONS =====
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-    }
-
-    function closeSidebar() {
-      document.getElementById('sidebar').classList.remove('open');
-    }
-
-    function logout() {
-      if (confirm('ออกจากระบบ?')) {
-        window.location.href = 'login.html';
-      }
-    }
-
-    // Initialize
     init();
   </script>
 </body>
