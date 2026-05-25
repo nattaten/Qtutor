@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>นักเรียน - Qtutor Admin</title>
+  <title>จัดการนักเรียน - Qtutor Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,23 +25,17 @@
     .toast.success { background: #d1fae5; color: #065f46; }
     .toast.error   { background: #fee2e2; color: #991b1b; }
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal { background: #fff; border-radius: 24px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); }
-
-    @media (max-width: 768px) {
-      .sidebar { position: fixed; z-index: 150; left: -240px; height: 100vh; }
-      .sidebar.open { left: 0; }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 140; backdrop-filter: blur(2px); }
-      .overlay.open { display: block; }
-      #tableWrap { overflow-x: auto; }
-      table { min-width: 800px; }
-      .toast { left: 50%; right: auto; transform: translate(-50%, 80px); width: 90%; text-align: center; }
-      .toast.show { transform: translate(-50%, 0); }
-    }
+    .modal { background: #fff; border-radius: 24px; padding: 28px; width: 100%; max-width: 500px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+    
+    /* สไตล์สำหรับ Checkbox คอร์ส */
+    .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 2px solid #f1f5f9; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+    .checkbox-item:hover { background: #f8fafc; }
+    .checkbox-item.active { border-color: #6366f1; background: #f5f3ff; }
   </style>
 </head>
 <body class="bg-slate-50 flex overflow-x-hidden">
 
-  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+  <div id="overlay" class="fixed inset-0 bg-black/50 z-[140] hidden md:hidden" onclick="closeSidebar()"></div>
 
   <aside id="sidebar" class="sidebar flex flex-col">
     <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
@@ -49,172 +43,182 @@
         <h1 class="text-2xl font-black text-white">Qtutor</h1>
         <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
       </div>
-      <button onclick="closeSidebar()" class="md:hidden text-slate-400">✕</button>
+      <button onclick="closeSidebar()" class="md:hidden text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
     <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
+      <a href="dashboard.html" class="nav-item "><span>📊</span> ภาพรวม</a>
       <a href="scores.html"    class="nav-item"><span>📝</span> จัดการคะแนน</a>
       <a href="students.html"  class="nav-item active"><span>👥</span> นักเรียน</a>
       <a href="courses.html"   class="nav-item"><span>📚</span> คอร์สเรียน</a>
       <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
       <a href="export.html"    class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
-    <div class="px-3 py-4 border-t border-slate-800">
-      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10"><span>🚪</span> ออกจากระบบ</button>
-    </div>
+    
   </aside>
 
   <div class="flex-1 flex flex-col min-h-screen min-w-0">
     <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between sticky top-0 z-10">
       <div class="flex items-center gap-3">
-        <button onclick="openSidebar()" class="md:hidden text-slate-500 bg-slate-50 p-2 rounded-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <h2 class="text-lg font-black text-slate-800">👥 นักเรียน</h2>
+        <button onclick="openSidebar()" class="md:hidden text-slate-500 bg-slate-50 p-2 rounded-lg">☰</button>
+        <h2 class="text-lg font-black text-slate-800">👥 จัดการนักเรียน</h2>
       </div>
       <button onclick="openModal()" class="btn-primary text-sm">+ เพิ่มนักเรียน</button>
     </div>
 
-    <main class="flex-1 p-5 md:p-6 space-y-5 max-w-5xl">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200">
-            <p class="text-xs font-bold uppercase opacity-80 mb-1">จำนวนนักเรียนทั้งหมด</p>
-            <h3 id="summaryTotal" class="text-3xl font-black">0 คน</h3>
-        </div>
-        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <p class="text-xs font-bold text-slate-400 uppercase mb-1">ค้นพบจากการกรอง</p>
-            <h3 id="summaryFiltered" class="text-3xl font-black text-slate-800">0 คน</h3>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+    <main class="flex-1 p-5 md:p-6 space-y-5">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-4 items-end">
         <div class="flex-1 w-full">
           <label class="field-label">กรองตามคอร์ส</label>
           <select id="filterCourse" onchange="loadStudents()" class="input"><option value="">-- ทั้งหมด --</option></select>
         </div>
         <div class="flex-1 w-full">
-          <label class="field-label">ค้นหาชื่อ / nickname</label>
+          <label class="field-label">ค้นหาชื่อ/ชื่อเล่น</label>
           <input id="searchInput" type="text" placeholder="พิมพ์เพื่อค้นหา..." class="input" oninput="renderTable()" />
         </div>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div id="tableWrap">
-          <p class="text-center text-slate-400 py-12 text-sm">กำลังโหลดข้อมูล...</p>
+        <div id="tableWrap" class="overflow-x-auto">
+          <p class="text-center text-slate-400 py-12">กำลังโหลดข้อมูลนักเรียน...</p>
         </div>
       </div>
     </main>
   </div>
 
-  <div id="toast" class="toast"></div>
-
   <div id="modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeModal()">
     <div class="modal">
-      <div class="flex items-center justify-between mb-6">
-        <h3 id="modalTitle" class="text-xl font-black text-slate-800">เพิ่มนักเรียน</h3>
-        <button onclick="closeModal()" class="text-slate-400 text-2xl">&times;</button>
-      </div>
+      <h3 id="modalTitle" class="text-xl font-black text-slate-800 mb-6">ข้อมูลนักเรียน</h3>
       <input type="hidden" id="editId" />
       <div class="space-y-4">
-        <div>
-          <label class="field-label">คอร์ส <span class="text-red-400">*</span></label>
-          <select id="modalCourse" class="input"><option value="">-- เลือกคอร์ส --</option></select>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="field-label">ชื่อเล่น *</label><input id="modalNickname" type="text" class="input" /></div>
+          <div><label class="field-label">ชื่อ-นามสกุล</label><input id="modalFullname" type="text" class="input" /></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="field-label">ชื่อจริง</label><input id="modalFullname" type="text" class="input" /></div>
-          <div><label class="field-label">ชื่อเล่น <span class="text-red-400">*</span></label><input id="modalNickname" type="text" class="input" /></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="field-label">โรงเรียน</label><input id="modalSchool" type="text" class="input" /></div>
           <div><label class="field-label">เบอร์โทร</label><input id="modalPhone" type="text" class="input" /></div>
+          <div><label class="field-label">โรงเรียน</label><input id="modalSchool" type="text" class="input" /></div>
         </div>
+        
+        <div>
+          <label class="field-label">คอร์สที่ลงทะเบียน</label>
+          <div id="courseCheckboxes" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-1 border border-slate-100 rounded-xl">
+            </div>
+        </div>
+
         <div><label class="field-label">หมายเหตุ</label><input id="modalNote" type="text" class="input" /></div>
       </div>
       <div class="flex gap-3 mt-8">
         <button onclick="closeModal()" class="flex-1 bg-slate-50 text-slate-500 font-bold rounded-xl py-3">ยกเลิก</button>
-        <button onclick="saveStudent()" id="modalSaveBtn" class="flex-1 btn-primary">💾 บันทึก</button>
+        <button onclick="saveStudent()" id="modalSaveBtn" class="flex-1 btn-primary">💾 บันทึกข้อมูล</button>
       </div>
     </div>
   </div>
+
+  <div id="toast" class="toast"></div>
 
   <script>
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allStudents = [];
-    let courses = [];
+    let coursesList = [];
+    let studentsData = [];
 
     async function init() {
-      const { data } = await db.from('courses').select('course_code, course_name').order('created_at', { ascending: false });
-      courses = data || [];
+      // 1. โหลดข้อมูลคอร์สก่อนเพื่อนำมาทำ Checkbox และ Map ชื่อ
+      const { data: courses } = await db.from('courses').select('course_code, course_name').order('sort_order', { ascending: true });
+      coursesList = courses || [];
+      
       const filterSel = document.getElementById('filterCourse');
-      const modalSel = document.getElementById('modalCourse');
-      courses.forEach(c => {
-        const opt = `<option value="${c.course_code}">${c.course_name}</option>`;
-        filterSel.innerHTML += opt;
-        modalSel.innerHTML += opt;
+      const checkContainer = document.getElementById('courseCheckboxes');
+      
+      coursesList.forEach(c => {
+        filterSel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`;
+        checkContainer.innerHTML += `
+          <label class="checkbox-item" id="label-${c.course_code}">
+            <input type="checkbox" name="courses" value="${c.course_code}" onchange="this.parentElement.classList.toggle('active', this.checked)">
+            <span class="text-sm font-semibold text-slate-600">${c.course_name}</span>
+          </label>`;
       });
+
       await loadStudents();
     }
 
     async function loadStudents() {
-      const code = document.getElementById('filterCourse').value;
+      // ดึงข้อมูลนักเรียนพร้อมกับรายการจากตาราง enrollments
+      const { data, error } = await db.from('students').select('*, enrollments(course_code)').order('nickname');
       
-      // ดึงจำนวนทั้งหมด (ไม่สน Filter คอร์ส) มาแสดงในสรุปสีม่วง
-      const { count: totalCount } = await db.from('students').select('*', { count: 'exact', head: true });
-      document.getElementById('summaryTotal').textContent = `${totalCount || 0} คน`;
+      if (error) {
+        console.error(error);
+        return;
+      }
 
-      let q = db.from('students').select('*').order('nickname');
-      if (code) q = q.eq('course_code', code);
-      const { data } = await q;
-      allStudents = data || [];
+      // Map ข้อมูลเพื่อเก็บรายชื่อคอร์สที่เป็นภาษาไทย
+      studentsData = data.map(s => {
+        const myCodes = s.enrollments.map(e => e.course_code);
+        const myNames = coursesList
+          .filter(c => myCodes.includes(c.course_code))
+          .map(c => c.course_name);
+        
+        return { ...s, myCodes, myNames };
+      });
+
       renderTable();
     }
 
     function renderTable() {
+      const filterCode = document.getElementById('filterCourse').value;
       const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-      const filtered = allStudents.filter(s => 
-        (s.nickname || '').toLowerCase().includes(keyword) || 
-        (s.full_name || '').toLowerCase().includes(keyword) ||
-        (s.school || '').toLowerCase().includes(keyword)
-      );
       
-      document.getElementById('summaryFiltered').textContent = `${filtered.length} คน`;
-
-      if (!filtered.length) {
-        document.getElementById('tableWrap').innerHTML = '<p class="text-center text-slate-400 py-12 text-sm">ไม่พบข้อมูลนักเรียน</p>';
-        return;
+      let filtered = studentsData;
+      
+      // กรองตามคอร์ส
+      if (filterCode) {
+        filtered = filtered.filter(s => s.myCodes.includes(filterCode));
+      }
+      
+      // กรองตามคำค้นหา
+      if (keyword) {
+        filtered = filtered.filter(s => 
+          (s.nickname || '').toLowerCase().includes(keyword) || 
+          (s.full_name || '').toLowerCase().includes(keyword)
+        );
       }
 
-      const rows = filtered.map((s, index) => `
+      const rows = filtered.map((s, idx) => `
         <tr class="hover:bg-slate-50 border-b border-slate-50 transition-colors">
-          <td class="px-4 py-3 text-slate-400 font-bold text-center">${index + 1}</td>
-          <td class="px-4 py-3">
+          <td class="px-4 py-4 text-slate-400 font-bold text-center">${idx + 1}</td>
+          <td class="px-4 py-4">
             <p class="font-black text-slate-800 text-sm">${s.nickname || '-'}</p>
             <p class="text-[11px] text-slate-400">${s.full_name || '-'}</p>
           </td>
-          <td class="px-3 py-3 text-sm text-slate-600 font-bold">${s.course_code || '-'}</td>
-          <td class="px-3 py-3 text-sm text-slate-500">${s.school || '-'}</td>
-          <td class="px-3 py-3 text-sm text-slate-500 font-mono">${s.phone || '-'}</td>
-          <td class="px-3 py-3 text-xs text-slate-400 truncate max-w-[120px]">${s.note || '-'}</td>
-          <td class="px-3 py-3 text-right whitespace-nowrap">
-            <button onclick='editStudent(${JSON.stringify(s)})' class="btn-sm btn-edit mr-1">แก้ไข</button>
+          <td class="px-3 py-4">
+            <div class="flex flex-wrap gap-1">
+              ${s.myNames.map(name => `<span class="bg-indigo-50 text-indigo-600 text-[10px] px-2 py-0.5 rounded-md font-bold border border-indigo-100">${name}</span>`).join('') || '<span class="text-slate-300 text-[10px]">ไม่มีคอร์ส</span>'}
+            </div>
+          </td>
+          <td class="px-3 py-4 text-xs text-slate-500 font-medium">${s.school || '-'}</td>
+          <td class="px-3 py-4 text-xs text-slate-500 font-mono">${s.phone || '-'}</td>
+          <td class="px-4 py-4 text-right">
+            <button onclick='openModal(${JSON.stringify(s)})' class="btn-sm btn-edit mr-1">แก้ไข</button>
             <button onclick="deleteStudent(${s.id}, '${s.nickname}')" class="btn-sm btn-danger">ลบ</button>
           </td>
         </tr>`).join('');
 
       document.getElementById('tableWrap').innerHTML = `
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 border-b border-slate-100 text-left text-[11px] font-black text-slate-400 uppercase">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase">
             <tr>
               <th class="px-4 py-3 text-center w-12">No.</th>
               <th class="px-4 py-3">นักเรียน</th>
-              <th class="px-3 py-3">คอร์ส</th>
+              <th class="px-3 py-3">คอร์สที่ลงเรียน</th>
               <th class="px-3 py-3">โรงเรียน</th>
-              <th class="px-3 py-3">เบอร์</th>
-              <th class="px-3 py-3">หมายเหตุ</th>
-              <th class="px-3 py-3 w-24"></th>
+              <th class="px-3 py-3">เบอร์โทร</th>
+              <th class="px-4 py-3 w-28"></th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -223,67 +227,105 @@
 
     function openModal(s = null) {
       document.getElementById('editId').value = s ? s.id : '';
-      document.getElementById('modalCourse').value = s ? s.course_code : '';
       document.getElementById('modalNickname').value = s ? (s.nickname || '') : '';
       document.getElementById('modalFullname').value = s ? (s.full_name || '') : '';
-      document.getElementById('modalSchool').value = s ? (s.school || '') : '';
       document.getElementById('modalPhone').value = s ? (s.phone || '') : '';
+      document.getElementById('modalSchool').value = s ? (s.school || '') : '';
       document.getElementById('modalNote').value = s ? (s.note || '') : '';
+      
+      // จัดการ Checkboxes
+      const checks = document.querySelectorAll('input[name="courses"]');
+      checks.forEach(c => {
+        c.checked = s ? s.myCodes.includes(c.value) : false;
+        c.parentElement.classList.toggle('active', c.checked);
+      });
+
       document.getElementById('modalTitle').textContent = s ? 'แก้ไขข้อมูลนักเรียน' : 'เพิ่มนักเรียนใหม่';
       document.getElementById('modal').classList.remove('hidden');
     }
 
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-    function editStudent(s) { openModal(s); }
-
     async function saveStudent() {
       const id = document.getElementById('editId').value;
       const nickname = document.getElementById('modalNickname').value.trim();
-      const course = document.getElementById('modalCourse').value;
+      const selectedCodes = Array.from(document.querySelectorAll('input[name="courses"]:checked')).map(c => c.value);
       
-      if (!nickname || !course) return showToast('กรุณากรอกชื่อเล่นและเลือกคอร์ส', 'error');
-
-      const payload = {
-        nickname, 
-        course_code: course,
-        full_name: document.getElementById('modalFullname').value.trim() || null,
-        school: document.getElementById('modalSchool').value.trim() || null,
-        phone: document.getElementById('modalPhone').value.trim() || null,
-        note: document.getElementById('modalNote').value.trim() || null
-      };
+      if (!nickname) return showToast('กรุณาระบุชื่อเล่น', 'error');
 
       const btn = document.getElementById('modalSaveBtn');
       btn.disabled = true; btn.textContent = '⏳ กำลังบันทึก...';
 
-      const { error } = id ? await db.from('students').update(payload).eq('id', id) : await db.from('students').insert(payload);
-      
-      btn.disabled = false; btn.textContent = '💾 บันทึก';
-      
-      if (!error) { 
-        showToast('✅ บันทึกข้อมูลสำเร็จ'); 
-        closeModal(); 
-        await loadStudents(); 
-      } else { 
-        showToast('❌ ผิดพลาด: ' + error.message, 'error'); 
+      const payload = {
+        nickname,
+        full_name: document.getElementById('modalFullname').value.trim() || null,
+        phone: document.getElementById('modalPhone').value.trim() || null,
+        school: document.getElementById('modalSchool').value.trim() || null,
+        note: document.getElementById('modalNote').value.trim() || null
+      };
+
+      try {
+        let studentId = id;
+        
+        // 1. บันทึกข้อมูลตาราง students
+        if (id) {
+          await db.from('students').update(payload).eq('id', id);
+        } else {
+          const { data, error } = await db.from('students').insert(payload).select().single();
+          if (error) throw error;
+          studentId = data.id;
+        }
+
+        // 2. บันทึกข้อมูลตาราง enrollments (ลบของเก่าแล้วใส่ใหม่ตามที่เลือก)
+        await db.from('enrollments').delete().eq('student_id', studentId);
+        
+        if (selectedCodes.length > 0) {
+          const enrollInserts = selectedCodes.map(code => ({
+            student_id: studentId,
+            course_code: code
+          }));
+          const { error: enrollErr } = await db.from('enrollments').insert(enrollInserts);
+          if (enrollErr) throw enrollErr;
+        }
+
+        showToast('✅ บันทึกข้อมูลสำเร็จ');
+        closeModal();
+        await loadStudents();
+      } catch (e) {
+        console.error(e);
+        showToast('❌ ผิดพลาด: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 บันทึกข้อมูล';
       }
     }
 
-    async function deleteStudent(id, nickname) {
-      if (!confirm(`คุณต้องการลบนักเรียน "${nickname}" ใช่หรือไม่? (ข้อมูลคะแนนจะถูกลบด้วย)`)) return;
-      await db.from('test_scores').delete().eq('student_id', id);
-      const { error } = await db.from('students').delete().eq('id', id);
-      if (!error) { showToast('✅ ลบนักเรียนสำเร็จ'); await loadStudents(); }
+    async function deleteStudent(id, name) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบนักเรียน "${name}"? ข้อมูลการลงทะเบียนจะถูกลบทั้งหมด`)) return;
+      
+      try {
+        // ลบข้อมูลพ่วงก่อน (Enrollments และ Scores)
+        await db.from('enrollments').delete().eq('student_id', id);
+        await db.from('test_scores').delete().eq('student_id', id);
+        
+        // ลบนักเรียน
+        const { error } = await db.from('students').delete().eq('id', id);
+        if (error) throw error;
+
+        showToast('✅ ลบข้อมูลสำเร็จ');
+        await loadStudents();
+      } catch (e) {
+        showToast('❌ ลบไม่สำเร็จ: ' + e.message, 'error');
+      }
     }
 
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    
     function showToast(m, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = m; t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-    function logout() { if(confirm('ออกจากระบบ?')) { sessionStorage.clear(); location.href='index.html'; } }
+    function openSidebar() { document.getElementById('sidebar').style.left = '0'; document.getElementById('overlay').classList.remove('hidden'); }
+    function closeSidebar() { document.getElementById('sidebar').style.left = '-240px'; document.getElementById('overlay').classList.add('hidden'); }
 
     init();
   </script>
