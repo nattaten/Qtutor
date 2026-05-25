@@ -4,125 +4,201 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>คอร์สเรียน - Qtutor Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
-    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; transition: all 0.3s; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
-    .nav-item:hover { background: #1e293b; color: #e2e8f0; }
-    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
-    .field-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
-    .input { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; }
-    .input:focus { outline: none; border-color: #6366f1; }
-    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 14px; padding: 10px 22px; transition: all 0.15s; border: none; cursor: pointer; font-size: 14px; }
-    .btn-sm { font-weight: 700; border-radius: 10px; padding: 8px 12px; font-size: 13px; border: none; cursor: pointer; transition: all 0.15s; }
+    * { font-family: 'Kanit', sans-serif !important; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #f8fafc; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+      width: 240px; position: fixed; top: 0; left: -240px; height: 100vh;
+      z-index: 200; display: flex; flex-direction: column;
+      transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 150;
+      backdrop-filter: blur(3px);
+    }
+    .overlay.show { display: block; }
+    @media (min-width: 1024px) {
+      .sidebar { left: 0; }
+      .overlay { display: none !important; }
+      .content { margin-left: 240px; }
+      .menu-toggle { display: none !important; }
+    }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px; color: #94a3b8; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s; text-decoration: none; margin-bottom: 2px; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .nav-item.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
+
+    /* ===== COMPONENTS ===== */
+    .field-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; display: block; }
+    .inp { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 11px 13px; font-size: 14px; font-weight: 600; color: #1e293b; width: 100%; transition: border-color 0.15s; }
+    .inp:focus { outline: none; border-color: #6366f1; background: #fff; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-weight: 900; border-radius: 12px; padding: 12px 20px; transition: all 0.15s; border: none; cursor: pointer; font-size: 14px; touch-action: manipulation; }
+    .btn-primary:active { opacity: 0.8; transform: scale(0.97); }
+    .btn-sm { font-weight: 700; border-radius: 9px; padding: 9px 14px; font-size: 13px; border: none; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+    .btn-sm:active { opacity: 0.7; }
     .btn-edit   { background: #ede9fe; color: #6d28d9; }
     .btn-danger { background: #fee2e2; color: #dc2626; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 200; padding: 14px 20px; border-radius: 16px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; transform: translateY(80px); opacity: 0; }
-    .toast.show { transform: translateY(0); opacity: 1; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); z-index: 400; padding: 13px 22px; border-radius: 14px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.3s; opacity: 0; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.success { background: #d1fae5; color: #065f46; }
     .toast.error   { background: #fee2e2; color: #991b1b; }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal { background: #fff; border-radius: 24px; padding: 24px; width: 100%; max-width: 550px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+      z-index: 300; display: flex; align-items: flex-end; justify-content: center;
+      padding: 0;
+    }
+    @media (min-width: 560px) {
+      .modal-backdrop { align-items: center; padding: 16px; }
+    }
+    .modal {
+      background: #fff; border-radius: 24px 24px 0 0; padding: 24px 20px 32px;
+      width: 100%; max-width: 560px; max-height: 95vh; overflow-y: auto;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+    }
+    @media (min-width: 560px) {
+      .modal { border-radius: 24px; padding: 28px; }
+    }
+    .modal-drag { width: 40px; height: 4px; background: #e2e8f0; border-radius: 2px; margin: 0 auto 20px; }
+    @media (min-width: 560px) { .modal-drag { display: none; } }
+
+    /* ===== COURSE CARD ===== */
+    .course-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; overflow: hidden; }
+    .course-card-body { padding: 16px; }
+    .course-card-actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #f8fafc; }
+    .course-card-actions .btn-sm { flex: 1; text-align: center; }
   </style>
 </head>
-<body class="bg-slate-50 flex overflow-x-hidden">
+<body>
 
-  <div id="overlay" class="fixed inset-0 bg-black/50 z-[140] hidden md:hidden" onclick="closeSidebar()"></div>
+  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
 
-  <aside id="sidebar" class="sidebar flex flex-col">
-    <div class="px-5 py-6 border-b border-slate-800 flex justify-between items-center">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div style="padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
       <div>
-        <h1 class="text-2xl font-black text-white">Qtutor</h1>
-        <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
+        <div style="font-size:22px;font-weight:900;color:#fff;">Qtutor</div>
+        <div style="font-size:10px;color:#64748b;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px;">Admin Panel</div>
       </div>
-      <button onclick="closeSidebar()" class="md:hidden text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <button onclick="closeSidebar()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;padding:4px;line-height:1;">✕</button>
     </div>
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item "><span>📊</span> ภาพรวม</a>
+    <nav style="flex:1;padding:12px 10px;overflow-y:auto;">
+      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
       <a href="scores.html"    class="nav-item"><span>📝</span> จัดการคะแนน</a>
-      <a href="students.html"  class="nav-item active"><span>👥</span> นักเรียน</a>
-      <a href="courses.html"   class="nav-item"><span>📚</span> คอร์สเรียน</a>
-      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="students.html"  class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html"   class="nav-item active"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา</a>
       <a href="export.html"    class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
-    
+    <div style="padding:12px 10px 20px;border-top:1px solid rgba(255,255,255,0.08);">
+      <button onclick="logout()" style="width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;border:none;background:rgba(239,68,68,0.1);color:#f87171;font-weight:700;font-size:13px;cursor:pointer;">🚪 ออกจากระบบ</button>
+    </div>
   </aside>
 
-  <div class="flex-1 flex flex-col min-h-screen">
-    <div class="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between sticky top-0 z-10">
-      <div class="flex items-center gap-3">
-        <button onclick="openSidebar()" class="md:hidden text-slate-500 bg-slate-50 p-2 rounded-lg">☰</button>
-        <h2 class="text-lg font-black text-slate-800">📚 คอร์สเรียน</h2>
-      </div>
-      <button onclick="openModal()" class="btn-primary text-sm">+ สร้างคอร์ส</button>
-    </div>
-
-    <main class="flex-1 p-4 md:p-6 max-w-5xl">
-      <div id="courseGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <!-- Content -->
+  <div class="content" style="min-height:100vh;display:flex;flex-direction:column;">
+    <!-- Header -->
+    <header style="background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 16px;position:sticky;top:0;z-index:40;box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+      <div style="display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:0 auto;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="menu-toggle" onclick="openSidebar()" style="background:#f1f5f9;border:none;padding:9px 12px;border-radius:10px;font-size:18px;cursor:pointer;line-height:1;">☰</button>
+          <span style="font-size:16px;font-weight:900;color:#0f172a;">📚 คอร์สเรียน</span>
         </div>
+        <button onclick="openModal()" class="btn-primary" style="font-size:13px;padding:10px 18px;">+ สร้างคอร์ส</button>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:16px;max-width:900px;width:100%;margin:0 auto;">
+      <div id="courseGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+        <div style="grid-column:1/-1;text-align:center;padding:40px 0;color:#94a3b8;font-weight:600;">กำลังโหลด...</div>
+      </div>
     </main>
   </div>
 
-  <div id="modal" class="modal-backdrop hidden" onclick="if(event.target===this) closeModal()">
+  <!-- Course Modal -->
+  <div id="modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this) closeModal()">
     <div class="modal">
-      <h3 id="modalTitle" class="text-xl font-black text-slate-800 mb-6">สร้างคอร์ส</h3>
+      <div class="modal-drag"></div>
+      <h3 id="modalTitle" style="font-size:18px;font-weight:900;color:#0f172a;margin:0 0 20px;">สร้างคอร์ส</h3>
       <input type="hidden" id="editId" />
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="field-label">รหัสคอร์ส *</label><input id="modalCode" type="text" class="input font-mono" /></div>
-          <div><label class="field-label">ชื่อคอร์ส *</label><input id="modalName" type="text" class="input" /></div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label class="field-label">รหัสคอร์ส *</label><input id="modalCode" type="text" class="inp" style="font-family:monospace;font-size:13px;" /></div>
+          <div><label class="field-label">ชื่อคอร์ส *</label><input id="modalName" type="text" class="inp" /></div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="field-label">ระดับชั้น</label><input id="modalLevel" type="text" class="input" /></div>
-          <div><label class="field-label">ลำดับแสดงผล</label><input id="modalSort" type="number" class="input" /></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label class="field-label">ระดับชั้น</label>
+            <select id="modalLevel" class="inp">
+            <option value="สอบเข้า ม.1">สอบเข้า ม.1</option>
+            <option value="สอบเข้า ม.4">สอบเข้า ม.4</option>
+            <option value="ม.1">ม.1</option>
+            <option value="ม.2">ม.2</option>
+            <option value="ม.3">ม.3</option>
+          </select>
+          </div>
+          <div><label class="field-label">ลำดับแสดงผล</label><input id="modalSort" type="number" class="inp" /></div>
         </div>
         <div>
           <label class="field-label">โหมดแสดงคะแนน</label>
-          <select id="modalScoreMode" class="input">
-            <option value="total">แสดงคะแนนรวม (Total)</option>
-            <option value="by_subject">แสดงแยกรายวิชา (By Subject)</option>
+          <select id="modalScoreMode" class="inp">
+            <option value="total">แสดงคะแนนรวม</option>
+            <option value="by_subject">แสดงแยกรายวิชา</option>
+            
           </select>
         </div>
-        <div><label class="field-label">สถานะ</label><select id="modalIsActive" class="input"><option value="true">เปิด</option><option value="false">ปิด</option></select></div>
+        <div>
+          <label class="field-label">สถานะ</label>
+          <select id="modalIsActive" class="inp">
+            <option value="true">เปิด</option>
+            <option value="false">ปิด</option>
+          </select>
+        </div>
       </div>
-      <div class="flex gap-3 mt-8">
-        <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">ยกเลิก</button>
-        <button onclick="saveCourse()" class="flex-1 btn-primary">💾 บันทึก</button>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button onclick="closeModal()" style="flex:1;background:#f1f5f9;color:#475569;font-weight:700;border-radius:12px;padding:13px;border:none;cursor:pointer;font-size:14px;">ยกเลิก</button>
+        <button onclick="saveCourse()" class="btn-primary" style="flex:1;">💾 บันทึก</button>
       </div>
     </div>
   </div>
 
-  <div id="subjectModal" class="modal-backdrop hidden" onclick="if(event.target===this) closeSubjectModal()">
-    <div class="modal max-w-lg">
-      <div class="mb-4">
-        <h3 class="text-xl font-black text-slate-800">📚 จัดการรายวิชา</h3>
-        <p id="subModalCourseName" class="text-xs text-indigo-500 font-bold"></p>
+  <!-- Subject Modal -->
+  <div id="subjectModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this) closeSubjectModal()">
+    <div class="modal">
+      <div class="modal-drag"></div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:18px;font-weight:900;color:#0f172a;">📚 จัดการรายวิชา</div>
+        <div id="subModalCourseName" style="font-size:11px;color:#6366f1;font-weight:700;margin-top:3px;"></div>
       </div>
-      
-      <div class="bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
-        <p id="subFormTitle" class="field-label">เพิ่มวิชาใหม่</p>
+
+      <!-- Add/edit form -->
+      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:16px;">
+        <div id="subFormTitle" class="field-label">เพิ่มวิชาใหม่</div>
         <input type="hidden" id="editSubId" />
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input id="newSubName" type="text" placeholder="ชื่อวิชา (เช่น คณิต)" class="input text-xs" />
-            <input id="newSubCode" type="text" placeholder="รหัสวิชา (เช่น mat)" class="input text-xs" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input id="newSubName" type="text" placeholder="ชื่อวิชา (เช่น คณิต)" class="inp" style="font-size:13px;" />
+          <input id="newSubCode" type="text" placeholder="รหัสวิชา (เช่น mat)" class="inp" style="font-size:13px;" />
         </div>
-        <div class="flex gap-2">
-            <input id="newSubSort" type="number" placeholder="ลำดับ" value="1" class="input text-xs w-20" />
-            <button onclick="saveSubject()" id="btnSubSave" class="btn-primary text-xs flex-1">＋ บันทึกวิชา</button>
-            <button onclick="resetSubForm()" id="btnSubCancel" class="hidden btn-sm bg-slate-200 text-slate-600 text-xs">ยกเลิก</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="newSubSort" type="number" placeholder="ลำดับ" value="1" class="inp" style="font-size:13px;width:70px;flex-shrink:0;" />
+          <button onclick="saveSubject()" id="btnSubSave" class="btn-primary" style="flex:1;font-size:13px;padding:11px 12px;">＋ บันทึกวิชา</button>
+          <button onclick="resetSubForm()" id="btnSubCancel" class="btn-sm" style="background:#e2e8f0;color:#475569;display:none;">ยกเลิก</button>
         </div>
       </div>
 
-      <div class="space-y-2 max-h-60 overflow-y-auto" id="subjectList"></div>
-      <button onclick="closeSubjectModal()" class="w-full mt-6 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">ปิด</button>
+      <div id="subjectList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;"></div>
+      <button onclick="closeSubjectModal()" style="width:100%;margin-top:18px;background:#f1f5f9;color:#475569;font-weight:700;border-radius:12px;padding:13px;border:none;cursor:pointer;font-size:14px;">ปิด</button>
     </div>
   </div>
 
@@ -139,81 +215,85 @@
 
     async function loadCourses() {
       const grid = document.getElementById('courseGrid');
-      grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">กำลังโหลด...</div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:#94a3b8;font-weight:600;">กำลังโหลด...</div>';
 
-      // 1. ดึงคอร์ส
       const { data: courses } = await db.from('courses').select('*').order('sort_order', { ascending: true });
-      // 2. ดึงการลงทะเบียนเพื่อนับจำนวนนักเรียน (จากตาราง enrollments)
       const { data: enrollments } = await db.from('enrollments').select('course_code');
-      
+
       const countMap = {};
       (enrollments || []).forEach(en => {
-        if(en.course_code) {
-          const code = en.course_code.toLowerCase().trim();
-          countMap[code] = (countMap[code] || 0) + 1;
+        if (en.course_code) {
+          const key = en.course_code.toLowerCase().trim();
+          countMap[key] = (countMap[key] || 0) + 1;
         }
       });
 
-      if (!courses || courses.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400">ยังไม่มีข้อมูลคอร์ส</div>';
+      if (!courses?.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:#94a3b8;font-weight:600;">ยังไม่มีคอร์ส</div>';
         return;
       }
 
       grid.innerHTML = courses.map(c => {
-        const key = (c.course_code || "").toLowerCase().trim();
+        const key = (c.course_code || '').toLowerCase().trim();
         const stuCount = countMap[key] || 0;
-        
+        const isActive = c.is_active !== false;
         return `
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col gap-4">
-            <div class="flex justify-between items-start">
-              <div class="min-w-0">
-                <p class="font-black text-slate-800 text-base truncate">${c.course_name}</p>
-                <p class="text-[10px] font-mono text-indigo-500">${c.course_code}</p>
+          <div class="course-card">
+            <div class="course-card-body">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px;">
+                <div style="min-width:0;">
+                  <div style="font-weight:900;color:#0f172a;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.course_name}</div>
+                  <div style="font-size:11px;font-weight:700;color:#6366f1;font-family:monospace;margin-top:2px;">${c.course_code}</div>
+                </div>
+                <span style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;flex-shrink:0;background:${isActive?'#d1fae5':'#f1f5f9'};color:${isActive?'#065f46':'#64748b'};">
+                  ${isActive ? 'เปิดอยู่' : 'ปิด'}
+                </span>
               </div>
-              <span class="badge ${c.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
-                ${c.is_active ? 'เปิดอยู่' : 'ปิด'}
-              </span>
+              <div style="display:flex;gap:20px;padding:10px 0;border-top:1px solid #f8fafc;border-bottom:1px solid #f8fafc;margin-bottom:0;">
+                <div><div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">นักเรียน</div><div style="font-weight:900;color:#0f172a;font-size:15px;">${stuCount} คน</div></div>
+                <div><div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">ระดับ</div><div style="font-weight:900;color:#0f172a;font-size:15px;">${c.level || '-'}</div></div>
+                <div><div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:2px;">โหมด</div><div style="font-weight:700;color:#475569;font-size:12px;">${c.score_display_mode || 'total'}</div></div>
+              </div>
             </div>
-            
-            <div class="flex gap-6 border-y border-slate-50 py-3">
-              <div><p class="text-[10px] text-slate-400 font-bold uppercase">นักเรียน</p><p class="font-black text-slate-700 text-sm">${stuCount} คน</p></div>
-              <div><p class="text-[10px] text-slate-400 font-bold uppercase">ระดับ</p><p class="font-black text-slate-700 text-sm">${c.level || '-'}</p></div>
-            </div>
-
-            <div class="flex gap-2">
-              <button onclick='openSubjectModal("${c.course_code}", "${c.course_name.replace(/'/g,"\\'")}")' class="flex-1 btn-sm bg-indigo-50 text-indigo-600">📚 วิชา</button>
-              <button onclick='editCourse(${JSON.stringify(c)})' class="btn-sm btn-edit">แก้ไข</button>
-              <button onclick="deleteCourse('${c.course_code}', '${c.course_name.replace(/'/g,"\\'")}')" class="btn-sm btn-danger">ลบ</button>
+            <div class="course-card-actions">
+              <button onclick='openSubjectModal("${c.course_code}", "${c.course_name.replace(/'/g, "\\'")}")' class="btn-sm" style="flex:1.5;background:#eef2ff;color:#4f46e5;text-align:center;">📚 วิชา</button>
+              <button onclick='editCourse(${JSON.stringify(c).replace(/'/g,"&#39;")})' class="btn-sm btn-edit" style="flex:1;text-align:center;">✏️ แก้ไข</button>
+              <button onclick="deleteCourse('${c.course_code}', '${c.course_name.replace(/'/g,"\\'")}')" class="btn-sm btn-danger" style="flex:1;text-align:center;">🗑️ ลบ</button>
             </div>
           </div>`;
       }).join('');
     }
 
-    // --- Subject Logic ---
+    /* ===== SUBJECT MODAL ===== */
     async function openSubjectModal(code, name) {
       currentCourseCode = code;
       document.getElementById('subModalCourseName').textContent = `คอร์ส: ${name} (${code})`;
-      document.getElementById('subjectModal').classList.remove('hidden');
+      document.getElementById('subjectModal').style.display = 'flex';
       resetSubForm();
       loadSubjects();
     }
-    function closeSubjectModal() { document.getElementById('subjectModal').classList.add('hidden'); }
+    function closeSubjectModal() { document.getElementById('subjectModal').style.display = 'none'; }
 
     async function loadSubjects() {
       const { data } = await db.from('subjects').select('*').eq('course_code', currentCourseCode).order('sort_order', { ascending: true });
       const listDiv = document.getElementById('subjectList');
-      if (!data?.length) { listDiv.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">ยังไม่มีรายวิชา</p>'; return; }
-      
+      if (!data?.length) {
+        listDiv.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:16px;">ยังไม่มีรายวิชา</div>';
+        return;
+      }
       listDiv.innerHTML = data.map(s => `
-        <div class="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
-            <div class="flex items-center gap-3">
-                <span class="text-[10px] bg-slate-100 w-6 h-6 flex items-center justify-center rounded-full font-bold">${s.sort_order}</span>
-                <div><p class="text-sm font-bold text-slate-700">${s.subject_name}</p><p class="text-[10px] font-mono text-slate-400">${s.subject_code}</p></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1.5px solid #f1f5f9;border-radius:12px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:10px;background:#f1f5f9;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:900;">${s.sort_order}</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#1e293b;">${s.subject_name}</div>
+              <div style="font-size:10px;font-family:monospace;color:#94a3b8;">${s.subject_code}</div>
             </div>
-            <div class="flex gap-1">
-                <button onclick='editSubject(${JSON.stringify(s)})' class="p-2 hover:bg-slate-50 rounded">✏️</button>
-                <button onclick="deleteSubject(${s.id})" class="text-rose-400 p-2 hover:bg-rose-50 rounded">✕</button>
-            </div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button onclick='editSubject(${JSON.stringify(s).replace(/'/g,"&#39;")})' style="padding:8px 10px;border:none;background:#f1f5f9;border-radius:8px;cursor:pointer;font-size:14px;">✏️</button>
+            <button onclick="deleteSubject(${s.id})" style="padding:8px 10px;border:none;background:#fee2e2;color:#dc2626;border-radius:8px;cursor:pointer;font-size:14px;">✕</button>
+          </div>
         </div>`).join('');
     }
 
@@ -222,11 +302,9 @@
       const name = document.getElementById('newSubName').value.trim();
       const code = document.getElementById('newSubCode').value.trim();
       const sort = parseInt(document.getElementById('newSubSort').value) || 0;
-      if (!name || !code) return showToast('กรุณากรอกข้อมูลให้ครบ', 'error');
-
+      if (!name || !code) return showToast('กรุณากรอกชื่อและรหัสวิชา', 'error');
       const payload = { course_code: currentCourseCode, subject_name: name, subject_code: code, sort_order: sort };
       const { error } = id ? await db.from('subjects').update(payload).eq('id', id) : await db.from('subjects').insert(payload);
-
       if (error) return showToast(error.message, 'error');
       showToast('บันทึกวิชาเรียบร้อย', 'success');
       resetSubForm(); loadSubjects();
@@ -239,7 +317,7 @@
       document.getElementById('newSubSort').value = s.sort_order;
       document.getElementById('subFormTitle').textContent = 'แก้ไขวิชา';
       document.getElementById('btnSubSave').textContent = '💾 บันทึกการแก้ไข';
-      document.getElementById('btnSubCancel').classList.remove('hidden');
+      document.getElementById('btnSubCancel').style.display = 'block';
     }
 
     function resetSubForm() {
@@ -249,17 +327,17 @@
       document.getElementById('newSubSort').value = '1';
       document.getElementById('subFormTitle').textContent = 'เพิ่มวิชาใหม่';
       document.getElementById('btnSubSave').textContent = '＋ บันทึกวิชา';
-      document.getElementById('btnSubCancel').classList.add('hidden');
+      document.getElementById('btnSubCancel').style.display = 'none';
     }
 
     async function deleteSubject(id) {
-      if (confirm('ต้องการลบวิชานี้ใช่ไหม?')) { 
-        await db.from('subjects').delete().eq('id', id); 
-        loadSubjects(); 
+      if (confirm('ต้องการลบวิชานี้?')) {
+        await db.from('subjects').delete().eq('id', id);
+        loadSubjects();
       }
     }
 
-    // --- Course CRUD ---
+    /* ===== COURSE CRUD ===== */
     function openModal(course = null) {
       const isEdit = !!course;
       document.getElementById('editId').value = isEdit ? course.id : '';
@@ -271,10 +349,10 @@
       document.getElementById('modalScoreMode').value = isEdit ? (course.score_display_mode || 'total') : 'total';
       document.getElementById('modalIsActive').value = isEdit ? String(course.is_active !== false) : 'true';
       document.getElementById('modalTitle').textContent = isEdit ? 'แก้ไขคอร์ส' : 'สร้างคอร์ส';
-      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal').style.display = 'flex';
     }
 
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
     function editCourse(c) { openModal(c); }
 
     async function saveCourse() {
@@ -282,16 +360,13 @@
       const code = document.getElementById('modalCode').value.trim();
       const name = document.getElementById('modalName').value.trim();
       if (!code || !name) return showToast('กรุณากรอกรหัสและชื่อคอร์ส', 'error');
-
       const payload = {
-        course_code: code,
-        course_name: name,
+        course_code: code, course_name: name,
         level: document.getElementById('modalLevel').value,
         sort_order: parseInt(document.getElementById('modalSort').value) || 0,
         score_display_mode: document.getElementById('modalScoreMode').value,
         is_active: document.getElementById('modalIsActive').value === 'true'
       };
-
       const { error } = id ? await db.from('courses').update(payload).eq('id', id) : await db.from('courses').insert(payload);
       if (error) return showToast(error.message, 'error');
       showToast('บันทึกคอร์สสำเร็จ', 'success');
@@ -299,21 +374,22 @@
     }
 
     async function deleteCourse(code, name) {
-      if (confirm(`คุณต้องการลบคอร์ส "${name}" ใช่ไหม?\n(ข้อมูลคะแนนและวิชาที่เกี่ยวข้องจะถูกลบทั้งหมด)`)) {
+      if (confirm(`ลบคอร์ส "${name}"?\n(วิชาและคะแนนที่เกี่ยวข้องจะถูกลบทั้งหมด)`)) {
         await db.from('subjects').delete().eq('course_code', code);
         await db.from('courses').delete().eq('course_code', code);
         loadCourses();
       }
     }
 
+    /* ===== UTILS ===== */
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = msg; t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 3000);
     }
-
-    function openSidebar() { document.getElementById('sidebar').style.left = '0'; document.getElementById('overlay').classList.remove('hidden'); }
-    function closeSidebar() { document.getElementById('sidebar').style.left = '-240px'; document.getElementById('overlay').classList.add('hidden'); }
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+    function logout() { if (confirm('ออกจากระบบ?')) location.href = 'login.html'; }
 
     init();
   </script>
