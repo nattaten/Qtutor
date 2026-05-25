@@ -78,35 +78,63 @@
         };
 
         async function init() {
-            const userData = JSON.parse(sessionStorage.getItem('student_user'));
-            if (!userData) return (location.href = 'index.html');
+          const userData = JSON.parse(sessionStorage.getItem('student_user'));
+          if (!userData) return (location.href = 'index.html');
 
-            document.getElementById('studentName').innerText = `น้อง${userData.nickname}`;
-            document.getElementById('initialName').innerText = userData.nickname.charAt(0);
-            document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
+          document.getElementById('studentName').innerText = `น้อง${userData.nickname}`;
+          document.getElementById('initialName').innerText = userData.nickname.charAt(0);
+          document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
 
-            try {
-                const { data: courseInfo } = await db.from('courses').select('*').eq('course_code', userData.course_code).maybeSingle();
-                const { data: scores } = await db.from('test_scores').select('*').eq('student_id', userData.id).eq('course_code', userData.course_code).order('test_number', { ascending: true });
+          try {
+              const [courseRes, scoreRes] = await Promise.all([
+                  db.from('courses').select('*').eq('course_code', userData.course_code).maybeSingle(),
+                  db.from('test_scores').select('*').eq('student_id', userData.id).eq('course_code', userData.course_code).order('test_number', { ascending: true })
+              ]);
 
-                if (courseInfo?.thumbnail_url) document.getElementById('courseCover').src = courseInfo.thumbnail_url;
+              const courseInfo = courseRes.data;
+              const scores = scoreRes.data;
 
-                if (!scores || scores.length === 0) {
-                    document.getElementById('scoreContainer').innerHTML = `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนน</p>`;
-                    return;
-                }
+              // --- ส่วนจัดการรูปภาพหน้าปก ---
+              const courseCover = document.getElementById('courseCover');
+              const defaultPlaceholder = 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800';
 
-                const threshold = 60; 
+              if (courseInfo?.thumbnail_url) {
+                  let finalUrl = courseInfo.thumbnail_url;
 
-                if (courseInfo?.score_display_mode === 'test_summary') {
-                    setupSummaryChart(scores, threshold);
-                    renderSummaryTable(scores, threshold);
-                } else {
-                    setupChart(scores, threshold);
-                    renderBySubject(scores, threshold);
-                }
+                  // 🛠️ ตรวจสอบและแปลงลิงก์ Google Drive ให้เป็น Direct Link
+                  if (finalUrl.includes('drive.google.com')) {
+                      const fileId = finalUrl.split('/d/')[1]?.split('/')[0];
+                      if (fileId) {
+                          finalUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                      }
+                  }
 
-            } catch (err) { console.error('Error:', err); }
+                  courseCover.src = finalUrl;
+                  
+                  courseCover.onerror = function() {
+                      this.src = defaultPlaceholder;
+                      this.onerror = null;
+                  };
+              } else {
+                  courseCover.src = defaultPlaceholder;
+              }
+              // --------------------------
+
+              if (!scores || scores.length === 0) {
+                  document.getElementById('scoreContainer').innerHTML = `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนน</p>`;
+                  return;
+              }
+
+              const threshold = 60; 
+              if (courseInfo?.score_display_mode === 'test_summary') {
+                  setupSummaryChart(scores, threshold);
+                  renderSummaryTable(scores, threshold);
+              } else {
+                  setupChart(scores, threshold);
+                  renderBySubject(scores, threshold);
+              }
+
+          } catch (err) { console.error('Error:', err); }
         }
 
         // --- 📊 Core Chart Function (With Dynamic Axis Scaling) ---
