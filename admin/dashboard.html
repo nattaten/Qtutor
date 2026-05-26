@@ -652,11 +652,15 @@
           .from('courses')
           .select('course_code, course_name')
           .eq('is_active', true)
-          .order('created_at', { ascending: false });
+          // เปลี่ยนจาก created_at เป็น sort_order
+          .order('sort_order', { ascending: true }); 
 
         if (error) throw error;
 
         const select = document.getElementById('courseSelect');
+        // ล้างค่าเดิมใน select ก่อน (เผื่อมีการเรียก init ซ้ำ)
+        select.innerHTML = ''; 
+
         (courses || []).forEach(course => {
           const option = document.createElement('option');
           option.value = course.course_code;
@@ -669,7 +673,12 @@
           onCourseChange();
         }
       } catch (err) {
-        showToast('ไม่สามารถโหลดคอร์สได้: ' + err.message, 'error');
+        // ตรวจสอบว่ามีฟังก์ชัน showToast ไหม ถ้าไม่มีให้ใช้ alert แทน
+        if (typeof showToast === "function") {
+          showToast('ไม่สามารถโหลดคอร์สได้: ' + err.message, 'error');
+        } else {
+          alert('ไม่สามารถโหลดคอร์สได้: ' + err.message);
+        }
         console.error(err);
       }
     }
