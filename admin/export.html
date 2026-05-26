@@ -424,18 +424,36 @@
     async function init() {
       try {
         const [cRes, sRes, scRes] = await Promise.all([
-          db.from('courses').select('*'),
+          // แก้ไขบรรทัดนี้: เพิ่มการกรอง is_active และเรียงลำดับตาม sort_order
+          db.from('courses')
+            .select('*')
+            .eq('is_active', true) // ดึงเฉพาะคอร์สที่ยังเปิดสอน
+            .order('sort_order', { ascending: true }), 
+            
           db.from('students').select('*'),
           db.from('test_scores').select('*')
         ]);
+
         allCourses = cRes.data || [];
         allStudents = sRes.data || [];
         allScores = scRes.data || [];
 
         const sel = document.getElementById('courseSelect');
-        sel.innerHTML = allCourses.map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
-        if (allCourses.length > 0) await onCourseChange();
-      } catch(e) { console.error('Init error:', e); }
+        
+        // แสดงรายการคอร์สใน Dropdown
+        if (allCourses.length > 0) {
+          sel.innerHTML = allCourses.map(c => 
+            `<option value="${c.course_code}">${c.course_name}</option>`
+          ).join('');
+          
+          await onCourseChange();
+        } else {
+          sel.innerHTML = '<option value="">-- ไม่มีคอร์สที่เปิดสอน --</option>';
+        }
+
+      } catch(e) { 
+        console.error('Init error:', e); 
+      }
     }
 
     async function onCourseChange() {

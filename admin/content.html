@@ -176,14 +176,27 @@
     }
 
     async function init() {
-      const { data: courses } = await db.from('courses').select('course_code, course_name').eq('is_active', true).order('created_at', {ascending: false});
+      // 1. เปลี่ยนการเรียงลำดับเป็น sort_order จากน้อยไปมาก
+      const { data: courses } = await db
+        .from('courses')
+        .select('course_code, course_name')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }); 
+
       const fCourse = document.getElementById('filterCourse');
       const mCourse = document.getElementById('modalCourse');
+
+      // 2. ล้างค่าเดิมและใส่ค่าเริ่มต้น
       fCourse.innerHTML = '<option value="">-- แสดงคอร์สทั้งหมด --</option>';
+      if (mCourse) mCourse.innerHTML = ''; // เคลียร์ค่าใน modalCourse ก่อนวนลูป
+
+      // 3. วนลูปสร้างตัวเลือก
       courses?.forEach(c => {
         const opt = `<option value="${c.course_code}">${c.course_name}</option>`;
-        fCourse.innerHTML += opt; mCourse.innerHTML += opt;
+        fCourse.innerHTML += opt;
+        if (mCourse) mCourse.innerHTML += opt;
       });
+
       loadContent();
     }
 

@@ -260,12 +260,17 @@
         .from('courses')
         .select('course_code, course_name')
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        // เปลี่ยนจาก created_at เป็น sort_order และตั้งเป็นน้อยไปมาก (1 อยู่บนสุด)
+        .order('sort_order', { ascending: true }); 
       
       ['enterCourse', 'viewCourse'].forEach(id => {
         const sel = document.getElementById(id);
+        if (!sel) return; // กันพลาดถ้าไม่มี element id นั้นในหน้า
+
         sel.innerHTML = `<option value="">-- เลือกคอร์ส --</option>`;
-        (courses || []).forEach(c => { sel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`; });
+        (courses || []).forEach(c => { 
+          sel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`; 
+        });
       });
 
       setTimeout(() => applyPersistentState(), 100);
