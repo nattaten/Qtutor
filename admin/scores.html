@@ -254,28 +254,6 @@
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
-    // Init
-    async function init() {
-      const { data: courses } = await db
-        .from('courses')
-        .select('course_code, course_name')
-        .eq('is_active', true)
-        // เปลี่ยนจาก created_at เป็น sort_order และตั้งเป็นน้อยไปมาก (1 อยู่บนสุด)
-        .order('sort_order', { ascending: true }); 
-      
-      ['enterCourse', 'viewCourse'].forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return; // กันพลาดถ้าไม่มี element id นั้นในหน้า
-
-        sel.innerHTML = `<option value="">-- เลือกคอร์ส --</option>`;
-        (courses || []).forEach(c => { 
-          sel.innerHTML += `<option value="${c.course_code}">${c.course_name}</option>`; 
-        });
-      });
-
-      setTimeout(() => applyPersistentState(), 100);
-    }
-
     function pendingKey(code) { return 'pendingTest_' + code; }
 
     // Tab switching
@@ -439,12 +417,12 @@
       container.innerHTML = '';
 
       allSubjects.forEach(subject => {
-        const score = fullScores[subject] || 50;
+        const score = fullScores[subject] || 10;
         const topic = currentTopics[subject] || '';
 
         // Show topic field only if score_display_mode === 'by_subject'
         const topicField = scoreDisplayMode === 'by_subject' 
-          ? `<input id="topic_${subject}" type="text" value="${topic}" placeholder="เช่น บทที่ 3" class="input text-base font-normal">`
+          ? `<input id="topic_${subject}" type="text" value="${topic}" placeholder="เช่น การเคลื่อนที่" class="input text-base font-normal">`
           : '';
 
         const html = scoreDisplayMode === 'by_subject'
@@ -525,13 +503,15 @@
       document.getElementById('bulkScoreArea').classList.remove('hidden');
       document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
 
-      // Fetch students from enrollments
+      // 1. ดึงข้อมูลจาก enrollments โดยเรียงลำดับจากที่นี่ได้เลย
       const { data: enrollments } = await db
         .from('enrollments')
-        .select('student_id, students(id, nickname, full_name)')
+        .select('student_id, sort_order, students(id, nickname, full_name)')
         .eq('course_code', code)
-        .order('students(nickname)');
+        .order('sort_order', { ascending: true }) // เรียงลำดับตามที่จัดไว้ในคอร์สนี้
+        .order('student_id', { ascending: true }); // ถ้าลำดับเท่ากัน เรียงตาม id นักเรียน
 
+      // 2. แปลงข้อมูลใส่ allStudents (ลำดับจะถูกเรียงมาแล้วจากข้างบน)
       allStudents = (enrollments || [])
         .map(e => ({ 
           id: e.student_id, 
@@ -543,7 +523,7 @@
         return;
       }
 
-      // Fetch existing scores
+      // 3. ดึงข้อมูลคะแนนที่มีอยู่แล้ว
       const { data: scores } = await db
         .from('test_scores')
         .select('student_id, subject, score')
@@ -556,6 +536,7 @@
         currentScores[r.student_id][r.subject] = r.score;
       });
 
+      // 4. แสดงผลตาราง
       renderScoreTable();
     }
 
@@ -720,7 +701,6 @@
             score: (val === '' || val === null) ? null : parseFloat(val),
             full_score: full,
             topic: topic
-            // NOTE: Do NOT include score_percent - it's a generated column in Supabase
           });
         });
       });
@@ -933,7 +913,7 @@
           return;
         }
 
-        // Update database (without score_percent as it's a generated column)
+        // Update database
         const { error } = await db.from('test_scores')
           .update({ score: newScore })
           .eq('student_id', studentId)
@@ -1017,6 +997,18 @@
         .map((r, i) => ({ ...r, rank_number: i + 1 }));
 
       await db.from('class_rankings').upsert(rows, { onConflict: 'course_code,student_id' });
+    }
+
+    // Init
+    async function init() {
+      // Load courses for both tabs
+      const { data: courses } = await db.from('courses').select('course_code, course_name').order('sort_order', { ascending: true });
+      const courseOptions = (courses || []).map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
+      
+      document.getElementById('enterCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
+      document.getElementById('viewCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
+
+      applyPersistentState();
     }
 
     init();
