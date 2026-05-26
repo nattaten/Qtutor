@@ -72,6 +72,8 @@
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let myChart = null;
+        let subjectSortMap = {}; // เก็บ sort_order ของแต่ละวิชา
+        
         const colorPalette = {
             'คณิตศาสตร์': '#3b82f6', 'วิทยาศาสตร์': '#10b981', 'ภาษาอังกฤษ': '#a855f7',
             'ภาษาไทย': '#f59e0b', 'สังคมศึกษา': '#64748b', 'OVERALL': '#1e293b'
@@ -86,13 +88,29 @@
           document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
 
           try {
-              const [courseRes, scoreRes] = await Promise.all([
+              console.log('🔍 userData.course_code:', userData.course_code);
+
+              const [courseRes, scoreRes, subjectsRes] = await Promise.all([
                   db.from('courses').select('*').eq('course_code', userData.course_code).maybeSingle(),
-                  db.from('test_scores').select('*').eq('student_id', userData.id).eq('course_code', userData.course_code).order('test_number', { ascending: true })
+                  db.from('test_scores').select('*').eq('student_id', userData.id).eq('course_code', userData.course_code).order('test_number', { ascending: true }),
+                  db.from('subjects').select('subject_name, sort_order').eq('course_code', userData.course_code).order('sort_order', { ascending: true })
               ]);
 
               const courseInfo = courseRes.data;
               const scores = scoreRes.data;
+              const subjects = subjectsRes.data || [];
+
+              // Debug
+              console.log('❌ subjectsRes.error:', subjectsRes.error);
+              console.log('✅ subjectsRes.data:', subjectsRes.data);
+              console.log('📊 scores:', scores);
+
+              // สร้าง map ของ sort_order สำหรับการเรียงลำดับวิชา
+              subjects.forEach(sub => {
+                  subjectSortMap[sub.subject_name] = sub.sort_order;
+                  console.log(`📚 ${sub.subject_name} -> sort_order: ${sub.sort_order}`);
+              });
+              console.log('🗺️ Final subjectSortMap:', subjectSortMap);
 
               // --- ส่วนจัดการรูปภาพหน้าปก ---
               const courseCover = document.getElementById('courseCover');
@@ -191,7 +209,14 @@
         // --- 📈 Summary Mode: Multi-line Chart ---
         function setupSummaryChart(scores, threshold) {
             const testNums = [...new Set(scores.map(s => s.test_number))];
-            const subjects = [...new Set(scores.map(s => s.subject))];
+            let subjects = [...new Set(scores.map(s => s.subject))];
+            
+            // เรียงวิชาตาม sort_order
+            subjects.sort((a, b) => {
+                const orderA = subjectSortMap[a] ?? 999;
+                const orderB = subjectSortMap[b] ?? 999;
+                return orderA - orderB;
+            });
             
             // 1. เส้นรายวิชา
             const datasets = subjects.map((sub, idx) => ({
@@ -222,8 +247,15 @@
 
         // --- 📑 Summary Mode: Matrix Table ---
         function renderSummaryTable(scores, threshold) {
-            const subjects = [...new Set(scores.map(s => s.subject))];
+            let subjects = [...new Set(scores.map(s => s.subject))];
             const testNums = [...new Set(scores.map(s => s.test_number))];
+
+            // เรียงวิชาตาม sort_order
+            subjects.sort((a, b) => {
+                const orderA = subjectSortMap[a] ?? 999;
+                const orderB = subjectSortMap[b] ?? 999;
+                return orderA - orderB;
+            });
 
             const headerHtml = `<tr>
                 <th class="pb-3 w-10">No.</th>
@@ -271,7 +303,15 @@
         // --- (Fallback Functions for Single Subject Mode) ---
         function setupChart(scores, threshold) {
             const labels = [...new Set(scores.map(s => `ครั้งที่ ${s.test_number}`))];
-            const subjects = [...new Set(scores.map(s => s.subject))];
+            let subjects = [...new Set(scores.map(s => s.subject))];
+            
+            // เรียงวิชาตาม sort_order
+            subjects.sort((a, b) => {
+                const orderA = subjectSortMap[a] ?? 999;
+                const orderB = subjectSortMap[b] ?? 999;
+                return orderA - orderB;
+            });
+            
             const datasets = subjects.map((sub, idx) => ({
                 label: sub,
                 data: labels.map((_, i) => {
@@ -285,7 +325,15 @@
         }
 
         function renderBySubject(scores, threshold) {
-            const subjects = [...new Set(scores.map(s => s.subject))];
+            let subjects = [...new Set(scores.map(s => s.subject))];
+            
+            // เรียงวิชาตาม sort_order
+            subjects.sort((a, b) => {
+                const orderA = subjectSortMap[a] ?? 999;
+                const orderB = subjectSortMap[b] ?? 999;
+                return orderA - orderB;
+            });
+            
             document.getElementById('scoreContainer').innerHTML = subjects.map(sub => {
                 const subScores = scores.filter(s => s.subject === sub);
                 const rows = subScores.map(s => {

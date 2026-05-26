@@ -575,19 +575,47 @@
 
     function renderTopics(filtered) {
       const card = document.getElementById('topicsCard');
-      if (courseInfo?.score_display_mode === 'test_summary') { card.style.display = 'none'; return; }
+      // 1. เช็คโหมดการแสดงผล ถ้าเป็นสรุปผลอย่างเดียวให้ซ่อน
+      if (courseInfo?.score_display_mode === 'test_summary') { 
+        card.style.display = 'none'; 
+        return; 
+      }
 
+      // 2. ตรวจสอบว่ามีข้อมูล Topic ในวิชาปัจจุบันหรือไม่
       const hasTopics = currentSubjects.some(sub => filtered.some(f => f.subject === sub && f.topic));
-      if (!hasTopics) { card.style.display = 'none'; return; }
+      if (!hasTopics) { 
+        card.style.display = 'none'; 
+        return; 
+      }
 
       card.style.display = 'block';
-      document.getElementById('topicsLbl').textContent = activeTest === 0 ? '📚 ภาพรวมเนื้อหาการสอบ' : '📖 เนื้อหาที่สอบ';
+      document.getElementById('topicsLbl').textContent = activeTest === 0 ? '📚 ภาพรวมเนื้อหาการสอบทั้งหมด' : '📖 เนื้อหาที่สอบครั้งนี้';
+      
+      // 3. Render กล่องเนื้อหาโดยอิงตามลำดับวิชาใน currentSubjects
       document.getElementById('topicsGrid').innerHTML = currentSubjects.map(sub => {
-        const topics = [...new Set(filtered.filter(f => f.subject === sub && f.topic).map(f => f.topic))];
-        return `<div class="topic-box">
-          <div class="topic-sub">${sub}</div>
-          <div class="topic-nm">${topics.length ? (activeTest === 0 ? topics.map((t,i) => `${i+1}. ${t}`).join('<br>') : topics.join(', ')) : '<span style="color:#cbd5e1;font-style:italic;">ไม่มีข้อมูล</span>'}</div>
-        </div>`;
+        
+        // ดึงเนื้อหาออกมา และจัดการเรียงลำดับ/ตัดตัวซ้ำ
+        const topics = filtered
+          .filter(f => f.subject === sub && f.topic)
+          // เพิ่มการ Sort เนื้อหาตามลำดับที่บันทึกมา (ถ้ามี id หรือ timestamp)
+          .sort((a, b) => (a.id || 0) - (b.id || 0)) 
+          .map(f => f.topic);
+
+        // ใช้ Set เพื่อเอาชื่อหัวข้อที่ซ้ำกันออก (แต่ยังคงลำดับที่ Sort ไว้)
+        const uniqueTopics = [...new Set(topics)];
+
+        return `
+          <div class="topic-box">
+            <div class="topic-sub">${sub}</div>
+            <div class="topic-nm">
+              ${uniqueTopics.length 
+                ? (activeTest === 0 
+                    ? uniqueTopics.map((t, i) => `<div class="mb-1">${i + 1}. ${t}</div>`).join('') 
+                    : uniqueTopics.join(', ')) 
+                : '<span style="color:#cbd5e1;font-style:italic;">ไม่มีข้อมูลเนื้อหา</span>'
+              }
+            </div>
+          </div>`;
       }).join('');
     }
 

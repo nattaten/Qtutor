@@ -39,12 +39,17 @@
     .subject-column-header { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 4px; text-align: center; border-bottom: 2px solid #e2e8f0; }
     .score-table-row { display: grid; gap: 2px; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; margin-bottom: 8px; }
     .score-table-cell { padding: 4px; }
-    .student-name-cell { font-weight: 800; font-size: 14px; color: #1e293b; padding: 8px; min-width: 150px; }
+    .student-index-cell { font-weight: 700; font-size: 12px; color: #94a3b8; padding: 8px; text-align: center; min-width: 40px; }
+    .student-name-cell { font-weight: 700; font-size: 16px; color: #1e293b; padding: 8px; min-width: 160px; }
     .score-cell { min-width: 80px; }
     .editable-score { cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s; border: 2px solid transparent; }
     .editable-score:hover { background: #f0f9ff; border-color: #6366f1; }
     .editable-score.editing { background: #fff; border-color: #10b981; }
     .topic-text { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; padding: 2px 4px; }
+    .view-table-row { background: #fff; border-bottom: 1px solid #e2e8f0; }
+    .view-table-row:hover { background: #f8fafc; }
+    .view-student-name { font-weight: 700; font-size: 16px; color: #1e293b; }
+    .view-subject-group { background: #f8fafc; border-left: 4px solid #6366f1; padding: 8px 12px; margin: 4px 0; border-radius: 6px; }
     @media (max-width: 768px) {
       .sidebar { position: fixed; z-index: 50; left: -240px; height: 100vh; }
       .sidebar.open { left: 0; }
@@ -64,6 +69,7 @@
     @media (max-width: 640px) {
       .two-col-inline { grid-template-columns: 1fr; }
     }
+    .max-score-display { font-weight: 700; color: #6366f1; padding: 2px 6px; background: #eef2ff; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-slate-50 flex overflow-x-hidden">
@@ -213,38 +219,53 @@
     let isSaving = false;
     let scoreDisplayMode = 'default';
     let editingCell = null;
+    let subjectSortMap = {}; // Maps subject_name -> sort_order
 
-    // ========== PERSISTENCE: LocalStorage Helpers ==========
-    function saveSelectionState(courseCode, testNumber) {
-      const state = { courseCode, testNumber, timestamp: Date.now() };
-      localStorage.setItem('scoreManagementState', JSON.stringify(state));
+    // ========== PERSISTENCE: Enhanced LocalStorage Helpers ==========
+    function saveAppState(state) {
+      const fullState = {
+        currentTab: state.currentTab || 'enter',
+        courseCode: state.courseCode || '',
+        testNumber: state.testNumber || '',
+        timestamp: Date.now()
+      };
+      localStorage.setItem('scoreManagementState', JSON.stringify(fullState));
     }
 
-    function loadSelectionState() {
+    function loadAppState() {
       const saved = localStorage.getItem('scoreManagementState');
-      return saved ? JSON.parse(saved) : null;
+      return saved ? JSON.parse(saved) : { currentTab: 'enter', courseCode: '', testNumber: '' };
     }
 
     function applyPersistentState() {
-      const state = loadSelectionState();
-      if (!state) return;
+      const state = loadAppState();
+      
+      // Restore tab
+      if (state.currentTab === 'view') {
+        const viewTab = document.querySelectorAll('.tab-btn')[1];
+        switchTab('view', viewTab);
+      }
 
+      // Restore course selection
       const enterCourse = document.getElementById('enterCourse');
-      if (enterCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+      if (state.courseCode && enterCourse.querySelector(`option[value="${state.courseCode}"]`)) {
         enterCourse.value = state.courseCode;
         onEnterCourseChange();
         
-        setTimeout(() => {
-          const enterTest = document.getElementById('enterTest');
-          if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
-            enterTest.value = state.testNumber;
-            onCourseTestChange();
-          }
-        }, 300);
+        // Restore test selection
+        if (state.testNumber) {
+          setTimeout(() => {
+            const enterTest = document.getElementById('enterTest');
+            if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
+              enterTest.value = state.testNumber;
+              onCourseTestChange();
+            }
+          }, 300);
+        }
       }
 
       const viewCourse = document.getElementById('viewCourse');
-      if (viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+      if (state.courseCode && viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
         viewCourse.value = state.courseCode;
         onViewCourseChange();
       }
@@ -256,21 +277,21 @@
 
     function pendingKey(code) { return 'pendingTest_' + code; }
 
-    // Tab switching
+    // Tab switching with state persistence
     function switchTab(name, btn) {
       ['enter','view'].forEach(t => document.getElementById('tab-' + t).classList.add('hidden'));
       document.getElementById('tab-' + name).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
+      // Save tab state
+      const state = loadAppState();
+      saveAppState({ ...state, currentTab: name });
+
       if (name === 'view') {
-        const state = loadSelectionState();
-        if (state && state.courseCode) {
-          const viewCourse = document.getElementById('viewCourse');
-          if (viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
-            viewCourse.value = state.courseCode;
-            onViewCourseChange();
-          }
+        const viewCourse = document.getElementById('viewCourse');
+        if (viewCourse.value) {
+          onViewCourseChange();
         }
       }
     }
@@ -299,7 +320,9 @@
         return;
       }
 
-      saveSelectionState(code, '');
+      // Save state
+      const state = loadAppState();
+      saveAppState({ ...state, courseCode: code, testNumber: '' });
 
       // Fetch course display mode
       const { data: courseData } = await db
@@ -310,14 +333,18 @@
 
       scoreDisplayMode = courseData?.[0]?.score_display_mode || 'default';
 
-      // Fetch subjects for this course
+      // Fetch subjects for this course with sort_order
       const { data: subjects } = await db
         .from('subjects')
-        .select('subject_name')
+        .select('subject_name, sort_order')
         .eq('course_code', code)
         .order('sort_order', { ascending: true });
 
       allSubjects = (subjects || []).map(s => s.subject_name);
+      subjectSortMap = {};
+      (subjects || []).forEach(s => {
+        subjectSortMap[s.subject_name] = s.sort_order;
+      });
 
       // Fetch test numbers
       const { data } = await db
@@ -382,7 +409,8 @@
       document.getElementById('delTestBtn').disabled = !(code && test);
 
       if (code && test) {
-        saveSelectionState(code, test);
+        const state = loadAppState();
+        saveAppState({ ...state, courseCode: code, testNumber: test });
       }
 
       document.getElementById('fullScoreArea').classList.add('hidden');
@@ -490,28 +518,29 @@
         showToast('บันทึกบางรายการล้มเหลว', 'error');
       } else {
         showToast('✅ บันทึกคะแนนเต็มและหัวข้อสำเร็จ');
+        // Live update: re-render the score table with new max scores
+        await loadStudentsAndScores(code, test);
       }
 
       btn.disabled = false;
       btn.textContent = '💾 บันทึกคะแนนเต็มและหัวข้อ';
     }
 
-    // Load students and existing scores
+    // Load students and existing scores with proper sorting
     async function loadStudentsAndScores(code, test) {
       const container = document.getElementById('scoreTableContainer');
       container.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
       document.getElementById('bulkScoreArea').classList.remove('hidden');
       document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
 
-      // 1. ดึงข้อมูลจาก enrollments โดยเรียงลำดับจากที่นี่ได้เลย
+      // Fetch students with proper sorting (by sort_order, then by student_id)
       const { data: enrollments } = await db
         .from('enrollments')
         .select('student_id, sort_order, students(id, nickname, full_name)')
         .eq('course_code', code)
-        .order('sort_order', { ascending: true }) // เรียงลำดับตามที่จัดไว้ในคอร์สนี้
-        .order('student_id', { ascending: true }); // ถ้าลำดับเท่ากัน เรียงตาม id นักเรียน
+        .order('sort_order', { ascending: true })
+        .order('student_id', { ascending: true });
 
-      // 2. แปลงข้อมูลใส่ allStudents (ลำดับจะถูกเรียงมาแล้วจากข้างบน)
       allStudents = (enrollments || [])
         .map(e => ({ 
           id: e.student_id, 
@@ -523,7 +552,7 @@
         return;
       }
 
-      // 3. ดึงข้อมูลคะแนนที่มีอยู่แล้ว
+      // Fetch existing scores
       const { data: scores } = await db
         .from('test_scores')
         .select('student_id, subject, score')
@@ -536,28 +565,30 @@
         currentScores[r.student_id][r.subject] = r.score;
       });
 
-      // 4. แสดงผลตาราง
+      // Render table
       renderScoreTable();
     }
 
-    // Render score entry table
+    // Render score entry table with index numbers
     function renderScoreTable() {
       const container = document.getElementById('scoreTableContainer');
       container.innerHTML = '';
 
-      // Header row
-      let headerHtml = '<div class="grid gap-2 mb-3" style="grid-template-columns: 150px ' + allSubjects.map(() => '100px').join(' ') + '">';
+      // Header row with index column
+      let headerHtml = '<div class="grid gap-2 mb-3" style="grid-template-columns: 50px 160px ' + allSubjects.map(() => '100px').join(' ') + '">';
+      headerHtml += '<div class="font-black text-slate-600 text-xs py-2 text-center">ลำดับ</div>';
       headerHtml += '<div class="font-black text-slate-600 text-xs py-2">นักเรียน</div>';
       allSubjects.forEach(subject => {
         const full = fullScores[subject] || 50;
-        headerHtml += `<div class="subject-column-header">${subject}<br>(/${full})</div>`;
+        headerHtml += `<div class="subject-column-header">${subject}<br><span class="max-score-display">/${full}</span></div>`;
       });
       headerHtml += '</div>';
       container.innerHTML = headerHtml;
 
-      // Student rows
+      // Student rows with index
       allStudents.forEach((student, idx) => {
-        let rowHtml = `<div class="score-table-row" style="grid-template-columns: 150px ${allSubjects.map(() => '100px').join(' ')}">`;
+        let rowHtml = `<div class="score-table-row" style="grid-template-columns: 50px 160px ${allSubjects.map(() => '100px').join(' ')}">`;
+        rowHtml += `<div class="student-index-cell">${idx + 1}</div>`;
         rowHtml += `<div class="student-name-cell">${student.nickname}</div>`;
 
         allSubjects.forEach((subject, subjIdx) => {
@@ -792,7 +823,7 @@
 
       const { data: subjects } = await db
         .from('subjects')
-        .select('subject_name')
+        .select('subject_name, sort_order')
         .eq('course_code', code)
         .order('sort_order', { ascending: true });
 
@@ -815,6 +846,31 @@
 
       const container = document.getElementById('scoreTableView');
       container.innerHTML = '<p class="p-10 text-center loading-dots font-bold text-slate-400">กำลังโหลด</p>';
+
+      // Fetch enrollments with sort_order for primary sorting
+      const { data: enrollments } = await db
+        .from('enrollments')
+        .select('student_id, sort_order, students(id, nickname, full_name)')
+        .eq('course_code', code)
+        .order('sort_order', { ascending: true })
+        .order('student_id', { ascending: true });
+
+      if (!enrollments || !enrollments.length) {
+        container.innerHTML = '<p class="p-10 text-center text-slate-400 font-bold">ไม่มีนักเรียนในคอร์สนี้</p>';
+        return;
+      }
+
+      // Fetch subjects for sorting
+      const { data: subjectsData } = await db
+        .from('subjects')
+        .select('subject_name, sort_order')
+        .eq('course_code', code)
+        .order('sort_order', { ascending: true });
+
+      const subjectOrder = {};
+      (subjectsData || []).forEach(s => {
+        subjectOrder[s.subject_name] = s.sort_order;
+      });
 
       // Build query with filters
       let q = db.from('test_scores')
@@ -847,42 +903,83 @@
         return;
       }
 
-      let html = `<table class="w-full text-xs min-w-[700px]">
-        <thead class="bg-slate-50 sticky top-0">
-          <tr>
-            <th class="p-3 text-left font-black text-slate-600">นักเรียน</th>
-            <th class="p-3 font-black text-slate-600">ครั้งที่</th>
-            <th class="p-3 font-black text-slate-600">วิชา</th>
-            <th class="p-3 font-black text-blue-600">คะแนน</th>
-            <th class="p-3 text-center font-black text-slate-600">จัดการ</th>
-          </tr>
-        </thead><tbody>`;
-
-      filteredData.forEach(row => {
-        const displayScore = row.score === null 
-          ? `<span class="null-score">—</span>/<span class="text-slate-400">${row.full_score}`
-          : `${row.score}/<span class="text-slate-400">${row.full_score}</span>`;
-
-        const topic = row.topic ? `<div class="topic-text">📚 ${row.topic}</div>` : '';
-
-        html += `<tr class="border-b border-slate-50 hover:bg-slate-50">
-          <td class="p-3 font-bold">${row.students?.nickname || row.students?.full_name || 'Unknown'}</td>
-          <td class="p-3 text-center font-black text-indigo-600">${row.test_number}</td>
-          <td class="p-3 text-center">${row.subject}</td>
-          <td class="p-3 text-center">
-            <div class="editable-score cursor-pointer" onclick="enableInlineEdit(this, '${code}', ${row.student_id}, ${row.test_number}, '${row.subject}', ${row.full_score})" title="คลิกเพื่อแก้ไข">
-              ${displayScore}
-              ${topic}
-            </div>
-            <input type="number" class="edit-input hidden w-full border-2 border-indigo-600 rounded-lg p-2 text-sm" style="display: none;" value="${row.score || ''}" min="0" max="${row.full_score}">
-          </td>
-          <td class="p-3 text-center">
-            <button onclick="deleteScore('${code}', ${row.student_id}, ${row.test_number}, '${row.subject}')" class="text-red-600 font-bold text-xs hover:underline">🗑 ลบ</button>
-          </td>
-        </tr>`;
+      // Group data by student (with index) and subject (sorted)
+      const enrollmentMap = {};
+      enrollments.forEach((e, idx) => {
+        enrollmentMap[e.student_id] = { index: idx + 1, ...e };
       });
 
-      html += `</tbody></table>`;
+      // Organize by student
+      const byStudent = {};
+      filteredData.forEach(row => {
+        const studentId = row.student_id;
+        if (!byStudent[studentId]) {
+          const enrollment = enrollmentMap[studentId];
+          byStudent[studentId] = {
+            index: enrollment?.index || '',
+            nickname: row.students?.nickname || row.students?.full_name || 'Unknown',
+            scores: []
+          };
+        }
+        byStudent[studentId].scores.push(row);
+      });
+
+      // Sort subjects within each student by subject_order
+      Object.values(byStudent).forEach(student => {
+        student.scores.sort((a, b) => {
+          const orderA = subjectOrder[a.subject] || 999;
+          const orderB = subjectOrder[b.subject] || 999;
+          return orderA - orderB;
+        });
+      });
+
+      // Build nested table HTML
+      let html = `<div class="space-y-4 p-4">`;
+
+      Object.entries(byStudent).forEach(([_, student]) => {
+        html += `
+          <div class="view-table-row rounded-lg overflow-hidden border border-slate-100">
+            <div class="bg-indigo-50 px-4 py-3 flex items-center gap-2">
+              <span class="font-black text-indigo-600 text-lg min-w-[40px] text-center">${student.index}</span>
+              <span class="view-student-name">${student.nickname}</span>
+            </div>
+            <div class="space-y-2 p-4">
+        `;
+
+        student.scores.forEach(row => {
+          const displayScore = row.score === null 
+            ? `<span class="null-score">—</span>/<span class="text-slate-400">${row.full_score}</span>`
+            : `<span class="font-black text-indigo-600">${row.score}</span>/<span class="text-slate-400">${row.full_score}</span>`;
+
+          const topic = row.topic ? `<div class="topic-text">📚 ${row.topic}</div>` : '';
+
+          html += `
+            <div class="view-subject-group">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-bold text-slate-700">${row.subject}</div>
+                  <div class="text-xs text-slate-500">ครั้งที่ ${row.test_number}</div>
+                </div>
+                <div class="text-right">
+                  <div class="editable-score cursor-pointer" onclick="enableInlineEdit(this, '${code}', ${row.student_id}, ${row.test_number}, '${row.subject}', ${row.full_score})" title="คลิกเพื่อแก้ไข">
+                    ${displayScore}
+                  </div>
+                  <input type="number" class="edit-input hidden w-full border-2 border-indigo-600 rounded-lg p-2 text-sm" style="display: none;" value="${row.score || ''}" min="0" max="${row.full_score}">
+                </div>
+              </div>
+              ${topic}
+              <button onclick="deleteScore('${code}', ${row.student_id}, ${row.test_number}, '${row.subject}')" class="text-red-600 font-bold text-xs hover:underline mt-2">🗑 ลบ</button>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
       container.innerHTML = html;
     }
 
@@ -928,7 +1025,7 @@
           // Update local display
           const displayScore = newScore === null 
             ? `<span class="null-score">—</span>/<span class="text-slate-400">${fullScore}</span>`
-            : `${newScore}/<span class="text-slate-400">${fullScore}</span>`;
+            : `<span class="font-black text-indigo-600">${newScore}</span>/<span class="text-slate-400">${fullScore}</span>`;
           scoreDiv.innerHTML = displayScore;
         } else {
           showToast('เกิดข้อผิดพลาด', 'error');
@@ -999,15 +1096,23 @@
       await db.from('class_rankings').upsert(rows, { onConflict: 'course_code,student_id' });
     }
 
-    // Init
+    // Init with active courses only
     async function init() {
-      // Load courses for both tabs
-      const { data: courses } = await db.from('courses').select('course_code, course_name').order('sort_order', { ascending: true });
-      const courseOptions = (courses || []).map(c => `<option value="${c.course_code}">${c.course_name}</option>`).join('');
+      // Load only active courses
+      const { data: courses } = await db
+        .from('courses')
+        .select('course_code, course_name')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      const courseOptions = (courses || [])
+        .map(c => `<option value="${c.course_code}">${c.course_name}</option>`)
+        .join('');
       
       document.getElementById('enterCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
       document.getElementById('viewCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
 
+      // Apply persistent state
       applyPersistentState();
     }
 
