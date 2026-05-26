@@ -46,10 +46,269 @@
     .editable-score:hover { background: #f0f9ff; border-color: #6366f1; }
     .editable-score.editing { background: #fff; border-color: #10b981; }
     .topic-text { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; padding: 2px 4px; }
-    .view-table-row { background: #fff; border-bottom: 1px solid #e2e8f0; }
-    .view-table-row:hover { background: #f8fafc; }
-    .view-student-name { font-weight: 700; font-size: 16px; color: #1e293b; }
-    .view-subject-group { background: #f8fafc; border-left: 4px solid #6366f1; padding: 8px 12px; margin: 4px 0; border-radius: 6px; }
+    .null-score { color: #94a3b8; font-weight: 300; font-style: italic; }
+    .zero-score { color: #1e293b; font-weight: 900; }
+    .two-col-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end; }
+    @media (max-width: 640px) {
+      .two-col-inline { grid-template-columns: 1fr; }
+    }
+    .max-score-display { font-weight: 700; color: #6366f1; padding: 2px 6px; background: #eef2ff; border-radius: 4px; }
+
+    /* ===== COMPACT ROW STYLES ===== */
+    .score-view-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 45px 150px 90px 100px 1fr 40px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background-color 0.15s ease;
+      position: relative;
+    }
+
+    .score-row:last-child {
+      border-bottom: none;
+    }
+
+    .score-row:hover {
+      background-color: #f8fafc;
+    }
+
+    .score-row-index {
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: #94a3b8;
+      min-width: 45px;
+    }
+
+    .score-row-nickname {
+      font-weight: 700;
+      font-size: 15px;
+      color: #1e293b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .score-row-test {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .score-row-subject {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .score-row-score-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .score-row-score-display {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .score-row-score-display:hover {
+      background: #f0f9ff;
+      border-color: #6366f1;
+    }
+
+    .score-row-score-display .max-score {
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .score-row-edit-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 2px solid #6366f1;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .score-row-edit-input:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .score-row-edit-input.hidden {
+      display: none;
+    }
+
+    .score-row-topic {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+      padding: 2px 6px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: -2px;
+    }
+
+    .score-row-delete {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: #fee2e2;
+      color: #ef4444;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .score-row-delete:hover {
+      background: #fecaca;
+      transform: scale(1.05);
+    }
+
+    .score-row-delete:active {
+      transform: scale(0.95);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .score-row {
+        grid-template-columns: 40px 120px 80px 90px 1fr 36px;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+
+      .score-row-nickname {
+        font-size: 14px;
+      }
+
+      .score-row-test {
+        font-size: 11px;
+      }
+
+      .score-row-subject {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .score-row {
+        grid-template-columns: 35px 100px 70px 80px 1fr 32px;
+        gap: 6px;
+        padding: 6px 8px;
+      }
+
+      .score-row-index {
+        font-size: 12px;
+      }
+
+      .score-row-nickname {
+        font-size: 13px;
+      }
+
+      .score-row-test {
+        font-size: 10px;
+      }
+
+      .score-row-subject {
+        font-size: 11px;
+      }
+
+      .score-row-delete {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 512px) {
+      .score-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .score-row-index,
+      .score-row-nickname,
+      .score-row-test,
+      .score-row-subject,
+      .score-row-score-wrapper,
+      .score-row-delete {
+        width: 100%;
+      }
+
+      .score-row-index {
+        order: -1;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+      }
+
+      .score-row-nickname {
+        order: 0;
+        font-size: 14px;
+      }
+
+      .score-row-test {
+        order: 1;
+        text-align: left;
+        font-size: 12px;
+      }
+
+      .score-row-subject {
+        order: 2;
+        font-size: 12px;
+      }
+
+      .score-row-score-wrapper {
+        order: 3;
+      }
+
+      .score-row-delete {
+        order: 4;
+      }
+    }
+
+    /* Existing styles preserved */
     @media (max-width: 768px) {
       .sidebar { position: fixed; z-index: 50; left: -240px; height: 100vh; }
       .sidebar.open { left: 0; }
@@ -63,13 +322,6 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .null-score { color: #94a3b8; font-weight: 300; font-style: italic; }
-    .zero-score { color: #1e293b; font-weight: 900; }
-    .two-col-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end; }
-    @media (max-width: 640px) {
-      .two-col-inline { grid-template-columns: 1fr; }
-    }
-    .max-score-display { font-weight: 700; color: #6366f1; padding: 2px 6px; background: #eef2ff; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-slate-50 flex overflow-x-hidden">
@@ -221,6 +473,12 @@
     let editingCell = null;
     let subjectSortMap = {}; // Maps subject_name -> sort_order
 
+    // ==================== STALE DATA PROTECTION ====================
+    // Flags to prevent accidental overwrites when app state is lost
+    let appStateValid = false;
+    let lastValidCourseCode = null;
+    let lastValidTestNumber = null;
+
     // ========== PERSISTENCE: Enhanced LocalStorage Helpers ==========
     function saveAppState(state) {
       const fullState = {
@@ -230,6 +488,11 @@
         timestamp: Date.now()
       };
       localStorage.setItem('scoreManagementState', JSON.stringify(fullState));
+      
+      // Mark app state as valid
+      appStateValid = !!state.courseCode;
+      if (state.courseCode) lastValidCourseCode = state.courseCode;
+      if (state.testNumber) lastValidTestNumber = state.testNumber;
     }
 
     function loadAppState() {
@@ -259,6 +522,7 @@
             if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
               enterTest.value = state.testNumber;
               onCourseTestChange();
+              appStateValid = true;
             }
           }, 300);
         }
@@ -270,6 +534,23 @@
         onViewCourseChange();
       }
     }
+
+    // ==================== VISIBILITY CHANGE LISTENER ====================
+    // Refresh data when user switches back to the tab (mobile memory management protection)
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && appStateValid && lastValidCourseCode) {
+        console.log('📱 Tab regained focus - refreshing data...');
+        showToast('🔄 রিফ্রেশ করা হচ্ছে...', 'success');
+        
+        // Re-load full scores and students
+        const code = document.getElementById('enterCourse').value || lastValidCourseCode;
+        const test = document.getElementById('enterTest').value || lastValidTestNumber;
+        
+        if (code && test) {
+          await loadStudentsAndScores(code, test);
+        }
+      }
+    });
 
     // Sidebar
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
@@ -317,12 +598,14 @@
       if (!code) {
         addBtn.disabled = true;
         hint.textContent = 'เลือกคอร์สก่อนเพื่อดูการสอบที่มีอยู่';
+        appStateValid = false;
         return;
       }
 
       // Save state
       const state = loadAppState();
       saveAppState({ ...state, courseCode: code, testNumber: '' });
+      lastValidCourseCode = code;
 
       // Fetch course display mode
       const { data: courseData } = await db
@@ -411,6 +694,8 @@
       if (code && test) {
         const state = loadAppState();
         saveAppState({ ...state, courseCode: code, testNumber: test });
+        lastValidTestNumber = test;
+        appStateValid = true;
       }
 
       document.getElementById('fullScoreArea').classList.add('hidden');
@@ -709,7 +994,17 @@
     async function saveAllScores() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
-      if (!code || !test) return showToast('กรุณาเลือกคอร์สและครั้งที่สอบ', 'error');
+      
+      // ====== STALE DATA PROTECTION: Validate state before saving ======
+      if (!code || !test) {
+        showToast('⚠️ ข้อมูลสูญหาย - กรุณาเลือกคอร์สและครั้งที่สอบใหม่', 'error');
+        return;
+      }
+
+      if (!appStateValid || !lastValidCourseCode) {
+        showToast('⚠️ สถานะแอปพลิเคชันไม่ถูกต้อง - กรุณารีเฟรชหน้า', 'error');
+        return;
+      }
 
       const btn = document.getElementById('saveAllBtn');
       isSaving = true;
@@ -845,9 +1140,9 @@
       }
 
       const container = document.getElementById('scoreTableView');
-      container.innerHTML = '<p class="p-10 text-center loading-dots font-bold text-slate-400">กำลังโหลด</p>';
+      container.innerHTML = '<p class="p-10 text-center loading-dots font-bold text-slate-400">กำลังโหลดข้อมูล...</p>';
 
-      // Fetch enrollments with sort_order for primary sorting
+      // 1. ดึงข้อมูลนักเรียน (Enrollments) เพื่อใช้เป็นลำดับหลัก (Sort Order)
       const { data: enrollments } = await db
         .from('enrollments')
         .select('student_id, sort_order, students(id, nickname, full_name)')
@@ -860,7 +1155,7 @@
         return;
       }
 
-      // Fetch subjects for sorting
+      // 2. ดึงลำดับวิชามาเก็บไว้ใน Map เพื่อใช้เรียงลำดับวิชาภายในตัวนักเรียน
       const { data: subjectsData } = await db
         .from('subjects')
         .select('subject_name, sort_order')
@@ -872,127 +1167,192 @@
         subjectOrder[s.subject_name] = s.sort_order;
       });
 
-      // Build query with filters
+      // 3. ดึงคะแนน (Scores) ตามเงื่อนไข Filter
       let q = db.from('test_scores')
-        .select('student_id, test_number, subject, score, full_score, topic, students(id, nickname, full_name)')
-        .eq('course_code', code)
-        .order('test_number', { ascending: true });
+        .select('student_id, test_number, subject, score, full_score, topic')
+        .eq('course_code', code);
       
       if (subject) q = q.eq('subject', subject);
       if (testNumber) q = q.eq('test_number', +testNumber);
       
-      const { data } = await q;
+      const { data: scoreData } = await q;
 
-      if (!data || !data.length) {
-        container.innerHTML = '<p class="p-10 text-center text-slate-400 font-bold">ไม่มีข้อมูลคะแนน</p>';
+      // 4. กรองข้อมูลตามชื่อนักเรียน (ถ้ามีการ Search) และจัดกลุ่มตาม student_id
+      const scoreMap = {};
+      (scoreData || []).forEach(row => {
+        const student = enrollments.find(e => e.student_id === row.student_id);
+        if (!student) return;
+
+        const nickname = student.students?.nickname?.toLowerCase() || '';
+        const fullName = student.students?.full_name?.toLowerCase() || '';
+        
+        if (studentSearch && !nickname.includes(studentSearch) && !fullName.includes(studentSearch)) return;
+
+        if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
+        scoreMap[row.student_id].push(row);
+      });
+
+      if (Object.keys(scoreMap).length === 0) {
+        container.innerHTML = '<p class="p-10 text-center text-slate-400 font-bold">ไม่พบข้อมูลคะแนน</p>';
         return;
       }
 
-      // Filter by student name if search is provided
-      let filteredData = data;
-      if (studentSearch) {
-        filteredData = data.filter(row => {
-          const nickname = row.students?.nickname?.toLowerCase() || '';
-          const fullName = row.students?.full_name?.toLowerCase() || '';
-          return nickname.includes(studentSearch) || fullName.includes(studentSearch);
-        });
-      }
+      // 5. สร้าง HTML โดยวนลูปตามรายชื่อนักเรียน (enrollments) เพื่อให้ลำดับ 1 ขึ้นก่อนเสมอ
+      let html = '<div class="flex flex-col border border-slate-200 rounded-xl overflow-hidden shadow-sm">';
 
-      if (!filteredData.length) {
-        container.innerHTML = '<p class="p-10 text-center text-slate-400 font-bold">ไม่พบผลการค้นหา</p>';
-        return;
-      }
+      enrollments.forEach((enroll, idx) => {
+        const studentScores = scoreMap[enroll.student_id];
+        
+        // ถ้าคนนี้มีคะแนน ให้ทำการเรียงคะแนน (ครั้งที่ > วิชา) แล้วแสดงผล
+        if (studentScores && studentScores.length > 0) {
+          
+          studentScores.sort((a, b) => {
+            if (a.test_number !== b.test_number) return a.test_number - b.test_number;
+            return (subjectOrder[a.subject] || 0) - (subjectOrder[b.subject] || 0);
+          });
 
-      // Group data by student (with index) and subject (sorted)
-      const enrollmentMap = {};
-      enrollments.forEach((e, idx) => {
-        enrollmentMap[e.student_id] = { index: idx + 1, ...e };
-      });
-
-      // Organize by student
-      const byStudent = {};
-      filteredData.forEach(row => {
-        const studentId = row.student_id;
-        if (!byStudent[studentId]) {
-          const enrollment = enrollmentMap[studentId];
-          byStudent[studentId] = {
-            index: enrollment?.index || '',
-            nickname: row.students?.nickname || row.students?.full_name || 'Unknown',
-            scores: []
-          };
-        }
-        byStudent[studentId].scores.push(row);
-      });
-
-      // Sort subjects within each student by subject_order
-      Object.values(byStudent).forEach(student => {
-        student.scores.sort((a, b) => {
-          const orderA = subjectOrder[a.subject] || 999;
-          const orderB = subjectOrder[b.subject] || 999;
-          return orderA - orderB;
-        });
-      });
-
-      // Build nested table HTML
-      let html = `<div class="space-y-4 p-4">`;
-
-      Object.entries(byStudent).forEach(([_, student]) => {
-        html += `
-          <div class="view-table-row rounded-lg overflow-hidden border border-slate-100">
-            <div class="bg-indigo-50 px-4 py-3 flex items-center gap-2">
-              <span class="font-black text-indigo-600 text-lg min-w-[40px] text-center">${student.index}</span>
-              <span class="view-student-name">${student.nickname}</span>
-            </div>
-            <div class="space-y-2 p-4">
-        `;
-
-        student.scores.forEach(row => {
-          const displayScore = row.score === null 
-            ? `<span class="null-score">—</span>/<span class="text-slate-400">${row.full_score}</span>`
-            : `<span class="font-black text-indigo-600">${row.score}</span>/<span class="text-slate-400">${row.full_score}</span>`;
-
-          const topic = row.topic ? `<div class="topic-text">📚 ${row.topic}</div>` : '';
-
-          html += `
-            <div class="view-subject-group">
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <div class="font-bold text-slate-700">${row.subject}</div>
-                  <div class="text-xs text-slate-500">ครั้งที่ ${row.test_number}</div>
+          studentScores.forEach(row => {
+            const nickname = enroll.students?.nickname || enroll.students?.full_name || 'ไม่ระบุชื่อ';
+            
+            html += `
+              <div class="flex items-center gap-2 md:gap-4 p-3 bg-white border-b border-slate-100 hover:bg-indigo-50/30 transition-colors text-[13px] md:text-sm">
+                <div class="w-6 text-slate-400 font-bold text-center">${idx + 1}</div>
+                
+                <div class="w-24 md:w-32 font-bold text-slate-800 truncate">${nickname}</div>
+                
+                <div class="w-16 md:w-20 text-slate-500 whitespace-nowrap">ครั้งที่ ${row.test_number}</div>
+                
+                <div class="flex-grow min-w-[120px]">
+                  <div class="font-semibold text-indigo-600 truncate">${row.subject}</div>
+                  ${row.topic ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">📚 ${row.topic}</div>` : ''}
                 </div>
-                <div class="text-right">
-                  <div class="editable-score cursor-pointer" onclick="enableInlineEdit(this, '${code}', ${row.student_id}, ${row.test_number}, '${row.subject}', ${row.full_score})" title="คลิกเพื่อแก้ไข">
-                    ${displayScore}
-                  </div>
-                  <input type="number" class="edit-input hidden w-full border-2 border-indigo-600 rounded-lg p-2 text-sm" style="display: none;" value="${row.score || ''}" min="0" max="${row.full_score}">
+
+                <div class="flex items-center gap-1.5 no-print">
+                  <input type="number" 
+                    class="w-12 md:w-14 px-1 py-1 border border-slate-200 rounded text-center font-bold text-blue-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none" 
+                    value="${row.score ?? ''}" 
+                    placeholder="-"
+                    max="${row.full_score}"
+                    onblur="updateScoreInline(this, '${code}', ${row.student_id}, ${row.test_number}, '${row.subject}', ${row.full_score})"
+                  >
+                  <span class="text-slate-400 text-xs">/ ${row.full_score}</span>
                 </div>
+
+                <button onclick="deleteScore('${code}', ${row.student_id}, ${row.test_number}, '${row.subject}')" 
+                  class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all no-print">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
               </div>
-              ${topic}
-              <button onclick="deleteScore('${code}', ${row.student_id}, ${row.test_number}, '${row.subject}')" class="text-red-600 font-bold text-xs hover:underline mt-2">🗑 ลบ</button>
-            </div>
-          `;
-        });
-
-        html += `
-            </div>
-          </div>
-        `;
+            `;
+          });
+        }
       });
 
-      html += `</div>`;
+      html += '</div>';
       container.innerHTML = html;
     }
 
-    // Enable inline edit in View mode
-    function enableInlineEdit(scoreDiv, code, studentId, testNum, subject, fullScore) {
-      if (editingCell) {
-        editingCell.input.style.display = 'none';
-        editingCell.display.style.display = '';
+    // ======== FIXED: updateScoreInline with proper validation & isolation ========
+    async function updateScoreInline(input, courseCode, studentId, testNumber, subject, fullScore) {
+      const newScoreStr = input.value.trim();
+      
+      // ========== VALIDATION 1: NULL/EMPTY CHECK (Stale Data Protection) ==========
+      if (!courseCode || !studentId || !testNumber || !subject) {
+        showToast('⚠️ ข้อมูลสูญหาย - กรุณารีเฟรชหน้า', 'error');
+        input.classList.add('bg-red-50', 'border-red-400');
+        return;
       }
 
-      const inputEl = scoreDiv.nextElementSibling;
-      scoreDiv.style.display = 'none';
-      inputEl.style.display = 'block';
+      // ========== VALIDATION 2: EMPTY VALUE = DELETE SCORE ==========
+      if (newScoreStr === '') {
+        await performUpdate(null);
+        return;
+      }
+
+      const newScore = parseFloat(newScoreStr);
+
+      // ========== VALIDATION 3: NaN CHECK ==========
+      if (isNaN(newScore) || newScore < 0) {
+        showToast('กรุณากรอกคะแนนให้ถูกต้อง', 'error');
+        input.classList.add('bg-red-50', 'border-red-400');
+        input.focus();
+        return;
+      }
+
+      // ========== VALIDATION 4: MAX SCORE CHECK ==========
+      if (fullScore > 0 && newScore > fullScore) {
+        showToast(`⚠️ คะแนนเกิน! (คะแนนเต็ม ${fullScore})`, 'error');
+        input.classList.remove('bg-green-50', 'border-green-400');
+        input.classList.add('bg-red-50', 'border-red-400');
+        input.focus();
+        
+        // Shake animation effect
+        input.style.animation = 'none';
+        setTimeout(() => {
+          input.style.animation = 'shake 0.4s ease-in-out';
+        }, 10);
+        
+        return;
+      }
+
+      await performUpdate(newScore);
+
+      // ========== HELPER: Perform the actual database update ==========
+      async function performUpdate(scoreToSave) {
+        try {
+          // ========== ISOLATION: Only update the score column ==========
+          // This ensures full_score and topic are NOT touched
+          const { error } = await db
+            .from('test_scores')
+            .update({ score: scoreToSave })  // ONLY update score
+            .eq('course_code', courseCode)
+            .eq('student_id', studentId)
+            .eq('test_number', testNumber)
+            .eq('subject', subject);
+
+          if (error) throw error;
+          
+          // ========== SUCCESS FEEDBACK ==========
+          showToast('✅ บันทึกคะแนนเรียบร้อย', 'success');
+          
+          // Green highlight effect
+          input.classList.remove('bg-red-50', 'border-red-400');
+          input.classList.add('bg-green-50', 'border-green-400');
+          setTimeout(() => input.classList.remove('bg-green-50', 'border-green-400'), 1500);
+          
+          // Refresh rankings only (not full data)
+          await refreshRankings(courseCode);
+          
+        } catch (err) {
+          console.error('Database error:', err);
+          showToast('⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ Database', 'error');
+          input.classList.add('bg-red-50', 'border-red-400');
+        }
+      }
+    }
+
+    // Add CSS for shake animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Enable inline edit in View mode
+    function enableInlineEdit(scoreDiv, code, studentId, testNum, subject, fullScore) {
+      // Close any previous edit
+      if (editingCell) {
+        editingCell.input.classList.add('hidden');
+        editingCell.display.classList.remove('hidden');
+      }
+
+      const inputEl = scoreDiv.parentElement.querySelector('.score-row-edit-input');
+      scoreDiv.classList.add('hidden');
+      inputEl.classList.remove('hidden');
       inputEl.focus();
       inputEl.select();
 
@@ -1004,13 +1364,13 @@
 
         if (newScore !== null && (newScore < 0 || newScore > fullScore)) {
           showToast('คะแนนไม่ถูกต้อง', 'error');
-          inputEl.style.display = 'none';
-          scoreDiv.style.display = '';
+          inputEl.classList.add('hidden');
+          scoreDiv.classList.remove('hidden');
           editingCell = null;
           return;
         }
 
-        // Update database
+        // Update database - ISOLATED to score column only
         const { error } = await db.from('test_scores')
           .update({ score: newScore })
           .eq('student_id', studentId)
@@ -1024,15 +1384,15 @@
           
           // Update local display
           const displayScore = newScore === null 
-            ? `<span class="null-score">—</span>/<span class="text-slate-400">${fullScore}</span>`
-            : `<span class="font-black text-indigo-600">${newScore}</span>/<span class="text-slate-400">${fullScore}</span>`;
-          scoreDiv.innerHTML = displayScore;
+            ? '<span class="null-score">—</span>'
+            : `<span class="font-black text-indigo-600">${newScore}</span>`;
+          scoreDiv.innerHTML = `${displayScore} <span class="text-slate-400">/</span> <span class="max-score text-slate-500">${fullScore}</span>`;
         } else {
           showToast('เกิดข้อผิดพลาด', 'error');
         }
 
-        inputEl.style.display = 'none';
-        scoreDiv.style.display = '';
+        inputEl.classList.add('hidden');
+        scoreDiv.classList.remove('hidden');
         editingCell = null;
       };
 
@@ -1040,14 +1400,14 @@
       inputEl.onkeydown = (e) => {
         if (e.key === 'Enter') inputEl.blur();
         if (e.key === 'Escape') {
-          inputEl.style.display = 'none';
-          scoreDiv.style.display = '';
+          inputEl.classList.add('hidden');
+          scoreDiv.classList.remove('hidden');
           editingCell = null;
         }
       };
     }
 
-    // Delete score
+    // Delete score - ISOLATED update
     async function deleteScore(code, studentId, testNum, subject) {
       if (!confirm('ลบคะแนนนี้?')) return;
       
@@ -1060,7 +1420,7 @@
 
       if (!error) {
         showToast('✅ ลบสำเร็จ');
-        refreshRankings(code);
+        await refreshRankings(code);
         loadScoreTableView();
       } else {
         showToast('ลบไม่สำเร็จ', 'error');
