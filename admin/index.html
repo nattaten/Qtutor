@@ -44,14 +44,24 @@
   <div class="w-full max-w-sm">
 
     <!-- LOGO -->
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-black text-white tracking-tight">Qtutor</h1>
-      <p class="text-slate-400 text-sm mt-1">ระบบจัดการแอดมิน</p>
+    <div class="text-center mb-10">
+      <div class="flex justify-center items-center">
+          <div class="bg-white p-1 rounded-[1rem] shadow-xl shadow-indigo-500/10 border border-white/20 inline-flex justify-center items-center">
+              <img src="โลโก้คิวใหม่ (1).png" alt="Qtutor Logo" 
+                  class="h-28 w-auto object-contain">
+          </div>
+      </div>
+      <p class="text-slate-400 text-xs font-bold mt-5 tracking-[0.2em] uppercase opacity-80">ระบบจัดการแอดมิน</p>
     </div>
 
     <!-- CARD -->
-    <div class="bg-slate-800/60 backdrop-blur-md border border-slate-700 rounded-3xl p-8 shadow-2xl">
-      <h2 class="text-xl font-black text-white mb-6">🔐 เข้าสู่ระบบ</h2>
+    <div class="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
+      <div class="flex items-center justify-center gap-2 mb-8">
+          <span class="text-2xl">🔐</span>
+          <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+            เข้าสู่ระบบแอดมิน
+          </h2>
+      </div>
 
       <form id="loginForm" onsubmit="handleLogin(event)" novalidate class="space-y-4">
 
