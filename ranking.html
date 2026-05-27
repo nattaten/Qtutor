@@ -22,7 +22,19 @@
     .test-chip.active { background: #fff; color: #0f172a; border-color: #fff; transform: scale(1.06); box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
     .avg-card { background: #fff; border-radius: 20px; padding: 14px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 
-    /* Responsive Logic */
+    /* Masked score pill */
+    .masked-score {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 1px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* Responsive */
     .desktop-table { display: block; }
     .mobile-cards  { display: none; }
 
@@ -30,21 +42,15 @@
       .desktop-table { display: none; }
       .mobile-cards  { display: flex; flex-direction: column; gap: 10px; }
       .rank-card {
-        background: #fff;
-        border-radius: 24px;
+        background: #fff; border-radius: 24px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-        overflow: hidden;
-        border: 1px solid #f1f5f9;
-        height: auto;
+        overflow: hidden; border: 1px solid #f1f5f9; height: auto;
       }
       .rank-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
       .rank-subjects {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        padding: 10px 16px 14px;
-        background: #fcfdfe;
-        border-top: 1px solid #f8fafc;
+        display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 6px; padding: 10px 16px 14px;
+        background: #fcfdfe; border-top: 1px solid #f8fafc;
       }
       .subject-box { background: #fff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 8px 4px; text-align: center; }
     }
@@ -81,22 +87,26 @@
     </div>
 
     <div id="topicsArea"></div>
-
     <div id="avgGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
     <div class="space-y-4">
-        <h3 class="text-sm font-black text-slate-800 flex items-center gap-2 px-1">
-            <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> ลำดับผลการสอบ
-        </h3>
+      <h3 class="text-sm font-black text-slate-800 flex items-center gap-2 px-1">
+        <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> ลำดับผลการสอบ
+      </h3>
+      <!-- Privacy notice -->
+      <div class="flex items-center gap-2 px-1">
+        <span class="text-[10px] text-slate-400">🔒</span>
+        <p class="text-[10px] text-slate-400 font-semibold">ชื่อของนักเรียนคนอื่นถูกซ่อนเพื่อความเป็นส่วนตัว</p>
+      </div>
 
-        <div class="desktop-table bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-          <table class="w-full min-w-[600px]">
-            <thead id="tableHead" class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-100"></thead>
-            <tbody id="rankingListDesktop" class="divide-y divide-slate-50"></tbody>
-          </table>
-        </div>
+      <div class="desktop-table bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+        <table class="w-full min-w-[600px]">
+          <thead id="tableHead" class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-100"></thead>
+          <tbody id="rankingListDesktop" class="divide-y divide-slate-50"></tbody>
+        </table>
+      </div>
 
-        <div id="rankingListMobile" class="mobile-cards"></div>
+      <div id="rankingListMobile" class="mobile-cards"></div>
     </div>
   </div>
 
@@ -105,112 +115,114 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allScores = [];       // rows from test_scores
-    let scoreSettings = [];   // rows from score_settings  (topic + full_score live here now)
-    let settingsMap = {};     // keyed by "test_number:subject" for O(1) lookup
-    let students = [];
-    let myId = null;
-    let activeTest = 0;
-    let displayMode = '';
+    let allScores    = [];   // rows from test_scores
+    let scoreSettings = [];  // rows from score_settings
+    let settingsMap   = {};  // "test_number:subject" → { full_score, topic }
+    let students      = [];  // [{ id, nickname }]
+    let myId          = null;
+    let activeTest    = 0;
+    let displayMode   = '';
+
     const colorMap = { 'วิทยาศาสตร์': 'emerald', 'คณิตศาสตร์': 'blue', 'ภาษาอังกฤษ': 'purple' };
 
     // ─── INIT ──────────────────────────────────────────────────────────────────
     async function init() {
       const userData = JSON.parse(sessionStorage.getItem('student_user'));
       if (!userData) return (location.href = 'index.html');
-      myId = +userData.id;
+
+      // Ensure myId is always a Number for strict equality checks later
+      myId = Number(userData.id);
+
       document.getElementById('navCourse').textContent  = userData.course_name;
       document.getElementById('heroCourse').textContent = userData.course_name;
 
-      // Fetch students, test_scores, score_settings, and course meta in parallel.
-      // score_settings now owns: test_number, subject, full_score, topic
-      const [sRes, scRes, ssRes, cRes] = await Promise.all([
-        db.from('students')
-          .select('id, nickname')
-          .eq('course_code', userData.course_code)
-          .order('nickname'),
+      try {
+        const [sRes, scRes, ssRes, cRes] = await Promise.all([
+          // 1. Enrolled students with nickname via join
+          db.from('enrollments')
+            .select('student_id, students!inner(id, nickname)')
+            .eq('course_code', userData.course_code),
 
-        db.from('test_scores')
-          .select('student_id, test_number, subject, score')
-          .eq('course_code', userData.course_code),
+          // 2. Raw student scores (no topic / full_score here)
+          db.from('test_scores')
+            .select('student_id, test_number, subject, score, is_absent')
+            .eq('course_code', userData.course_code),
 
-        db.from('score_settings')
-          .select('test_number, subject, full_score, topic')
-          .eq('course_code', userData.course_code),
+          // 3. Test metadata — full_score and topic live here now
+          db.from('score_settings')
+            .select('test_number, subject, full_score, topic')
+            .eq('course_code', userData.course_code),
 
-        db.from('courses')
-          .select('score_display_mode')
-          .eq('course_code', userData.course_code)
-          .maybeSingle()
-      ]);
+          // 4. Course display mode
+          db.from('courses')
+            .select('score_display_mode')
+            .eq('course_code', userData.course_code)
+            .maybeSingle()
+        ]);
 
-      students      = sRes.data  || [];
-      allScores     = scRes.data || [];
-      scoreSettings = ssRes.data || [];
-      displayMode   = cRes.data?.score_display_mode;
+        // Flatten the nested join result into a simple { id, nickname } array
+        students = (sRes.data || []).map(row => ({
+          id:       Number(row.student_id),
+          nickname: row.students?.nickname || 'ไม่ระบุชื่อ'
+        }));
 
-      // Build a Map: "test_number:subject" → { full_score, topic }
-      // For "all tests" view we also need a subject-level aggregate, built on demand.
-      settingsMap = {};
-      scoreSettings.forEach(s => {
-        settingsMap[`${s.test_number}:${s.subject}`] = {
-          full_score: +s.full_score,
-          topic: s.topic || ''
-        };
-      });
+        allScores     = scRes.data  || [];
+        scoreSettings = ssRes.data  || [];
+        displayMode   = cRes.data?.score_display_mode;
 
-      buildTestStrip();
-      render();
+        // Build O(1) lookup map for full_score and topic
+        settingsMap = {};
+        scoreSettings.forEach(s => {
+          settingsMap[`${s.test_number}:${s.subject}`] = {
+            full_score: Number(s.full_score) || 0,
+            topic:      s.topic || ''
+          };
+        });
+
+        buildTestStrip();
+        render();
+
+      } catch (err) {
+        console.error('Init error:', err);
+        alert('เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง');
+      }
     }
 
     // ─── HELPERS ───────────────────────────────────────────────────────────────
 
-    /**
-     * Returns full_score for a given (test_number, subject).
-     * Falls back to the maximum score seen in test_scores to avoid ÷0.
-     */
+    /** Returns configured full_score, or falls back to max recorded score to prevent ÷0 */
     function getFullScore(testNumber, subject) {
-      const key = `${testNumber}:${subject}`;
-      if (settingsMap[key] && settingsMap[key].full_score > 0) {
-        return settingsMap[key].full_score;
-      }
-      // Fallback: max score recorded for this test+subject (prevents ÷0)
-      const fallback = Math.max(
-        0,
-        ...allScores
-          .filter(s => s.test_number === testNumber && s.subject === subject)
-          .map(s => +s.score)
-      );
-      return fallback || 0;
+      const entry = settingsMap[`${testNumber}:${subject}`];
+      if (entry && entry.full_score > 0) return entry.full_score;
+      // Fallback: max score seen in test_scores for this test+subject
+      const scores = allScores
+        .filter(s => s.test_number === testNumber && s.subject === subject)
+        .map(s => Number(s.score));
+      return scores.length ? Math.max(...scores) : 0;
     }
 
-    /**
-     * Returns the topic for a given (test_number, subject).
-     * For "all tests" (test_number === 0) collects unique topics across all tests.
-     */
+    /** Returns topics for a subject from score_settings. All tests = aggregated list. */
     function getTopics(testNumber, subject) {
       if (testNumber !== 0) {
-        return settingsMap[`${testNumber}:${subject}`]?.topic
-          ? [settingsMap[`${testNumber}:${subject}`].topic]
-          : [];
+        const t = settingsMap[`${testNumber}:${subject}`]?.topic;
+        return t ? [t] : [];
       }
-      // Aggregate across all test numbers, preserve order
       const seen = new Set();
       return scoreSettings
         .filter(s => s.subject === subject && s.topic)
         .sort((a, b) => a.test_number - b.test_number)
         .map(s => s.topic)
-        .filter(t => { if (seen.has(t)) return false; seen.add(t); return true; });
+        .filter(t => seen.has(t) ? false : (seen.add(t), true));
     }
 
-    // ─── UI BUILDERS ───────────────────────────────────────────────────────────
+    // ─── TEST STRIP ────────────────────────────────────────────────────────────
 
     function buildTestStrip() {
       const tests = [...new Set(allScores.map(s => s.test_number))].sort((a, b) => a - b);
       const strip = document.getElementById('testStrip');
-      strip.innerHTML = `<button class="test-chip active" onclick="selectTest(0, this)">รวม</button>`;
+      strip.innerHTML = `<button class="test-chip active" onclick="selectTest(0,this)">รวม</button>`;
       tests.forEach(t => {
-        strip.innerHTML += `<button class="test-chip" onclick="selectTest(${t}, this)">${t}</button>`;
+        strip.innerHTML += `<button class="test-chip" onclick="selectTest(${t},this)">${t}</button>`;
       });
     }
 
@@ -221,14 +233,15 @@
       render();
     }
 
+    // ─── RENDER ────────────────────────────────────────────────────────────────
+
     function render() {
       const filtered = activeTest === 0
         ? allScores
         : allScores.filter(s => s.test_number === activeTest);
 
-      // Derive the subject list from score_settings (authoritative) so we only
-      // show subjects that actually have settings configured.
-      const settingsSubjects = activeTest === 0
+      // Subject list is authoritative from score_settings, not test_scores
+      const subjects = activeTest === 0
         ? [...new Set(scoreSettings.map(s => s.subject))]
         : [...new Set(scoreSettings.filter(s => s.test_number === activeTest).map(s => s.subject))];
 
@@ -240,10 +253,10 @@
         area.style.display = 'none';
       } else {
         area.style.display = 'block';
-        renderTopics(settingsSubjects);
+        renderTopics(subjects);
       }
 
-      renderRanking(filtered, settingsSubjects);
+      renderRanking(filtered, subjects);
     }
 
     // ─── TOPICS PANEL ──────────────────────────────────────────────────────────
@@ -251,25 +264,22 @@
     function renderTopics(subjects) {
       const area = document.getElementById('topicsArea');
       let html = `<div class="bg-[#1e293b] rounded-[2rem] p-5 shadow-xl text-white border border-slate-700/50">
-                    <p class="text-[9px] font-black text-indigo-300 uppercase mb-4 tracking-widest flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> เนื้อหาที่สอบ
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
+        <p class="text-[9px] font-black text-indigo-300 uppercase mb-4 tracking-widest flex items-center gap-2">
+          <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> เนื้อหาที่สอบ
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
 
       subjects.forEach(sub => {
-        // Topics come from score_settings (not test_scores any more)
         const topics = getTopics(activeTest, sub);
         html += `<div class="space-y-2">
-                  <p class="text-[11px] font-black text-white flex items-center gap-2">
-                    <span class="w-1 h-3 bg-indigo-500 rounded-full"></span>${sub}
-                  </p>
-                  <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/30">`;
+          <p class="text-[11px] font-black text-white flex items-center gap-2">
+            <span class="w-1 h-3 bg-indigo-500 rounded-full"></span>${sub}
+          </p>
+          <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/30">`;
         if (topics.length > 0) {
-          if (activeTest === 0) {
-            html += topics.map((t, i) => `<p class="text-[11px] text-slate-300 mb-1 font-medium">${i+1}. ${t}</p>`).join('');
-          } else {
-            html += `<p class="text-[11px] text-slate-300 leading-relaxed">${topics.join(', ')}</p>`;
-          }
+          html += activeTest === 0
+            ? topics.map((t, i) => `<p class="text-[11px] text-slate-300 mb-1 font-medium">${i+1}. ${t}</p>`).join('')
+            : `<p class="text-[11px] text-slate-300 leading-relaxed">${topics.join(', ')}</p>`;
         } else {
           html += `<p class="text-[10px] text-slate-500 italic">ไม่มีข้อมูลเนื้อหา</p>`;
         }
@@ -280,79 +290,78 @@
     }
 
     // ─── RANKING ───────────────────────────────────────────────────────────────
+    /**
+     * Privacy rules:
+     *   isMe  → show real nickname + ⭐, show actual % values
+     *   !isMe → show "Student #[rank]" label, show "??" for all scores
+     *
+     * Ranking itself (sort order) is always calculated from real data so the
+     * position numbers are accurate even when scores are masked.
+     */
 
     function renderRanking(filtered, subjects) {
-      /**
-       * Aggregate per-student scores.
-       *
-       * For total %, we sum the student's earned scores and divide by the
-       * TOTAL POSSIBLE score (summed from score_settings), NOT from test_scores.
-       *
-       * Per-subject %: (earned) / (full_score from score_settings) * 100
-       *
-       * If a subject entry is missing from score_settings the subject is
-       * excluded from both numerator and denominator so we never ÷0.
-       */
-
-      // Pre-compute total possible full_score per subject for the selected view.
-      // For "all tests" we sum across every test_number; for a single test we look up once.
-      const subjectFullScores = {};   // subject → total full_score denominator
+      // ── 1. Pre-compute total possible full_score per subject ──────────────
       const testNumbers = activeTest === 0
         ? [...new Set(scoreSettings.map(s => s.test_number))]
         : [activeTest];
 
+      const subjectFullScores = {};
       subjects.forEach(sub => {
-        let total = 0;
-        testNumbers.forEach(tn => {
-          const fs = getFullScore(tn, sub);
-          total += fs;
-        });
-        subjectFullScores[sub] = total;
+        subjectFullScores[sub] = testNumbers.reduce((sum, tn) => sum + getFullScore(tn, sub), 0);
       });
 
-      // Accumulate earned scores per student per subject
+      // ── 2. Accumulate earned scores per student per subject ───────────────
       const map = {};
-      filtered.forEach(s => {
-        const sid = +s.student_id;
-        const sub = s.subject;
+      filtered.forEach(row => {
+        // Skip absent rows — treat as 0 earned but still count denominator
+        if (row.is_absent) return;
 
-        // Skip subjects that have no settings at all (prevents polluting totals)
+        const sid = Number(row.student_id);
+        const sub = row.subject;
         if (!subjects.includes(sub)) return;
 
-        const fs = getFullScore(s.test_number, sub);
-        if (fs === 0) return;  // no full_score available – skip this row
+        const fs = getFullScore(row.test_number, sub);
+        if (fs === 0) return;  // no settings → exclude from calculation
 
         if (!map[sid]) {
           map[sid] = { earnedBySubject: {}, fullBySubject: {} };
-          subjects.forEach(su => { map[sid].earnedBySubject[su] = 0; map[sid].fullBySubject[su] = 0; });
+          subjects.forEach(s => { map[sid].earnedBySubject[s] = 0; map[sid].fullBySubject[s] = 0; });
         }
-        map[sid].earnedBySubject[sub] += +s.score;
+        map[sid].earnedBySubject[sub] += Number(row.score);
         map[sid].fullBySubject[sub]   += fs;
       });
 
-      // Build row objects
-      const rows = Object.entries(map).map(([sid, d]) => {
-        let totalEarned   = 0;
-        let totalPossible = 0;
+      // Also include enrolled students who have no scores yet (so they appear in the list)
+      students.forEach(st => {
+        if (!map[st.id]) {
+          map[st.id] = { earnedBySubject: {}, fullBySubject: {} };
+          subjects.forEach(s => { map[st.id].earnedBySubject[s] = 0; map[st.id].fullBySubject[s] = 0; });
+        }
+      });
 
-        const subs = subjects.map(sub => {
-          const earned   = d.earnedBySubject[sub]  || 0;
-          const possible = subjectFullScores[sub]   || 0;
-          if (possible === 0) return null;   // no settings → show "—"
+      // ── 3. Build sorted row objects ───────────────────────────────────────
+      const rows = Object.entries(map).map(([sid, d]) => {
+        const studentId = Number(sid);
+        let totalEarned = 0, totalPossible = 0;
+
+        const subPcts = subjects.map(sub => {
+          const earned   = d.earnedBySubject[sub] || 0;
+          const possible = subjectFullScores[sub]  || 0;
+          if (possible === 0) return null;
           totalEarned   += earned;
           totalPossible += possible;
           return (earned / possible * 100).toFixed(1);
         });
 
         return {
-          student_id: +sid,
-          nickname: students.find(s => s.id === +sid)?.nickname || 'นักเรียน',
-          subs,
+          student_id: studentId,
+          nickname:   students.find(s => s.id === studentId)?.nickname || 'นักเรียน',
+          subPcts,                                                        // real values
           pct: totalPossible > 0 ? (totalEarned / totalPossible * 100) : 0
         };
       }).sort((a, b) => b.pct - a.pct);
 
-      // ── Average cards ──────────────────────────────────────────────────────
+      // ── 4. Average cards (always visible, shows class averages) ──────────
       const avgGrid = document.getElementById('avgGrid');
       const overallAvg = rows.length
         ? (rows.reduce((a, b) => a + b.pct, 0) / rows.length).toFixed(1)
@@ -364,70 +373,77 @@
       </div>`;
 
       subjects.forEach((sub, i) => {
-        const subVals = rows.map(r => r.subs[i]).filter(v => v !== null);
-        const subAvg  = subVals.length
-          ? (subVals.reduce((a, b) => +a + +b, 0) / subVals.length).toFixed(1)
-          : '—';
-        const color   = colorMap[sub] || 'indigo';
-        // Full score label comes from score_settings
-        const totalFs = subjectFullScores[sub] || '?';
+        const vals   = rows.map(r => r.subPcts[i]).filter(v => v !== null);
+        const subAvg = vals.length ? (vals.reduce((a, b) => +a + +b, 0) / vals.length).toFixed(1) : '—';
+        const color  = colorMap[sub] || 'indigo';
         avgGrid.innerHTML += `<div class="avg-card border-b-4 border-${color}-500">
           <p class="text-[9px] font-black text-${color}-600 uppercase">${sub}</p>
           <p class="text-xl font-black text-slate-800">${subAvg}%</p>
-          <p class="text-[9px] text-slate-400 mt-1">เต็ม ${totalFs} คะแนน</p>
         </div>`;
       });
 
-      // ── Desktop table ──────────────────────────────────────────────────────
-      const head = document.getElementById('tableHead');
-      head.innerHTML = `<tr>
+      // ── 5. Desktop table ──────────────────────────────────────────────────
+      document.getElementById('tableHead').innerHTML = `<tr>
         <th class="px-5 py-3 w-16 text-center">Rank</th>
         <th class="px-5 py-3">Student</th>
-        ${subjects.map(s => {
-          const fs = subjectFullScores[s] || '?';
-          return `<th class="px-5 py-3 text-center">${s}<br><span class="font-normal normal-case text-[9px]">เต็ม ${fs}</span></th>`;
-        }).join('')}
+        ${subjects.map(s => `<th class="px-5 py-3 text-center">${s}</th>`).join('')}
         <th class="px-5 py-3 text-right">Total %</th>
       </tr>`;
 
       document.getElementById('rankingListDesktop').innerHTML = rows.map((r, i) => {
-        const isMe = r.student_id === myId;
+        const isMe       = r.student_id === myId;
+        const rank       = i + 1;
+        // Privacy masking: real data only for the logged-in student
+        const displayName = isMe
+          ? `⭐ ${r.nickname}`
+          : `นักเรียน #${rank}`;
+        const displayPct  = `${r.pct.toFixed(1)}%`;
+        const subCells    = r.subPcts.map(v =>
+          `<td class="px-5 py-4 text-center font-bold text-slate-500">${v !== null ? v+'%' : '—'}</td>`
+        ).join('');
+
         return `<tr class="${isMe ? 'bg-indigo-50/70' : ''} transition-colors">
-          <td class="px-5 py-4 text-center font-black text-slate-400">#${i+1}</td>
-          <td class="px-5 py-4 font-bold ${isMe ? 'text-indigo-600' : 'text-slate-700'}">${isMe ? '⭐ ' : ''}${r.nickname}</td>
-          ${r.subs.map(s => `<td class="px-5 py-4 text-center font-bold text-slate-500">${s !== null ? s+'%' : '—'}</td>`).join('')}
-          <td class="px-5 py-4 text-right font-black text-indigo-600">${r.pct.toFixed(1)}%</td>
+          <td class="px-5 py-4 text-center">
+            <span class="font-black ${isMe ? 'text-indigo-500' : 'text-slate-400'}">#${rank}</span>
+          </td>
+          <td class="px-5 py-4 font-bold ${isMe ? 'text-indigo-600' : 'text-slate-400'}">${displayName}</td>
+          ${subCells}
+          <td class="px-5 py-4 text-right font-black ${isMe ? 'text-indigo-600' : 'text-slate-400'}">${displayPct}</td>
         </tr>`;
       }).join('');
 
-      // ── Mobile cards ───────────────────────────────────────────────────────
+      // ── 6. Mobile cards ───────────────────────────────────────────────────
       document.getElementById('rankingListMobile').innerHTML = rows.map((r, i) => {
-        const isMe = r.student_id === myId;
-        return `
-        <div class="rank-card ${isMe ? 'border-indigo-200 ring-2 ring-indigo-50' : ''}">
+        const isMe        = r.student_id === myId;
+        const rank        = i + 1;
+        const displayName = isMe ? `⭐ ${r.nickname}` : `นักเรียน #${rank}`;
+        const displayPct  = `${r.pct.toFixed(1)}%`;
+        const pctColor    = isMe ? '#4f46e5' : '#334155';
+
+        const subBoxes = subjects.map((sub, idx) => {
+          const scoreDisplay = r.subPcts[idx] !== null ? `${r.subPcts[idx]}%` : '—';
+          const scoreColor = '#1e293b';
+          return `<div class="subject-box">
+            <div style="font-size:9px;color:#94a3b8;font-weight:700;margin-bottom:2px;text-transform:uppercase;">${sub}</div>
+            <div style="font-size:14px;font-weight:900;color:${scoreColor};">${scoreDisplay}</div>
+          </div>`;
+        }).join('');
+
+        return `<div class="rank-card ${isMe ? 'border-indigo-200 ring-2 ring-indigo-50' : ''}">
           <div class="rank-card-header">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="width:32px; height:32px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; color:#64748b;">${i+1}</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;background:${isMe ? '#eef2ff' : '#f1f5f9'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:${isMe ? '#4f46e5' : '#64748b'};">${rank}</div>
               <div>
-                <div class="font-black text-sm ${isMe ? 'text-indigo-600' : 'text-slate-800'}">${isMe ? '⭐ ' : ''}${r.nickname}</div>
-                <div style="font-size:10px; font-weight:600; color:#94a3b8;">ตำแหน่งที่ ${i+1}</div>
+                <div class="font-black text-sm" style="color:${isMe ? '#4f46e5' : '#475569'};">${displayName}</div>
+                <div style="font-size:10px;font-weight:600;color:#94a3b8;">ตำแหน่งที่ ${rank}</div>
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:20px; font-weight:900; color:#4f46e5;">${r.pct.toFixed(1)}%</div>
-              <div style="font-size:9px; font-weight:700; color:#94a3b8; text-transform:uppercase;">รวม</div>
+              <div style="font-size:20px;font-weight:900;color:${pctColor};">${displayPct}</div>
+              <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;">รวม</div>
             </div>
           </div>
-          <div class="rank-subjects">
-            ${subjects.map((sub, idx) => {
-              const fs = subjectFullScores[sub] || '?';
-              return `<div class="subject-box">
-                <div style="font-size:9px; color:#94a3b8; font-weight:700; margin-bottom:2px; text-transform:uppercase;">${sub}</div>
-                <div style="font-size:14px; font-weight:900; color:#1e293b;">${r.subs[idx] !== null ? r.subs[idx]+'%' : '—'}</div>
-                <div style="font-size:9px; color:#cbd5e1;">/${fs}</div>
-              </div>`;
-            }).join('')}
-          </div>
+          <div class="rank-subjects">${subBoxes}</div>
         </div>`;
       }).join('');
     }

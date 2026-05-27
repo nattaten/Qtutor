@@ -9,302 +9,55 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { font-family: 'Kanit', sans-serif; }
-    
-    /* ══════ SIDEBAR ══════ */
-    .sidebar { 
-      background: #0f172a; 
-      min-height: 100vh; 
-      width: 240px; 
-      flex-shrink: 0; 
-      transition: all 0.3s ease;
-      box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+    .sidebar { background: #0f172a; min-height: 100vh; width: 240px; flex-shrink: 0; transition: all 0.3s ease; box-shadow: 2px 0 12px rgba(0,0,0,0.1); }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.15s; text-decoration: none; }
+    .nav-item:hover { background: #1e293b; color: #e2e8f0; transform: translateX(4px); }
+    .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.35); font-weight: 900; }
+    .stat-card { background: #fff; border-radius: 24px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; transition: all 0.2s; }
+    .stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .stat-value { font-size: 2rem; font-weight: 900; line-height: 1; }
+    .top-bar { background: #fff; border-bottom: 1px solid #f1f5f9; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .input { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 14px; outline: none; font-family: 'Kanit', sans-serif; width: 100%; transition: border 0.15s, box-shadow 0.15s; background: #fff; }
+    .input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .sched-table { border-collapse: separate; border-spacing: 0 8px; width: 100%; }
+    .sched-table thead th { padding: 8px 12px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; text-align: left; background: transparent; }
+    .sched-table thead th.c-center { text-align: center; }
+    .sched-row td { background: #f8fafc; padding: 14px; vertical-align: top; transition: background 0.15s; border-bottom: none; }
+    .sched-row:hover td { background: #f1f5f9; }
+    .sched-row td:first-child { border-radius: 14px 0 0 14px; padding-left: 16px; }
+    .sched-row td:last-child { border-radius: 0 14px 14px 0; padding-right: 16px; }
+    .sched-row.is-next td { background: #eef2ff; border-left: 4px solid #6366f1; }
+    .sched-row.is-next:hover td { background: #e0e7ff; }
+    .sched-row.is-hol td { background: #fff7ed; }
+    .sched-row.is-hol:hover td { background: #ffedd5; }
+    .next-badge { display: inline-block; background: #6366f1; color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 99px; vertical-align: middle; margin-top: 6px; }
+    .subj-teacher { font-size: 12px; font-weight: 800; line-height: 1.3; }
+    .subj-topic { font-size: 11px; font-weight: 500; color: #64748b; margin-top: 4px; line-height: 1.4; }
+    .btn { font-family: 'Kanit', sans-serif; font-weight: 900; transition: all 0.2s; border: none; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(99,102,241,0.4); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-sm-edit { font-size: 10px; font-weight: 900; background: #e0e7ff; color: #4338ca; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-sm-edit:hover { background: #c7d2fe; transform: translateY(-1px); }
+    .btn-sm-delete { font-size: 10px; font-weight: 900; background: #fee2e2; color: #dc2626; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; }
+    .btn-sm-delete:hover { background: #fecaca; transform: translateY(-1px); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 49; }
+    .modal-content { position: relative; background: white; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 50; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+
+    /* ── Data Completeness Warning ── */
+    .warn-banner {
+      background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 16px;
+      padding: 12px 16px; display: flex; align-items: flex-start; gap: 10px;
     }
-    
-    .nav-item { 
-      display: flex; 
-      align-items: center; 
-      gap: 10px; 
-      padding: 12px 16px; 
-      border-radius: 12px; 
-      color: #94a3b8; 
-      font-weight: 700; 
-      font-size: 14px; 
-      cursor: pointer; 
-      transition: all 0.15s; 
-      text-decoration: none;
-    }
-    
-    .nav-item:hover { 
-      background: #1e293b; 
-      color: #e2e8f0; 
-      transform: translateX(4px);
-    }
-    
-    .nav-item.active { 
-      background: linear-gradient(135deg, #6366f1, #8b5cf6); 
-      color: #fff; 
-      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
-      font-weight: 900;
-    }
-    
-    /* ══════ STAT CARDS ══════ */
-    .stat-card { 
-      background: #fff; 
-      border-radius: 24px; 
-      padding: 24px; 
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border: 1px solid #f1f5f9;
-      transition: all 0.2s;
-    }
-    
-    .stat-card:hover {
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      transform: translateY(-2px);
-    }
-    
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 900;
-      line-height: 1;
-    }
-    
-    /* ══════ TOP BAR ══════ */
-    .top-bar { 
-      background: #fff; 
-      border-bottom: 1px solid #f1f5f9; 
-      padding: 16px 24px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    /* ══════ FORM INPUTS ══════ */
-    .input { 
-      border: 1.5px solid #e2e8f0; 
-      border-radius: 12px; 
-      padding: 10px 14px; 
-      font-size: 14px; 
-      outline: none; 
-      font-family: 'Kanit', sans-serif; 
-      width: 100%; 
-      transition: border 0.15s, box-shadow 0.15s;
-      background: #fff; 
-    }
-    
-    .input:focus { 
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-    }
-    
-    /* ══════ SCHEDULE TABLE ══════ */
-    .sched-table { 
-      border-collapse: separate; 
-      border-spacing: 0 8px; 
-      width: 100%; 
-    }
-    
-    .sched-table thead th { 
-      padding: 8px 12px; 
-      font-size: 10px; 
-      font-weight: 900; 
-      text-transform: uppercase; 
-      letter-spacing: 0.05em; 
-      color: #94a3b8; 
-      text-align: left;
-      background: transparent;
-    }
-    
-    .sched-table thead th.c-center { 
-      text-align: center; 
-    }
-    
-    .sched-row td { 
-      background: #f8fafc; 
-      padding: 14px; 
-      vertical-align: top; 
-      transition: background 0.15s;
-      border-bottom: none;
-    }
-    
-    .sched-row:hover td { 
-      background: #f1f5f9; 
-    }
-    
-    .sched-row td:first-child { 
-      border-radius: 14px 0 0 14px; 
-      padding-left: 16px; 
-    }
-    
-    .sched-row td:last-child { 
-      border-radius: 0 14px 14px 0; 
-      padding-right: 16px; 
-    }
-    
-    .sched-row.is-next td { 
-      background: #eef2ff; 
-      border-left: 4px solid #6366f1;
-    }
-    
-    .sched-row.is-next:hover td { 
-      background: #e0e7ff; 
-    }
-    
-    .sched-row.is-hol td { 
-      background: #fff7ed; 
-    }
-    
-    .sched-row.is-hol:hover td { 
-      background: #ffedd5; 
-    }
-    
-    .next-badge { 
-      display: inline-block; 
-      background: #6366f1; 
-      color: #fff; 
-      font-size: 9px; 
-      font-weight: 900; 
-      padding: 4px 10px; 
-      border-radius: 99px; 
-      vertical-align: middle; 
-      margin-top: 6px;
-    }
-    
-    .subj-teacher { 
-      font-size: 12px; 
-      font-weight: 800; 
-      line-height: 1.3; 
-    }
-    
-    .subj-topic { 
-      font-size: 11px; 
-      font-weight: 500; 
-      color: #64748b; 
-      margin-top: 4px; 
-      line-height: 1.4; 
-    }
-    
-    /* ══════ BUTTONS ══════ */
-    .btn {
-      font-family: 'Kanit', sans-serif;
-      font-weight: 900;
-      transition: all 0.2s;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-    }
-    
-    .btn-primary:hover:not(:disabled) {
-      box-shadow: 0 6px 16px rgba(99,102,241,0.4);
-      transform: translateY(-1px);
-    }
-    
-    .btn-primary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    
-    .btn-sm-edit {
-      font-size: 10px;
-      font-weight: 900;
-      background: #e0e7ff;
-      color: #4338ca;
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    
-    .btn-sm-edit:hover {
-      background: #c7d2fe;
-      transform: translateY(-1px);
-    }
-    
-    .btn-sm-delete {
-      font-size: 10px;
-      font-weight: 900;
-      background: #fee2e2;
-      color: #dc2626;
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    
-    .btn-sm-delete:hover {
-      background: #fecaca;
-      transform: translateY(-1px);
-    }
-    
-    /* ══════ MODAL ══════ */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(3px);
-      z-index: 49;
-    }
-    
-    .modal-content {
-      position: relative;
-      background: white;
-      border-radius: 24px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-      z-index: 50;
-      max-width: 480px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    /* ══════ MOBILE ══════ */
+    .warn-banner ul { margin: 4px 0 0; padding-left: 18px; font-size: 11px; color: #92400e; }
+
     @media (max-width: 768px) {
-      .sidebar { 
-        position: fixed; 
-        z-index: 100; 
-        left: -240px; 
-        top: 0;
-        height: 100vh;
-        overflow-y: auto;
-      }
-      
-      .sidebar.open { 
-        left: 0; 
-      }
-      
-      .overlay { 
-        display: none; 
-        position: fixed; 
-        inset: 0; 
-        background: rgba(0,0,0,0.5); 
-        z-index: 90; 
-        backdrop-filter: blur(2px); 
-      }
-      
-      .overlay.open { 
-        display: block; 
-      }
-      
-      .main-content { 
-        width: 100%; 
-      }
-      
-      .stat-value {
-        font-size: 1.75rem;
-      }
+      .sidebar { position: fixed; z-index: 100; left: -240px; top: 0; height: 100vh; overflow-y: auto; }
+      .sidebar.open { left: 0; }
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; backdrop-filter: blur(2px); }
+      .overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .stat-value { font-size: 1.75rem; }
     }
   </style>
 </head>
@@ -323,31 +76,16 @@
         </svg>
       </button>
     </div>
-    
     <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item active">
-        <span>📊</span> ภาพรวม
-      </a>
-      <a href="scores.html" class="nav-item">
-        <span>📝</span> จัดการคะแนน
-      </a>
-      <a href="students.html" class="nav-item">
-        <span>👥</span> นักเรียน
-      </a>
-      <a href="courses.html" class="nav-item">
-        <span>📚</span> คอร์สเรียน
-      </a>
-      <a href="content.html" class="nav-item">
-        <span>🎬</span> เนื้อหา (เฉลย/คลิป)
-      </a>
-      <a href="export.html" class="nav-item">
-        <span>📤</span> Export รายงาน
-      </a>
+      <a href="dashboard.html" class="nav-item active"><span>📊</span> ภาพรวม</a>
+      <a href="scores.html" class="nav-item"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html" class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html" class="nav-item"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html" class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="export.html" class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
-    
     <div class="px-3 py-4 border-t border-slate-800">
-      <button onclick="logout()" 
-        class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl">
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl">
         <span>🚪</span> ออกจากระบบ
       </button>
     </div>
@@ -355,14 +93,12 @@
 
   <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
 
-  <!-- ═══ MAIN CONTENT ═══ -->
+  <!-- ═══ MAIN ═══ -->
   <div class="flex-1 flex flex-col min-h-screen min-w-0 main-content">
 
-    <!-- ═══ TOP BAR ═══ -->
     <div class="top-bar sticky top-0 z-10">
       <div class="flex items-center gap-3">
-        <button onclick="openSidebar()" 
-          class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+        <button onclick="openSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -377,23 +113,22 @@
           <p class="text-sm font-bold text-slate-700">แอดมิน</p>
           <p class="text-xs text-slate-400">Qtutor System</p>
         </div>
-        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md">
-          A
-        </div>
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md">A</div>
       </div>
     </div>
 
-    <!-- ═══ MAIN CONTENT ═══ -->
     <main class="flex-1 p-4 md:p-6 space-y-6 overflow-x-hidden">
 
       <!-- COURSE SELECTOR -->
       <div class="flex flex-col sm:flex-row sm:items-center gap-3">
         <label class="text-sm font-bold text-slate-600">คอร์สที่กำลังดู:</label>
-        <select id="courseSelect" onchange="onCourseChange()"
-          class="w-full sm:w-64 input shadow-sm">
+        <select id="courseSelect" onchange="onCourseChange()" class="w-full sm:w-64 input shadow-sm">
           <option value="">-- เลือกคอร์ส --</option>
         </select>
       </div>
+
+      <!-- DATA COMPLETENESS WARNING (hidden by default) -->
+      <div id="warnArea"></div>
 
       <!-- STAT CARDS -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -402,19 +137,18 @@
           <p id="statStudents" class="stat-value text-slate-800 mt-2">—</p>
           <p class="text-[10px] text-slate-400 mt-2">คนในคอร์ส</p>
         </div>
-        
         <div class="stat-card">
+          <!-- Count sourced from score_settings (authoritative test count) -->
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">จำนวน Test ทั้งหมด</p>
-          <p id="statLatestTest" class="stat-value text-indigo-600 mt-2">—</p>
+          <p id="statTotalTests" class="stat-value text-indigo-600 mt-2">—</p>
           <p class="text-[10px] text-slate-400 mt-2">ชุดการทดสอบ</p>
         </div>
-        
         <div class="stat-card">
+          <!-- Average sourced by joining test_scores ÷ score_settings.full_score -->
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">เฉลี่ยห้อง</p>
           <p id="statAvgScore" class="stat-value text-emerald-600 mt-2">—</p>
           <p class="text-[10px] text-slate-400 mt-2">% รวม</p>
         </div>
-        
         <div class="stat-card">
           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">เนื้อหา</p>
           <p id="statContent" class="stat-value text-amber-600 mt-2">—</p>
@@ -422,17 +156,14 @@
         </div>
       </div>
 
-      <!-- ════ SCHEDULE & CONTENT ════ -->
-      <div class="bg-white rounded-24px shadow-sm border border-slate-100 overflow-hidden">
-
-        <!-- Header -->
+      <!-- SCHEDULE TABLE -->
+      <div class="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 class="text-sm md:text-base font-black text-slate-800">📅 ตารางสอน &amp; เนื้อหา</h3>
             <p class="text-[11px] text-slate-400 mt-0.5">ครู · หัวข้อเนื้อหา · วันเรียน</p>
           </div>
-          <button id="addRowBtn" onclick="openAddModal()" disabled
-            class="btn btn-primary px-4 py-2 text-xs">
+          <button id="addRowBtn" onclick="openAddModal()" disabled class="btn btn-primary px-4 py-2 text-xs">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -440,18 +171,14 @@
           </button>
         </div>
 
-        <!-- Next Session Banner -->
-        <div id="nextBanner" class="hidden mx-4 mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl px-4 py-3 flex items-center gap-3 animate-pulse">
-          <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span class="text-lg">📌</span>
-          </div>
+        <div id="nextBanner" class="hidden mx-4 mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl px-4 py-3 flex items-center gap-3">
+          <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"><span class="text-lg">📌</span></div>
           <div>
             <p class="text-[10px] text-indigo-200 font-semibold uppercase tracking-wide">การสอนครั้งถัดไป</p>
             <p id="nextBannerText" class="font-black text-sm mt-0.5"></p>
           </div>
         </div>
 
-        <!-- Schedule Table -->
         <div class="overflow-x-auto px-4 pb-4 pt-2">
           <table class="sched-table min-w-[720px]">
             <thead>
@@ -459,32 +186,15 @@
                 <th style="width:72px">ครั้งที่</th>
                 <th style="width:100px">เดือน</th>
                 <th style="width:80px" class="c-center">เสาร์ / อา.</th>
-                <th>
-                  <span class="flex items-center gap-1">
-                    <span style="width:7px;height:7px;border-radius:50%;background:#34d399;display:inline-block"></span>
-                    วิทย์
-                  </span>
-                </th>
-                <th>
-                  <span class="flex items-center gap-1">
-                    <span style="width:7px;height:7px;border-radius:50%;background:#60a5fa;display:inline-block"></span>
-                    คณิต
-                  </span>
-                </th>
-                <th>
-                  <span class="flex items-center gap-1">
-                    <span style="width:7px;height:7px;border-radius:50%;background:#a78bfa;display:inline-block"></span>
-                    อังกฤษ
-                  </span>
-                </th>
+                <th><span class="flex items-center gap-1"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;display:inline-block"></span>วิทย์</span></th>
+                <th><span class="flex items-center gap-1"><span style="width:7px;height:7px;border-radius:50%;background:#60a5fa;display:inline-block"></span>คณิต</span></th>
+                <th><span class="flex items-center gap-1"><span style="width:7px;height:7px;border-radius:50%;background:#a78bfa;display:inline-block"></span>อังกฤษ</span></th>
                 <th style="width:90px" class="c-center">จัดการ</th>
               </tr>
             </thead>
             <tbody id="scheduleBody">
               <tr class="sched-row">
-                <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">
-                  เลือกคอร์สก่อนครับ
-                </td>
+                <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">เลือกคอร์สก่อนครับ</td>
               </tr>
             </tbody>
           </table>
@@ -495,8 +205,7 @@
       <div class="pb-4">
         <h3 class="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-3">เมนูด่วน</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <a href="scores.html" 
-            class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all">
+          <a href="scores.html" class="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-md hover:border-indigo-200 hover:-translate-y-1 transition-all">
             <span class="text-2xl mb-2">📝</span>
             <p class="text-xs font-black text-slate-700">จัดการคะแนน</p>
           </a>
@@ -505,13 +214,11 @@
     </main>
   </div>
 
-  <!-- ═══ ADD/EDIT MODAL ═══ -->
+  <!-- ═══ MODAL ═══ -->
   <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="modal-backdrop" onclick="closeModal()"></div>
     <div class="modal-content p-6 space-y-4">
       <h3 id="modalTitle" class="text-lg font-black text-slate-800">เพิ่มแถวใหม่</h3>
-      
-      <!-- Holiday Toggle -->
       <label class="flex items-center gap-3 cursor-pointer select-none">
         <div class="relative">
           <input type="checkbox" id="fIsHoliday" class="sr-only peer" onchange="toggleHolidayMode()">
@@ -520,8 +227,6 @@
         </div>
         <span class="text-sm font-bold text-slate-700">วันหยุด</span>
       </label>
-
-      <!-- Form Fields -->
       <div class="grid grid-cols-2 gap-3">
         <div id="sessionNumWrap">
           <label class="text-xs font-bold text-slate-500 block mb-1">ครั้งที่สอบ</label>
@@ -559,8 +264,6 @@
           <input type="number" id="fSun" placeholder="เช่น 7" class="input" min="1" max="31">
         </div>
       </div>
-
-      <!-- Teacher Fields -->
       <div id="teacherFields" class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-xs font-bold text-blue-600 block mb-1">ครูวิทย์</label>
@@ -575,97 +278,61 @@
           <input type="text" id="fEng" placeholder="เช่น หญิง" class="input">
         </div>
       </div>
-
-      <!-- Action Buttons -->
       <div class="flex gap-3 pt-2">
-        <button onclick="closeModal()" 
-          class="flex-1 btn bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5">
-          ยกเลิก
-        </button>
-        <button onclick="saveRow()" 
-          class="flex-1 btn btn-primary py-2.5">
-          บันทึก
-        </button>
+        <button onclick="closeModal()" class="flex-1 btn bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5">ยกเลิก</button>
+        <button onclick="saveRow()" class="flex-1 btn btn-primary py-2.5">บันทึก</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══ TOAST NOTIFICATION ═══ -->
+  <!-- TOAST -->
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl z-50 opacity-0 transition-opacity pointer-events-none"></div>
 
   <script>
-    // ════ SUPABASE CONFIG ════
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ════ AUTH CHECK ════
-    if (!sessionStorage.getItem('admin_user')) {
-      location.href = 'index.html';
-    }
+    if (!sessionStorage.getItem('admin_user')) location.href = 'index.html';
 
-    // ════ INITIALIZE ════
     document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('th-TH', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 
     let editingId = null;
 
-    // ════ SIDEBAR FUNCTIONS ════
-    function openSidebar() {
-      document.getElementById('sidebar').classList.add('open');
-      document.getElementById('overlay').classList.add('open');
-    }
+    // ── Sidebar ──────────────────────────────────────────────────────────────
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('overlay').classList.add('open');    }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+    function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.clear(); location.href = 'index.html'; } }
 
-    function closeSidebar() {
-      document.getElementById('sidebar').classList.remove('open');
-      document.getElementById('overlay').classList.remove('open');
-    }
-
-    function logout() {
-      if (confirm('ออกจากระบบ?')) {
-        sessionStorage.clear();
-        location.href = 'index.html';
-      }
-    }
-
-    // ════ TOAST NOTIFICATION ════
+    // ── Toast ─────────────────────────────────────────────────────────────────
     function showToast(msg, type = 'ok') {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
-      const bgColor = type === 'error' ? 'bg-red-600' : 'bg-slate-900';
-      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 text-sm font-bold px-5 py-3 rounded-2xl shadow-xl z-50 transition-opacity pointer-events-none ${bgColor} text-white opacity-100`;
-      
+      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 text-sm font-bold px-5 py-3 rounded-2xl shadow-xl z-50 transition-opacity pointer-events-none ${type === 'error' ? 'bg-red-600' : 'bg-slate-900'} text-white opacity-100`;
       clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => {
-        toast.classList.add('opacity-0');
-      }, 2500);
+      toast._timer = setTimeout(() => toast.classList.add('opacity-0'), 2500);
     }
 
-    // ════ DATA LOADING ════
+    // ── Init ──────────────────────────────────────────────────────────────────
     async function init() {
       try {
         const { data: courses, error } = await db
           .from('courses')
           .select('course_code, course_name')
           .eq('is_active', true)
-          // เปลี่ยนจาก created_at เป็น sort_order
-          .order('sort_order', { ascending: true }); 
+          .order('sort_order', { ascending: true });
 
         if (error) throw error;
 
         const select = document.getElementById('courseSelect');
-        // ล้างค่าเดิมใน select ก่อน (เผื่อมีการเรียก init ซ้ำ)
-        select.innerHTML = ''; 
-
-        (courses || []).forEach(course => {
-          const option = document.createElement('option');
-          option.value = course.course_code;
-          option.textContent = `${course.course_name}`;
-          select.appendChild(option);
+        select.innerHTML = '<option value="">-- เลือกคอร์ส --</option>';
+        (courses || []).forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.course_code;
+          o.textContent = c.course_name;
+          select.appendChild(o);
         });
 
         if (courses && courses.length > 0) {
@@ -673,97 +340,162 @@
           onCourseChange();
         }
       } catch (err) {
-        // ตรวจสอบว่ามีฟังก์ชัน showToast ไหม ถ้าไม่มีให้ใช้ alert แทน
-        if (typeof showToast === "function") {
-          showToast('ไม่สามารถโหลดคอร์สได้: ' + err.message, 'error');
-        } else {
-          alert('ไม่สามารถโหลดคอร์สได้: ' + err.message);
-        }
-        console.error(err);
+        showToast('ไม่สามารถโหลดคอร์สได้: ' + err.message, 'error');
       }
     }
 
     async function onCourseChange() {
       const code = document.getElementById('courseSelect').value;
       document.getElementById('addRowBtn').disabled = !code;
+      document.getElementById('warnArea').innerHTML = '';
 
-      if (!code) {
-        resetStats();
-        resetScheduleTable();
-        return;
-      }
+      if (!code) { resetStats(); resetScheduleTable(); return; }
 
       await Promise.all([loadStats(code), loadSchedule(code)]);
     }
 
     function resetStats() {
-      document.getElementById('statStudents').textContent = '—';
-      document.getElementById('statLatestTest').textContent = '—';
-      document.getElementById('statAvgScore').textContent = '—';
-      document.getElementById('statContent').textContent = '—';
+      ['statStudents','statTotalTests','statAvgScore','statContent']
+        .forEach(id => document.getElementById(id).textContent = '—');
     }
 
     function resetScheduleTable() {
-      const tbody = document.getElementById('scheduleBody');
-      tbody.innerHTML = `<tr class="sched-row">
-        <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">
-          เลือกคอร์สก่อนครับ
-        </td>
-      </tr>`;
+      document.getElementById('scheduleBody').innerHTML =
+        `<tr class="sched-row"><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">เลือกคอร์สก่อนครับ</td></tr>`;
       document.getElementById('nextBanner').classList.add('hidden');
     }
 
+    // ── Stats (now reads from score_settings for test count & full_score) ─────
     async function loadStats(code) {
       try {
-        const [studRes, scoresRes, solRes, vidRes] = await Promise.all([
+        const [studRes, settingsRes, scoresRes, solRes, vidRes] = await Promise.all([
+          // Student count
           db.from('enrollments').select('id', { count: 'exact' }).eq('course_code', code),
-          db.from('test_scores').select('test_number,score_percent').eq('course_code', code),
+
+          // score_settings: source of truth for test count, full_score, subject
+          db.from('score_settings')
+            .select('test_number, subject, full_score')
+            .eq('course_code', code),
+
+          // test_scores: raw student marks only
+          db.from('test_scores')
+            .select('student_id, test_number, subject, score')
+            .eq('course_code', code),
+
+          // Content counts (unchanged)
           db.from('solutions').select('id', { count: 'exact' }).eq('course_code', code),
           db.from('videos').select('id', { count: 'exact' }).eq('course_code', code),
         ]);
 
+        // ── Student count ──────────────────────────────────────────────────
         document.getElementById('statStudents').textContent = studRes.count ?? 0;
+
+        // ── Content count ──────────────────────────────────────────────────
         document.getElementById('statContent').textContent = (solRes.count ?? 0) + (vidRes.count ?? 0);
 
+        // ── Test count from score_settings (authoritative) ─────────────────
+        const settings = settingsRes.data || [];
+        const uniqueTests = [...new Set(settings.map(s => s.test_number))];
+        document.getElementById('statTotalTests').textContent =
+          uniqueTests.length > 0 ? `${uniqueTests.length}` : '—';
+
+        // ── Class average: (Σ student_score) / (Σ full_score per student) ──
+        // Build settingsMap keyed by "test_number:subject" → full_score
+        const settingsMap = {};
+        settings.forEach(s => {
+          settingsMap[`${s.test_number}:${s.subject}`] = +s.full_score;
+        });
+
         const scores = scoresRes.data || [];
-        if (scores.length > 0) {
-          const latest = Math.max(...scores.map(s => s.test_number));
-          const avg = scores.reduce((sum, r) => sum + (r.score_percent || 0), 0) / scores.length;
-          document.getElementById('statLatestTest').textContent = `ครั้งที่ ${latest}`;
-          document.getElementById('statAvgScore').textContent = avg.toFixed(1);
+
+        if (scores.length > 0 && settings.length > 0) {
+          // Group scores by student
+          const byStudent = {};
+          scores.forEach(row => {
+            const key = `${row.test_number}:${row.subject}`;
+            const fs = settingsMap[key];
+            if (!fs || fs === 0) return;    // no settings → skip
+
+            const sid = row.student_id;
+            if (!byStudent[sid]) byStudent[sid] = { earned: 0, possible: 0 };
+            byStudent[sid].earned   += +row.score;
+            byStudent[sid].possible += fs;
+          });
+
+          const studentEntries = Object.values(byStudent).filter(e => e.possible > 0);
+          if (studentEntries.length > 0) {
+            const classAvg = studentEntries.reduce((sum, e) => sum + (e.earned / e.possible * 100), 0)
+                             / studentEntries.length;
+            document.getElementById('statAvgScore').textContent = classAvg.toFixed(1) + '%';
+          } else {
+            document.getElementById('statAvgScore').textContent = '—';
+          }
         } else {
-          document.getElementById('statLatestTest').textContent = '—';
           document.getElementById('statAvgScore').textContent = '—';
         }
+
+        // ── Data Completeness Warning ──────────────────────────────────────
+        // Find test_number values in test_scores with no matching score_settings entry
+        const settingTestSet = new Set(scores
+          .map(r => `${r.test_number}:${r.subject}`)
+          .filter(k => settingsMap[k] !== undefined)
+          .map(k => k.split(':')[0])
+        );
+        const scoresTestNums = [...new Set(scores.map(r => r.test_number))];
+        const missingSettings = scoresTestNums.filter(tn =>
+          scores
+            .filter(r => r.test_number === tn)
+            .some(r => !settingsMap[`${r.test_number}:${r.subject}`])
+        );
+
+        renderWarnBanner(missingSettings);
+
       } catch (err) {
         showToast('ไม่สามารถโหลดสถิติได้', 'error');
         console.error(err);
       }
     }
 
+    function renderWarnBanner(missingTests) {
+      const area = document.getElementById('warnArea');
+      if (missingTests.length === 0) { area.innerHTML = ''; return; }
+
+      area.innerHTML = `
+        <div class="warn-banner">
+          <span style="font-size:18px;flex-shrink:0">⚠️</span>
+          <div>
+            <p style="font-size:12px;font-weight:900;color:#92400e;">
+              ข้อมูลไม่สมบูรณ์ — score_settings ขาดหายไปสำหรับบางครั้งที่สอบ
+            </p>
+            <p style="font-size:11px;color:#b45309;margin-top:2px;">
+              วิชาที่ขาด full_score จะถูกยกเว้นจากการคำนวณเฉลี่ย
+            </p>
+            <ul>
+              ${missingTests.map(tn => `<li>ครั้งที่ ${tn} — ยังไม่มี score_settings</li>`).join('')}
+            </ul>
+          </div>
+        </div>`;
+    }
+
+    // ── Schedule (topics now sourced from score_settings) ─────────────────────
     function rowDate(row) {
-      const ceYear = (row.year || 2568) - 543;
-      return new Date(ceYear, row.month_number - 1, row.sat_date);
+      return new Date((row.year || 2568) - 543, row.month_number - 1, row.sat_date);
     }
 
     async function loadSchedule(code) {
-      try {
-        const tbody = document.getElementById('scheduleBody');
-        tbody.innerHTML = `<tr class="sched-row">
-          <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">
-            กำลังโหลด...
-          </td>
-        </tr>`;
+      const tbody = document.getElementById('scheduleBody');
+      tbody.innerHTML = `<tr class="sched-row"><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">กำลังโหลด...</td></tr>`;
 
+      try {
         const [{ data: schedData, error }, { data: topicsData }] = await Promise.all([
-          db
-            .from('class_schedule')
+          db.from('class_schedule')
             .select('*')
             .eq('course_code', code)
             .order('month_number')
             .order('sat_date'),
-          db
-            .from('test_scores')
+
+          // Topics come from score_settings now (not test_scores)
+          db.from('score_settings')
             .select('test_number, subject, topic')
             .eq('course_code', code)
             .not('topic', 'is', null)
@@ -773,16 +505,12 @@
         if (error) throw error;
 
         if (!schedData || schedData.length === 0) {
-          tbody.innerHTML = `<tr class="sched-row">
-            <td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">
-              ยังไม่มีตารางสอน — กด "+ เพิ่มแถว"
-            </td>
-          </tr>`;
+          tbody.innerHTML = `<tr class="sched-row"><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px 0;border-radius:14px">ยังไม่มีตารางสอน — กด "+ เพิ่มแถว"</td></tr>`;
           document.getElementById('nextBanner').classList.add('hidden');
           return;
         }
 
-        // Build topic map
+        // Build topic map from score_settings: test_number → subject → topic
         const topicMap = {};
         (topicsData || []).forEach(row => {
           if (!topicMap[row.test_number]) topicMap[row.test_number] = {};
@@ -790,12 +518,11 @@
         });
 
         // Find next session
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
         const nextRow = schedData.find(r => !r.is_holiday && rowDate(r) >= today);
 
         if (nextRow) {
-          const months = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+          const months = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
           document.getElementById('nextBannerText').textContent =
             `ครั้งที่ ${nextRow.session_number} · เสาร์ ${nextRow.sat_date} / อาทิตย์ ${nextRow.sun_date} ${months[nextRow.month_number]}`;
           document.getElementById('nextBanner').classList.remove('hidden');
@@ -803,15 +530,10 @@
           document.getElementById('nextBanner').classList.add('hidden');
         }
 
-        // Subject cell helper
         function subjCell(teacher, topic, color) {
-          const teacherHtml = teacher
-            ? `<div class="subj-teacher" style="color:${color}">${teacher}</div>`
-            : `<div style="font-size:11px;color:#cbd5e1">—</div>`;
-          const topicHtml = topic
-            ? `<div class="subj-topic">${topic}</div>`
-            : '';
-          return `<td style="padding:12px 12px 12px 8px;vertical-align:top">${teacherHtml}${topicHtml}</td>`;
+          const t = teacher ? `<div class="subj-teacher" style="color:${color}">${teacher}</div>` : `<div style="font-size:11px;color:#cbd5e1">—</div>`;
+          const tp = topic ? `<div class="subj-topic">${topic}</div>` : '';
+          return `<td style="padding:12px 12px 12px 8px;vertical-align:top">${t}${tp}</td>`;
         }
 
         let lastMonth = '';
@@ -819,7 +541,6 @@
           const isNext = nextRow && row.id === nextRow.id;
           const topics = topicMap[row.session_number] || {};
 
-          // Holiday row
           if (row.is_holiday) {
             return `<tr class="sched-row is-hol">
               <td colspan="7" style="border-radius:14px;padding:10px 14px">
@@ -835,16 +556,14 @@
             </tr>`;
           }
 
-          // Regular row
           const showMonth = row.month_name !== lastMonth;
           if (showMonth) lastMonth = row.month_name;
 
-          const rowClass = `sched-row${isNext ? ' is-next' : ''}`;
-          const badgeBg = isNext ? '#4f46e5' : '#e2e8f0';
-          const badgeNum = isNext ? '#fff' : '#475569';
+          const badgeBg  = isNext ? '#4f46e5' : '#e2e8f0';
+          const badgeNum = isNext ? '#fff'    : '#475569';
           const badgeLbl = isNext ? '#c7d2fe' : '#94a3b8';
 
-          return `<tr class="${rowClass}">
+          return `<tr class="sched-row${isNext ? ' is-next' : ''}">
             <td style="padding:12px 8px 12px 14px;vertical-align:middle;text-align:center">
               <div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:${badgeBg}">
                 <span style="font-size:9px;font-weight:900;color:${badgeLbl};line-height:1">ครั้ง</span>
@@ -852,24 +571,16 @@
               </div>
               ${isNext ? `<div><span class="next-badge">ถัดไป</span></div>` : ''}
             </td>
-
             <td style="padding:12px 8px;vertical-align:top">
               <div style="font-size:12px;font-weight:800;color:#1e293b">${showMonth ? row.month_name : ''}</div>
             </td>
-
             <td style="padding:12px 8px;vertical-align:top;text-align:center">
-              <div style="font-size:12px;font-weight:700;color:#334155">
-                <span style="font-size:10px;color:#94a3b8">ส.</span> ${row.sat_date}
-              </div>
-              <div style="font-size:12px;font-weight:700;color:#334155;margin-top:2px">
-                <span style="font-size:10px;color:#94a3b8">อ.</span> ${row.sun_date}
-              </div>
+              <div style="font-size:12px;font-weight:700;color:#334155"><span style="font-size:10px;color:#94a3b8">ส.</span> ${row.sat_date}</div>
+              <div style="font-size:12px;font-weight:700;color:#334155;margin-top:2px"><span style="font-size:10px;color:#94a3b8">อ.</span> ${row.sun_date}</div>
             </td>
-
-            ${subjCell(row.science_teacher, topics['วิทย์'], '#059669')}
-            ${subjCell(row.math_teacher, topics['คณิต'], '#2563eb')}
-            ${subjCell(row.english_teacher, topics['อังกฤษ'], '#7c3aed')}
-
+            ${subjCell(row.science_teacher,  topics['วิทยาศาสตร์'] || topics['วิทย์'],  '#059669')}
+            ${subjCell(row.math_teacher,     topics['คณิตศาสตร์']  || topics['คณิต'],  '#2563eb')}
+            ${subjCell(row.english_teacher,  topics['ภาษาอังกฤษ']  || topics['อังกฤษ'],'#7c3aed')}
             <td style="padding:12px 14px 12px 8px;vertical-align:middle;text-align:center">
               <div style="display:flex;flex-direction:column;gap:5px">
                 <button onclick="openEditModal('${row.id}')" class="btn-sm-edit">แก้ไข</button>
@@ -878,24 +589,23 @@
             </td>
           </tr>`;
         }).join('');
+
       } catch (err) {
         showToast('ไม่สามารถโหลดตารางสอนได้', 'error');
         console.error(err);
       }
     }
 
-    // ════ MODAL FUNCTIONS ════
+    // ── Modal ─────────────────────────────────────────────────────────────────
     function openAddModal() {
       editingId = null;
       document.getElementById('modalTitle').textContent = 'เพิ่มแถวใหม่';
-      clearForm();
-      showModal();
+      clearForm(); showModal();
     }
 
     async function openEditModal(id) {
       editingId = id;
       document.getElementById('modalTitle').textContent = 'แก้ไขแถว';
-      
       try {
         const { data, error } = await db.from('class_schedule').select('*').eq('id', id).single();
         if (error) throw error;
@@ -911,29 +621,21 @@
         document.getElementById('fSci').value = data.science_teacher ?? '';
         document.getElementById('fEng').value = data.english_teacher ?? '';
 
-        const monthSelect = document.getElementById('fMonth');
-        const option = Array.from(monthSelect.options).find(o => o.value.startsWith(data.month_number + '|'));
-        if (option) monthSelect.value = option.value;
+        const opt = Array.from(document.getElementById('fMonth').options)
+          .find(o => o.value.startsWith(data.month_number + '|'));
+        if (opt) document.getElementById('fMonth').value = opt.value;
 
         showModal();
       } catch (err) {
-        showToast('ไม่สามารถโหลดข้อมูลแถวได้', 'error');
-        console.error(err);
+        showToast('ไม่สามารถโหลดข้อมูลแถวได้', 'error'); console.error(err);
       }
     }
 
-    function showModal() {
-      document.getElementById('modal').classList.replace('hidden', 'flex');
-    }
-
-    function closeModal() {
-      document.getElementById('modal').classList.replace('flex', 'hidden');
-    }
+    function showModal()  { document.getElementById('modal').classList.replace('hidden', 'flex'); }
+    function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
 
     function clearForm() {
-      ['fSession', 'fSat', 'fSun', 'fMath', 'fSci', 'fEng'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
+      ['fSession','fSat','fSun','fMath','fSci','fEng'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('fMonth').value = '';
       document.getElementById('fYear').value = 2568;
       document.getElementById('fIsHoliday').checked = false;
@@ -941,17 +643,11 @@
     }
 
     function toggleHolidayMode() {
-      const isHoliday = document.getElementById('fIsHoliday').checked;
-      document.getElementById('sessionNumWrap').style.opacity = isHoliday ? '0.4' : '1';
-      document.getElementById('teacherFields').style.opacity = isHoliday ? '0.4' : '1';
-      
-      if (isHoliday) {
-        document.getElementById('fSession').disabled = true;
-        ['fSci', 'fMath', 'fEng'].forEach(id => document.getElementById(id).disabled = true);
-      } else {
-        document.getElementById('fSession').disabled = false;
-        ['fSci', 'fMath', 'fEng'].forEach(id => document.getElementById(id).disabled = false);
-      }
+      const isHol = document.getElementById('fIsHoliday').checked;
+      document.getElementById('sessionNumWrap').style.opacity = isHol ? '0.4' : '1';
+      document.getElementById('teacherFields').style.opacity  = isHol ? '0.4' : '1';
+      document.getElementById('fSession').disabled = isHol;
+      ['fSci','fMath','fEng'].forEach(id => document.getElementById(id).disabled = isHol);
     }
 
     async function saveRow() {
@@ -963,29 +659,18 @@
       const session = parseInt(document.getElementById('fSession').value) || null;
       const year = parseInt(document.getElementById('fYear').value) || 2568;
 
-      // Validation
-      if (!monthVal || !sat || !sun) {
-        showToast('กรุณากรอกเดือน, วันเสาร์ และอาทิตย์', 'error');
-        return;
-      }
-      if (!isHoliday && !session) {
-        showToast('กรุณากรอกครั้งที่สอบ', 'error');
-        return;
-      }
+      if (!monthVal || !sat || !sun) { showToast('กรุณากรอกเดือน, วันเสาร์ และอาทิตย์', 'error'); return; }
+      if (!isHoliday && !session)    { showToast('กรุณากรอกครั้งที่สอบ', 'error'); return; }
 
       const [monthNum, monthName] = monthVal.split('|');
       const payload = {
-        course_code: code,
-        is_holiday: isHoliday,
-        month_number: parseInt(monthNum),
-        month_name: monthName,
-        year,
-        sat_date: sat,
-        sun_date: sun,
+        course_code: code, is_holiday: isHoliday,
+        month_number: parseInt(monthNum), month_name: monthName, year,
+        sat_date: sat, sun_date: sun,
         session_number: isHoliday ? null : session,
-        math_teacher: isHoliday ? '' : document.getElementById('fMath').value.trim(),
-        science_teacher: isHoliday ? '' : document.getElementById('fSci').value.trim(),
-        english_teacher: isHoliday ? '' : document.getElementById('fEng').value.trim(),
+        math_teacher:     isHoliday ? '' : document.getElementById('fMath').value.trim(),
+        science_teacher:  isHoliday ? '' : document.getElementById('fSci').value.trim(),
+        english_teacher:  isHoliday ? '' : document.getElementById('fEng').value.trim(),
       };
 
       try {
@@ -995,36 +680,29 @@
         } else {
           ({ error } = await db.from('class_schedule').insert(payload));
         }
-
         if (error) throw error;
 
         showToast(editingId ? '✅ แก้ไขเรียบร้อย' : '✅ เพิ่มแถวเรียบร้อย');
         closeModal();
         loadSchedule(code);
       } catch (err) {
-        showToast('บันทึกไม่สำเร็จ: ' + err.message, 'error');
-        console.error(err);
+        showToast('บันทึกไม่สำเร็จ: ' + err.message, 'error'); console.error(err);
       }
     }
 
     async function deleteRow(id) {
       if (!confirm('ลบแถวนี้ออกจากตาราง?')) return;
-
       try {
         const code = document.getElementById('courseSelect').value;
         const { error } = await db.from('class_schedule').delete().eq('id', id);
-
         if (error) throw error;
-
         showToast('✅ ลบเรียบร้อย');
         loadSchedule(code);
       } catch (err) {
-        showToast('ลบไม่สำเร็จ: ' + err.message, 'error');
-        console.error(err);
+        showToast('ลบไม่สำเร็จ: ' + err.message, 'error'); console.error(err);
       }
     }
 
-    // Initialize
     init();
   </script>
 </body>
