@@ -42,273 +42,26 @@
     .student-index-cell { font-weight: 700; font-size: 12px; color: #94a3b8; padding: 8px; text-align: center; min-width: 40px; }
     .student-name-cell { font-weight: 700; font-size: 16px; color: #1e293b; padding: 8px; min-width: 160px; }
     .score-cell { min-width: 80px; }
-    .editable-score { cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s; border: 2px solid transparent; }
-    .editable-score:hover { background: #f0f9ff; border-color: #6366f1; }
-    .editable-score.editing { background: #fff; border-color: #10b981; }
-    .topic-text { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; padding: 2px 4px; }
-    .null-score { color: #94a3b8; font-weight: 300; font-style: italic; }
-    .zero-score { color: #1e293b; font-weight: 900; }
     .two-col-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: flex-end; }
-    @media (max-width: 640px) {
-      .two-col-inline { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 640px) { .two-col-inline { grid-template-columns: 1fr; } }
     .max-score-display { font-weight: 700; color: #6366f1; padding: 2px 6px; background: #eef2ff; border-radius: 4px; }
 
-    /* ===== COMPACT ROW STYLES ===== */
-    .score-view-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-    }
-
-    .score-row {
-      display: grid;
-      grid-template-columns: 45px 150px 90px 100px 1fr 40px;
-      gap: 12px;
-      align-items: center;
-      padding: 10px 12px;
-      border-bottom: 1px solid #f1f5f9;
-      transition: background-color 0.15s ease;
-      position: relative;
-    }
-
-    .score-row:last-child {
-      border-bottom: none;
-    }
-
-    .score-row:hover {
-      background-color: #f8fafc;
-    }
-
-    .score-row-index {
-      text-align: center;
-      font-weight: 700;
-      font-size: 13px;
-      color: #94a3b8;
-      min-width: 45px;
-    }
-
-    .score-row-nickname {
-      font-weight: 700;
-      font-size: 15px;
-      color: #1e293b;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .score-row-test {
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .score-row-subject {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1e293b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .score-row-score-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .score-row-score-display {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      background: #f8fafc;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      font-weight: 600;
-      font-size: 13px;
-    }
-
-    .score-row-score-display:hover {
-      background: #f0f9ff;
-      border-color: #6366f1;
-    }
-
-    .score-row-score-display .max-score {
-      font-weight: 600;
-      color: #64748b;
-    }
-
-    .score-row-edit-input {
-      width: 100%;
-      padding: 6px 10px;
-      border: 2px solid #6366f1;
-      border-radius: 8px;
-      background: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1e293b;
-      text-align: center;
-      outline: none;
-      transition: border-color 0.15s ease;
-    }
-
-    .score-row-edit-input:focus {
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-    }
-
-    .score-row-edit-input.hidden {
+    /* ===== LOADING LOCK BANNER ===== */
+    #dataLoadingBanner {
       display: none;
-    }
-
-    .score-row-topic {
-      font-size: 11px;
-      color: #94a3b8;
-      font-weight: 500;
-      padding: 2px 6px;
-      background: #f1f5f9;
-      border-radius: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: -2px;
-    }
-
-    .score-row-delete {
-      width: 36px;
-      height: 36px;
-      border: none;
-      background: #fee2e2;
-      color: #ef4444;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #92400e;
       align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      gap: 8px;
+      margin-bottom: 8px;
     }
+    #dataLoadingBanner.visible { display: flex; }
 
-    .score-row-delete:hover {
-      background: #fecaca;
-      transform: scale(1.05);
-    }
-
-    .score-row-delete:active {
-      transform: scale(0.95);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 1024px) {
-      .score-row {
-        grid-template-columns: 40px 120px 80px 90px 1fr 36px;
-        gap: 8px;
-        padding: 8px 10px;
-      }
-
-      .score-row-nickname {
-        font-size: 14px;
-      }
-
-      .score-row-test {
-        font-size: 11px;
-      }
-
-      .score-row-subject {
-        font-size: 12px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .score-row {
-        grid-template-columns: 35px 100px 70px 80px 1fr 32px;
-        gap: 6px;
-        padding: 6px 8px;
-      }
-
-      .score-row-index {
-        font-size: 12px;
-      }
-
-      .score-row-nickname {
-        font-size: 13px;
-      }
-
-      .score-row-test {
-        font-size: 10px;
-      }
-
-      .score-row-subject {
-        font-size: 11px;
-      }
-
-      .score-row-delete {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
-      }
-    }
-
-    @media (max-width: 512px) {
-      .score-row {
-        grid-template-columns: 1fr;
-        gap: 6px;
-        padding: 8px;
-      }
-
-      .score-row-index,
-      .score-row-nickname,
-      .score-row-test,
-      .score-row-subject,
-      .score-row-score-wrapper,
-      .score-row-delete {
-        width: 100%;
-      }
-
-      .score-row-index {
-        order: -1;
-        padding-bottom: 4px;
-        border-bottom: 1px solid #e2e8f0;
-        text-align: left;
-      }
-
-      .score-row-nickname {
-        order: 0;
-        font-size: 14px;
-      }
-
-      .score-row-test {
-        order: 1;
-        text-align: left;
-        font-size: 12px;
-      }
-
-      .score-row-subject {
-        order: 2;
-        font-size: 12px;
-      }
-
-      .score-row-score-wrapper {
-        order: 3;
-      }
-
-      .score-row-delete {
-        order: 4;
-      }
-    }
-
-    /* Existing styles preserved */
     @media (max-width: 768px) {
       .sidebar { position: fixed; z-index: 50; left: -240px; height: 100vh; }
       .sidebar.open { left: 0; }
@@ -317,11 +70,10 @@
       .mobile-stack { display: flex; flex-direction: column; }
       .mobile-stack > * { width: 100%; }
     }
-    @media (min-width: 769px) {
-      .sidebar { position: relative; left: 0; }
-    }
+    @media (min-width: 769px) { .sidebar { position: relative; left: 0; } }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
   </style>
 </head>
 <body class="bg-slate-50 flex overflow-x-hidden">
@@ -367,7 +119,13 @@
       <!-- ===== TAB: กรอกคะแนน ===== -->
       <div id="tab-enter" class="space-y-4">
 
-        <!-- Step 1: เลือกคอร์ส + ครั้งที่ -->
+        <!-- Loading lock banner -->
+        <div id="dataLoadingBanner">
+          <span>⏳</span>
+          <span id="dataLoadingBannerText">กำลังโหลดข้อมูลวิชาและหัวข้อ กรุณารอสักครู่...</span>
+        </div>
+
+        <!-- Step 1 -->
         <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
           <h3 class="font-black text-slate-800 mb-3 text-sm md:text-base">1. เลือกคอร์สและครั้งที่สอบ</h3>
           <div class="mobile-stack md:grid md:grid-cols-2 gap-3">
@@ -391,28 +149,30 @@
           </div>
         </div>
 
-        <!-- Step 2: คะแนนเต็ม & หัวข้อ -->
+        <!-- Step 2: Config (writes to score_settings) -->
         <div id="fullScoreArea" class="hidden bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
-          <h3 class="font-black text-slate-800 mb-3 text-sm md:text-base">2. กำหนดคะแนนเต็มและหัวข้อ</h3>
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 class="font-black text-slate-800 text-sm md:text-base">2. กำหนดคะแนนเต็มและหัวข้อ</h3>
+            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">บันทึกใน score_settings</span>
+          </div>
           <div id="fullScoreInputs" class="grid gap-3"></div>
           <button onclick="saveFullScoresAndTopic()" class="btn-secondary mt-4 w-full">💾 บันทึกคะแนนเต็มและหัวข้อ</button>
         </div>
 
-        <!-- Step 3: กรอกคะแนน -->
+        <!-- Step 3: Student scores (writes to test_scores) -->
         <div id="bulkScoreArea" class="hidden">
           <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h3 class="font-black text-slate-800 text-sm md:text-base">3. กรอกคะแนนนักเรียน</h3>
             <span id="bulkTestLabel" class="text-xs font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"></span>
           </div>
 
-          <!-- Score Entry Table -->
           <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
             <div id="scoreTableContainer" class="p-4 space-y-2">
               <p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>
             </div>
           </div>
 
-          <button onclick="saveAllScores()" id="saveAllBtn" class="btn-primary mt-4">
+          <button onclick="saveAllScores()" id="saveAllBtn" class="btn-primary mt-4" disabled>
             💾 บันทึกคะแนนทั้งหมด
           </button>
         </div>
@@ -423,8 +183,6 @@
       <div id="tab-view" class="hidden space-y-4">
         <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
           <h3 class="font-black text-slate-800 mb-4 text-sm md:text-base">🔍 Advanced Search & Filter</h3>
-          
-          <!-- Filters Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div>
               <label class="field-label">คอร์ส <span class="text-red-500">*</span></label>
@@ -443,11 +201,9 @@
               <input type="text" id="studentSearch" class="input" placeholder="ชื่อหรือชื่อเล่น" inputmode="text">
             </div>
           </div>
-
           <button onclick="loadScoreTableView()" class="btn-primary">🔍 ค้นหา</button>
         </div>
 
-        <!-- Results Table -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
           <div id="scoreTableView"></div>
         </div>
@@ -459,37 +215,51 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // ==================== SUPABASE ====================
     const SUPABASE_URL = 'https://vsurgimkuuxdmalxawfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdXJnaW1rdXV4ZG1hbHhhd2ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDg1NTUsImV4cCI6MjA5MDY4NDU1NX0.N6BHHblAiwsZQ09LZaphrqqNCkpCbomDX1orZSkBLg0';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allSubjects = [];
-    let allStudents = [];
-    let fullScores = {};
-    let currentScores = {};
-    let currentTopics = {};
-    let isSaving = false;
+    // ==================== GLOBAL STATE ====================
+    // These are the single source of truth for metadata.
+    // They are populated ONLY from score_settings, never from test_scores.
+    let allSubjects      = [];   // ordered list of subject names for current course
+    let subjectSortMap   = {};   // subject_name -> sort_order
+    let allStudents      = [];   // [{id, nickname}] for current course
+    let fullScores       = {};   // subject -> full_score  (from score_settings)
+    let currentTopics    = {};   // subject -> topic       (from score_settings)
+    let currentScores    = {};   // student_id -> subject -> score (from test_scores)
     let scoreDisplayMode = 'default';
-    let editingCell = null;
-    let subjectSortMap = {}; // Maps subject_name -> sort_order
-
-    // ==================== STALE DATA PROTECTION ====================
-    // Flags to prevent accidental overwrites when app state is lost
-    let appStateValid = false;
+    let isSaving         = false;
+    let appStateValid    = false;
     let lastValidCourseCode = null;
     let lastValidTestNumber = null;
 
-    // ========== PERSISTENCE: Enhanced LocalStorage Helpers ==========
+    // True only after score_settings has fully loaded into fullScores/currentTopics.
+    // The Save button (Step 3) stays disabled until this is true.
+    let dataReadyToSave = false;
+
+    // ==================== LAYER 1: DATA-READY FLAG ====================
+    function setDataReady(ready, bannerMsg = '') {
+      dataReadyToSave = ready;
+      const banner  = document.getElementById('dataLoadingBanner');
+      const saveBtn = document.getElementById('saveAllBtn');
+
+      if (!ready) {
+        banner.classList.add('visible');
+        document.getElementById('dataLoadingBannerText').textContent =
+          bannerMsg || 'กำลังโหลดข้อมูลวิชาและหัวข้อ กรุณารอสักครู่...';
+        if (saveBtn) saveBtn.disabled = true;
+      } else {
+        banner.classList.remove('visible');
+        checkIfAllValid();
+      }
+    }
+
+    // ==================== PERSISTENCE ====================
     function saveAppState(state) {
-      const fullState = {
-        currentTab: state.currentTab || 'enter',
-        courseCode: state.courseCode || '',
-        testNumber: state.testNumber || '',
-        timestamp: Date.now()
-      };
-      localStorage.setItem('scoreManagementState', JSON.stringify(fullState));
-      
-      // Mark app state as valid
+      const full = { currentTab: state.currentTab || 'enter', courseCode: state.courseCode || '', testNumber: state.testNumber || '', timestamp: Date.now() };
+      localStorage.setItem('scoreManagementState', JSON.stringify(full));
       appStateValid = !!state.courseCode;
       if (state.courseCode) lastValidCourseCode = state.courseCode;
       if (state.testNumber) lastValidTestNumber = state.testNumber;
@@ -500,100 +270,73 @@
       return saved ? JSON.parse(saved) : { currentTab: 'enter', courseCode: '', testNumber: '' };
     }
 
-    function applyPersistentState() {
-      const state = loadAppState();
-      
-      // Restore tab
-      if (state.currentTab === 'view') {
-        const viewTab = document.querySelectorAll('.tab-btn')[1];
-        switchTab('view', viewTab);
-      }
-
-      // Restore course selection
-      const enterCourse = document.getElementById('enterCourse');
-      if (state.courseCode && enterCourse.querySelector(`option[value="${state.courseCode}"]`)) {
-        enterCourse.value = state.courseCode;
-        onEnterCourseChange();
-        
-        // Restore test selection
-        if (state.testNumber) {
-          setTimeout(() => {
-            const enterTest = document.getElementById('enterTest');
-            if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
-              enterTest.value = state.testNumber;
-              onCourseTestChange();
-              appStateValid = true;
-            }
-          }, 300);
-        }
-      }
-
-      const viewCourse = document.getElementById('viewCourse');
-      if (state.courseCode && viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
-        viewCourse.value = state.courseCode;
-        onViewCourseChange();
-      }
-    }
-
-    // ==================== VISIBILITY CHANGE LISTENER ====================
-    // Refresh data when user switches back to the tab (mobile memory management protection)
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden && appStateValid && lastValidCourseCode) {
-        console.log('📱 Tab regained focus - refreshing data...');
-        showToast('🔄 রিফ্রেশ করা হচ্ছে...', 'success');
-        
-        // Re-load full scores and students
-        const code = document.getElementById('enterCourse').value || lastValidCourseCode;
-        const test = document.getElementById('enterTest').value || lastValidTestNumber;
-        
-        if (code && test) {
-          await loadStudentsAndScores(code, test);
-        }
-      }
-    });
-
-    // Sidebar
+    // ==================== SIDEBAR ====================
     function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
     function pendingKey(code) { return 'pendingTest_' + code; }
 
-    // Tab switching with state persistence
     function switchTab(name, btn) {
       ['enter','view'].forEach(t => document.getElementById('tab-' + t).classList.add('hidden'));
       document.getElementById('tab-' + name).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
-      // Save tab state
       const state = loadAppState();
       saveAppState({ ...state, currentTab: name });
-
       if (name === 'view') {
         const viewCourse = document.getElementById('viewCourse');
-        if (viewCourse.value) {
-          onViewCourseChange();
-        }
+        if (viewCourse.value) onViewCourseChange();
       }
     }
 
-    // Toast
     function showToast(m, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = m; t.className = `toast ${type} show`;
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    // ── When course changes (Entry Mode) ──────────────────────────────────────
-    async function onEnterCourseChange() {
-      const code = document.getElementById('enterCourse').value;
-      const testSel = document.getElementById('enterTest');
-      const addBtn = document.getElementById('addTestBtn');
-      const hint = document.getElementById('testHint');
+    // ==================== FETCH FROM score_settings ====================
+    // Loads full_score and topic for each subject into global state.
+    // Must be called before any save operation.
+    async function loadSettingsFromDB(courseCode, testNumber) {
+      const { data, error } = await db
+        .from('score_settings')
+        .select('subject, full_score, topic')
+        .eq('course_code', courseCode)
+        .eq('test_number', +testNumber);
 
+      if (error) {
+        console.error('score_settings fetch error:', error);
+        return;
+      }
+
+      fullScores    = {};
+      currentTopics = {};
+
+      (data || []).forEach(row => {
+        fullScores[row.subject] = row.full_score;
+        if (row.topic != null && row.topic !== '') {
+          currentTopics[row.subject] = row.topic;
+        }
+        // Subjects with no topic in DB are intentionally absent in currentTopics.
+      });
+    }
+
+    // ==================== COURSE CHANGE (Entry tab) ====================
+    async function onEnterCourseChange() {
+      const code    = document.getElementById('enterCourse').value;
+      const testSel = document.getElementById('enterTest');
+      const addBtn  = document.getElementById('addTestBtn');
+      const hint    = document.getElementById('testHint');
+
+      // Reset state
       testSel.innerHTML = '<option value="">-- ครั้งที่ --</option>';
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
+      allSubjects   = [];
+      fullScores    = {};
+      currentTopics = {};
+      setDataReady(false, 'กำลังโหลดข้อมูลวิชา...');
 
       if (!code) {
         addBtn.disabled = true;
@@ -602,7 +345,6 @@
         return;
       }
 
-      // Save state
       const state = loadAppState();
       saveAppState({ ...state, courseCode: code, testNumber: '' });
       lastValidCourseCode = code;
@@ -613,37 +355,46 @@
         .select('score_display_mode')
         .eq('course_code', code)
         .limit(1);
-
       scoreDisplayMode = courseData?.[0]?.score_display_mode || 'default';
 
-      // Fetch subjects for this course with sort_order
+      // Fetch subjects (must complete before test numbers are rendered)
       const { data: subjects } = await db
         .from('subjects')
         .select('subject_name, sort_order')
         .eq('course_code', code)
         .order('sort_order', { ascending: true });
 
-      allSubjects = (subjects || []).map(s => s.subject_name);
+      allSubjects  = (subjects || []).map(s => s.subject_name);
       subjectSortMap = {};
-      (subjects || []).forEach(s => {
-        subjectSortMap[s.subject_name] = s.sort_order;
-      });
+      (subjects || []).forEach(s => { subjectSortMap[s.subject_name] = s.sort_order; });
 
-      // Fetch test numbers
-      const { data } = await db
+      // Fetch existing test numbers from score_settings (source of truth for tests)
+      const { data: settingsData } = await db
+        .from('score_settings')
+        .select('test_number')
+        .eq('course_code', code);
+
+      // Also check test_scores for any tests that exist there but not in score_settings
+      const { data: scoresData } = await db
         .from('test_scores')
         .select('test_number')
         .eq('course_code', code);
 
-      const existing = [...new Set((data || []).map(r => r.test_number))].sort((a, b) => a - b);
-      let nextNum = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+      const allTestNums = [
+        ...new Set([
+          ...(settingsData || []).map(r => r.test_number),
+          ...(scoresData   || []).map(r => r.test_number)
+        ])
+      ].sort((a, b) => a - b);
 
-      existing.forEach(n => {
+      let nextNum = allTestNums.length > 0 ? Math.max(...allTestNums) + 1 : 1;
+
+      allTestNums.forEach(n => {
         testSel.innerHTML += `<option value="${n}">ครั้งที่ ${n}</option>`;
       });
 
       const saved = sessionStorage.getItem(pendingKey(code));
-      if (saved && !existing.includes(+saved)) {
+      if (saved && !allTestNums.includes(+saved)) {
         testSel.innerHTML += `<option value="${saved}">ครั้งที่ ${saved} (ยังไม่บันทึก)</option>`;
         testSel.value = saved;
         nextNum = +saved + 1;
@@ -653,21 +404,19 @@
       addBtn.disabled = false;
       addBtn.dataset.next = nextNum;
 
-      const total = existing.length + (saved && !existing.includes(+saved) ? 1 : 0);
-      if (total === 0) {
-        hint.textContent = `ยังไม่มีการสอบ — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
-      } else {
-        hint.textContent = `มีการสอบแล้ว ${total} ครั้ง — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
-      }
+      const total = allTestNums.length + (saved && !allTestNums.includes(+saved) ? 1 : 0);
+      hint.textContent = total === 0
+        ? `ยังไม่มีการสอบ — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`
+        : `มีการสอบแล้ว ${total} ครั้ง — กด ＋ เพื่อเพิ่มครั้งที่ ${nextNum}`;
     }
 
-    // ── Add next test number ─────────────────────────────────────
-    function addNextTest() {
+    // ==================== ADD NEXT TEST ====================
+    async function addNextTest() {
       const code = document.getElementById('enterCourse').value;
       if (!code) return;
-      const addBtn = document.getElementById('addTestBtn');
+      const addBtn  = document.getElementById('addTestBtn');
       const testSel = document.getElementById('enterTest');
-      const hint = document.getElementById('testHint');
+      const hint    = document.getElementById('testHint');
       const nextNum = +(addBtn.dataset.next || 1);
 
       const exists = Array.from(testSel.options).some(o => +o.value === nextNum);
@@ -675,67 +424,58 @@
         testSel.innerHTML += `<option value="${nextNum}">ครั้งที่ ${nextNum} (ยังไม่บันทึก)</option>`;
       }
       testSel.value = nextNum;
-
       sessionStorage.setItem(pendingKey(code), nextNum);
 
       const newNext = nextNum + 1;
       addBtn.dataset.next = newNext;
       hint.textContent = `กด ＋ เพื่อเพิ่มครั้งที่ ${newNext}`;
 
-      onCourseTestChange();
+      await onCourseTestChange();
     }
 
-    // ── On course+test change ────────────────────────────────────
+    // ==================== COURSE + TEST CHANGE ====================
+    // Loads score_settings FIRST (topics + full scores), THEN loads student scores.
     async function onCourseTestChange() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
       document.getElementById('delTestBtn').disabled = !(code && test);
 
-      if (code && test) {
-        const state = loadAppState();
-        saveAppState({ ...state, courseCode: code, testNumber: test });
-        lastValidTestNumber = test;
-        appStateValid = true;
-      }
-
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
 
+      setDataReady(false, 'กำลังโหลดหัวข้อและคะแนนเต็มจาก score_settings...');
+
       if (!code || !test) return;
 
-      // Load full scores and topics for each subject
-      const { data: existing } = await db.from('test_scores')
-        .select('subject, full_score, topic')
-        .eq('course_code', code)
-        .eq('test_number', +test)
-        .limit(allSubjects.length);
+      saveAppState({ ...loadAppState(), courseCode: code, testNumber: test });
+      lastValidTestNumber = test;
 
-      fullScores = {};
-      currentTopics = {};
-      (existing || []).forEach(r => {
-        fullScores[r.subject] = r.full_score;
-        currentTopics[r.subject] = r.topic || '';
-      });
+      // STEP 1: Load metadata from score_settings (topics + full_score)
+      // This is the ONLY place fullScores and currentTopics are populated.
+      await loadSettingsFromDB(code, test);
 
-      // Render full score inputs for each subject
+      // Render Step 2 UI with values from score_settings
       renderFullScoreInputs();
 
-      // Load students
+      // STEP 2: Load student scores from test_scores
       await loadStudentsAndScores(code, test);
+
+      appStateValid = true;
+      setDataReady(true);
     }
 
-    // Render full score inputs with topic field (conditional)
+    // ==================== RENDER FULL SCORE INPUTS ====================
     function renderFullScoreInputs() {
       const container = document.getElementById('fullScoreInputs');
       container.innerHTML = '';
 
       allSubjects.forEach(subject => {
-        const score = fullScores[subject] || 10;
-        const topic = currentTopics[subject] || '';
+        // Fallback to sensible defaults if this subject has no entry yet in score_settings
+        const score        = fullScores[subject] ?? 10;
+        const topicForInput = currentTopics[subject] || '';
 
-        // Show topic field only if score_display_mode === 'by_subject'
-        const topicField = scoreDisplayMode === 'by_subject' 
-          ? `<input id="topic_${subject}" type="text" value="${topic}" placeholder="เช่น การเคลื่อนที่" class="input text-base font-normal">`
+        const topicField = scoreDisplayMode === 'by_subject'
+          ? `<input id="topic_${subject}" type="text" value="${topicForInput}" placeholder="เช่น การเคลื่อนที่" class="input text-base font-normal">`
           : '';
 
         const html = scoreDisplayMode === 'by_subject'
@@ -767,7 +507,9 @@
       document.getElementById('fullScoreArea').classList.remove('hidden');
     }
 
-    // Save full scores and topics (if applicable)
+    // ==================== STEP 2: SAVE TO score_settings ONLY ====================
+    // This function writes ONLY to score_settings.
+    // It never touches test_scores.
     async function saveFullScoresAndTopic() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
@@ -777,48 +519,61 @@
       btn.disabled = true;
       btn.textContent = '⏳ กำลังบันทึก...';
 
-      const updates = allSubjects.map(subject => {
-        const fullScore = +document.getElementById(`fullScore_${subject}`).value;
-        const topic = scoreDisplayMode === 'by_subject' 
-          ? document.getElementById(`topic_${subject}`)?.value?.trim() || null
-          : null;
+      // Build upsert rows — one per subject.
+      // UNIQUE constraint: (course_code, subject, test_number)
+      const rows = allSubjects.map(subject => {
+        const fullScoreRaw = document.getElementById(`fullScore_${subject}`)?.value?.trim();
+        const topicRaw     = scoreDisplayMode === 'by_subject'
+          ? document.getElementById(`topic_${subject}`)?.value?.trim()
+          : undefined;
 
-        fullScores[subject] = fullScore;
-        currentTopics[subject] = topic || '';
-        
-        return db.from('test_scores')
-          .update({ 
-            full_score: fullScore,
-            topic: topic
-          })
-          .eq('course_code', code)
-          .eq('test_number', +test)
-          .eq('subject', subject);
+        const parsedFull = parseFloat(fullScoreRaw);
+        const row = {
+          course_code: code,
+          test_number: +test,
+          subject:     subject,
+          full_score:  (!isNaN(parsedFull) && parsedFull > 0) ? parsedFull : (fullScores[subject] ?? 10)
+        };
+
+        // Include topic only if input is non-empty (don't overwrite a real topic with blank)
+        if (typeof topicRaw === 'string' && topicRaw !== '') {
+          row.topic = topicRaw;
+        } else if (currentTopics[subject]) {
+          // Preserve existing topic from in-memory state if input is blank
+          row.topic = currentTopics[subject];
+        }
+
+        return row;
       });
 
-      const results = await Promise.all(updates);
-      const hasError = results.some(r => r.error);
+      const { error } = await db
+        .from('score_settings')
+        .upsert(rows, { onConflict: 'course_code,subject,test_number' });
 
-      if (hasError) {
-        showToast('บันทึกบางรายการล้มเหลว', 'error');
+      if (error) {
+        console.error('score_settings upsert error:', error);
+        showToast('บันทึกบางรายการล้มเหลว: ' + error.message, 'error');
       } else {
-        showToast('✅ บันทึกคะแนนเต็มและหัวข้อสำเร็จ');
-        // Live update: re-render the score table with new max scores
-        await loadStudentsAndScores(code, test);
+        showToast('✅ บันทึกคะแนนเต็มและหัวข้อสำเร็จ (score_settings)');
+
+        // Refresh in-memory state from what we just saved
+        await loadSettingsFromDB(code, test);
+
+        // Re-render score table so it picks up any updated full_score values
+        renderScoreTable();
       }
 
       btn.disabled = false;
       btn.textContent = '💾 บันทึกคะแนนเต็มและหัวข้อ';
     }
 
-    // Load students and existing scores with proper sorting
+    // ==================== LOAD STUDENTS + SCORES FROM test_scores ====================
     async function loadStudentsAndScores(code, test) {
       const container = document.getElementById('scoreTableContainer');
       container.innerHTML = `<p class="text-slate-400 font-bold text-sm text-center py-6 loading-dots">กำลังโหลด</p>`;
       document.getElementById('bulkScoreArea').classList.remove('hidden');
       document.getElementById('bulkTestLabel').textContent = `ครั้งที่ ${test}`;
 
-      // Fetch students with proper sorting (by sort_order, then by student_id)
       const { data: enrollments } = await db
         .from('enrollments')
         .select('student_id, sort_order, students(id, nickname, full_name)')
@@ -826,21 +581,20 @@
         .order('sort_order', { ascending: true })
         .order('student_id', { ascending: true });
 
-      allStudents = (enrollments || [])
-        .map(e => ({ 
-          id: e.student_id, 
-          nickname: e.students?.nickname || e.students?.full_name || 'Unknown'
-        }));
+      allStudents = (enrollments || []).map(e => ({
+        id:       e.student_id,
+        nickname: e.students?.nickname || e.students?.full_name || 'Unknown'
+      }));
 
       if (!allStudents.length) {
         container.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">ไม่พบนักเรียนในคอร์สนี้</p>`;
         return;
       }
 
-      // Fetch existing scores
+      // Fetch ONLY score from test_scores — full_score and topic are NOT in this table anymore
       const { data: scores } = await db
         .from('test_scores')
-        .select('student_id, subject, score')
+        .select('student_id, subject, score, is_absent')
         .eq('course_code', code)
         .eq('test_number', +test);
 
@@ -850,86 +604,75 @@
         currentScores[r.student_id][r.subject] = r.score;
       });
 
-      // Render table
       renderScoreTable();
     }
 
-    // Render score entry table with index numbers
+    // ==================== RENDER SCORE TABLE ====================
+    // full_score values come from the global fullScores object (populated from score_settings)
     function renderScoreTable() {
       const container = document.getElementById('scoreTableContainer');
       container.innerHTML = '';
 
-      // Header row with index column
       let headerHtml = '<div class="grid gap-2 mb-3" style="grid-template-columns: 50px 160px ' + allSubjects.map(() => '100px').join(' ') + '">';
       headerHtml += '<div class="font-black text-slate-600 text-xs py-2 text-center">ลำดับ</div>';
       headerHtml += '<div class="font-black text-slate-600 text-xs py-2">นักเรียน</div>';
       allSubjects.forEach(subject => {
-        const full = fullScores[subject] || 50;
+        const full = fullScores[subject] ?? 50;
         headerHtml += `<div class="subject-column-header">${subject}<br><span class="max-score-display">/${full}</span></div>`;
       });
       headerHtml += '</div>';
       container.innerHTML = headerHtml;
 
-      // Student rows with index
       allStudents.forEach((student, idx) => {
         let rowHtml = `<div class="score-table-row" style="grid-template-columns: 50px 160px ${allSubjects.map(() => '100px').join(' ')}">`;
         rowHtml += `<div class="student-index-cell">${idx + 1}</div>`;
         rowHtml += `<div class="student-name-cell">${student.nickname}</div>`;
 
         allSubjects.forEach((subject, subjIdx) => {
-          const scoreVal = currentScores[student.id]?.[subject] || '';
-          const full = fullScores[subject] || 50;
-          const inputId = `score_${student.id}_${subject}`;
-          
+          const scoreVal = currentScores[student.id]?.[subject] ?? '';
+          const full     = fullScores[subject] ?? 50;
+          const inputId  = `score_${student.id}_${subject}`;
+
           rowHtml += `
             <div class="score-cell">
-              <input 
-                id="${inputId}" 
-                type="text" 
-                inputmode="decimal" 
-                value="${scoreVal}" 
-                placeholder="–" 
-                class="score-input text-sm py-2" 
+              <input
+                id="${inputId}"
+                type="text"
+                inputmode="decimal"
+                value="${scoreVal}"
+                placeholder="–"
+                class="score-input text-sm py-2"
                 data-student-id="${student.id}"
                 data-subject="${subject}"
                 data-full="${full}"
                 data-row="${idx}"
                 data-col="${subjIdx}"
-                onchange="validateScoreInput(this)" 
+                onchange="validateScoreInput(this)"
                 onkeydown="handleScoreKeyNavigation(event, this)"
               >
             </div>
           `;
         });
-        
+
         rowHtml += '</div>';
         container.innerHTML += rowHtml;
       });
     }
 
-    // Validate score input
+    // ==================== VALIDATE INPUT ====================
     function validateScoreInput(input) {
-      const val = input.value.trim();
+      const val       = input.value.trim();
       const fullScore = +input.dataset.full;
-      
+
       const sanitized = val.replace(/[^\d.]/g, '');
-      if (sanitized !== val) {
-        input.value = sanitized;
-      }
+      if (sanitized !== val) input.value = sanitized;
 
       input.classList.remove('valid', 'invalid', 'empty');
 
-      if (input.value === '' || input.value === null) {
-        input.classList.add('empty');
-        return true;
-      }
+      if (input.value === '') { input.classList.add('empty'); return true; }
 
       const numVal = parseFloat(input.value);
-      
-      if (isNaN(numVal)) {
-        input.classList.add('empty');
-        return true;
-      }
+      if (isNaN(numVal)) { input.classList.add('empty'); return true; }
 
       if (numVal < 0 || numVal > fullScore) {
         input.classList.add('invalid');
@@ -943,59 +686,43 @@
     }
 
     function checkIfAllValid() {
-      const saveBtn = document.getElementById('saveAllBtn');
+      if (!dataReadyToSave) return;
+      const saveBtn   = document.getElementById('saveAllBtn');
       const allInputs = document.querySelectorAll('#scoreTableContainer .score-input');
-      let hasInvalid = false;
-
-      allInputs.forEach(input => {
-        if (input.classList.contains('invalid')) {
-          hasInvalid = true;
-        }
-      });
-
+      let hasInvalid  = false;
+      allInputs.forEach(input => { if (input.classList.contains('invalid')) hasInvalid = true; });
       saveBtn.disabled = hasInvalid || isSaving;
     }
 
-    // Excel-like keyboard navigation
+    // ==================== KEYBOARD NAVIGATION ====================
     function handleScoreKeyNavigation(e, input) {
       const row = +input.dataset.row;
       const col = +input.dataset.col;
-      const allInputs = document.querySelectorAll('#scoreTableContainer .score-input');
-      const currentIdx = Array.from(allInputs).indexOf(input);
-
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown')   { e.preventDefault(); document.querySelector(`[data-row="${row+1}"][data-col="${col}"]`)?.focus(); }
+      else if (e.key === 'ArrowUp')    { e.preventDefault(); document.querySelector(`[data-row="${row-1}"][data-col="${col}"]`)?.focus(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); document.querySelector(`[data-row="${row}"][data-col="${col+1}"]`)?.focus(); }
+      else if (e.key === 'ArrowLeft')  { e.preventDefault(); document.querySelector(`[data-row="${row}"][data-col="${col-1}"]`)?.focus(); }
+      else if (e.key === 'Enter') {
         e.preventDefault();
-        const nextInput = document.querySelector(`[data-row="${row + 1}"][data-col="${col}"]`);
-        if (nextInput) nextInput.focus();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevInput = document.querySelector(`[data-row="${row - 1}"][data-col="${col}"]`);
-        if (prevInput) prevInput.focus();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        const nextInput = document.querySelector(`[data-row="${row}"][data-col="${col + 1}"]`);
-        if (nextInput) nextInput.focus();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        const prevInput = document.querySelector(`[data-row="${row}"][data-col="${col - 1}"]`);
-        if (prevInput) prevInput.focus();
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const nextInput = document.querySelector(`[data-row="${row + 1}"][data-col="0"]`);
-        if (nextInput) nextInput.focus();
-        else {
-          const firstInput = document.querySelector('[data-row="0"][data-col="0"]');
-          if (firstInput) firstInput.focus();
-        }
+        const next = document.querySelector(`[data-row="${row+1}"][data-col="0"]`);
+        if (next) next.focus();
+        else document.querySelector('[data-row="0"][data-col="0"]')?.focus();
       }
     }
 
-    // Save all scores
+    // ==================== STEP 3: SAVE TO test_scores ONLY ====================
+    // CRITICAL: This function writes ONLY to test_scores.
+    // The payload contains ONLY: course_code, student_id, test_number, subject, score.
+    // full_score and topic are NEVER included here — they live in score_settings.
     async function saveAllScores() {
+      if (!dataReadyToSave) {
+        showToast('⚠️ ข้อมูลยังโหลดไม่ครบ กรุณารอสักครู่', 'error');
+        return;
+      }
+
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
-      
-      // ====== STALE DATA PROTECTION: Validate state before saving ======
+
       if (!code || !test) {
         showToast('⚠️ ข้อมูลสูญหาย - กรุณาเลือกคอร์สและครั้งที่สอบใหม่', 'error');
         return;
@@ -1007,45 +734,42 @@
       }
 
       const btn = document.getElementById('saveAllBtn');
-      isSaving = true;
-      btn.disabled = true;
+      isSaving  = true;
+      btn.disabled  = true;
       btn.textContent = '⏳ กำลังบันทึก...';
 
+      // Build rows for test_scores — NO full_score, NO topic columns
       const rows = [];
       allStudents.forEach(student => {
         allSubjects.forEach(subject => {
           const input = document.getElementById(`score_${student.id}_${subject}`);
-          const val = input?.value;
-          const full = fullScores[subject] || 50;
-          const topic = currentTopics[subject] || null;
-          
+          const val   = input?.value;
           rows.push({
             course_code: code,
-            student_id: student.id,
+            student_id:  student.id,
             test_number: +test,
-            subject: subject,
-            score: (val === '' || val === null) ? null : parseFloat(val),
-            full_score: full,
-            topic: topic
+            subject:     subject,
+            score: (val === '' || val == null) ? null : parseFloat(val)
+            // ⛔ full_score intentionally omitted — it lives in score_settings
+            // ⛔ topic     intentionally omitted — it lives in score_settings
           });
         });
       });
 
       if (!rows.length) {
         showToast('ไม่พบข้อมูลนักเรียน', 'error');
-        isSaving = false;
-        btn.disabled = false;
+        isSaving = false; btn.disabled = false;
         return;
       }
 
-      const { error } = await db.from('test_scores').upsert(rows, { 
-        onConflict: 'student_id,course_code,test_number,subject' 
+      const { error } = await db.from('test_scores').upsert(rows, {
+        onConflict: 'student_id,course_code,test_number,subject'
       });
-      
+
       if (!error) {
         btn.classList.add('success');
         btn.textContent = '✅ บันทึกเรียบร้อย!';
-        showToast(`✅ บันทึกคะแนนทั้งหมดเรียบร้อย`);
+        showToast('✅ บันทึกคะแนนทั้งหมดเรียบร้อย (test_scores)');
         sessionStorage.removeItem(pendingKey(code));
 
         await refreshRankings(code);
@@ -1053,36 +777,41 @@
         setTimeout(() => {
           btn.classList.remove('success');
           btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
-          isSaving = false;
-          btn.disabled = false;
+          isSaving = false; btn.disabled = false;
         }, 2000);
       } else {
-        console.error(error);
+        console.error('test_scores upsert error:', error);
         showToast('เกิดข้อผิดพลาดในการบันทึก: ' + error.message, 'error');
-        isSaving = false;
-        btn.disabled = false;
+        isSaving = false; btn.disabled = false;
         btn.textContent = '💾 บันทึกคะแนนทั้งหมด';
       }
     }
 
-    // ── Delete test ──────────────────────────────────────────────
+    // ==================== DELETE TEST ====================
+    // Deletes from BOTH score_settings and test_scores for this course+test
     async function deleteTest() {
       const code = document.getElementById('enterCourse').value;
       const test = document.getElementById('enterTest').value;
       if (!code || !test) return;
 
-      if (!confirm(`⚠️ ลบการสอบครั้งที่ ${test} ของคอร์สนี้ทั้งหมด?\n\nคะแนนของนักเรียนทุกคนจะถูกลบถาวร`)) return;
+      if (!confirm(`⚠️ ลบการสอบครั้งที่ ${test} ของคอร์สนี้ทั้งหมด?\n\nคะแนนของนักเรียนทุกคนและการตั้งค่าคะแนนเต็มจะถูกลบถาวร`)) return;
 
       const btn = document.getElementById('delTestBtn');
       btn.disabled = true;
       btn.textContent = '⏳';
 
-      const { error } = await db.from('test_scores')
-        .delete()
-        .eq('course_code', code)
-        .eq('test_number', +test);
+      const [scoresResult, settingsResult] = await Promise.all([
+        db.from('test_scores')
+          .delete()
+          .eq('course_code', code)
+          .eq('test_number', +test),
+        db.from('score_settings')
+          .delete()
+          .eq('course_code', code)
+          .eq('test_number', +test)
+      ]);
 
-      if (error) {
+      if (scoresResult.error || settingsResult.error) {
         showToast('ลบไม่สำเร็จ กรุณาลองใหม่', 'error');
         btn.disabled = false;
         btn.textContent = '🗑';
@@ -1099,21 +828,22 @@
 
       document.getElementById('fullScoreArea').classList.add('hidden');
       document.getElementById('bulkScoreArea').classList.add('hidden');
+      setDataReady(false);
       btn.disabled = true;
       btn.textContent = '🗑';
 
       const remaining = Array.from(testSel.options).filter(o => o.value).length;
-      const nextNum = remaining > 0 ? Math.max(...Array.from(testSel.options).filter(o => o.value).map(o => +o.value)) + 1 : 1;
+      const nextNum = remaining > 0
+        ? Math.max(...Array.from(testSel.options).filter(o => o.value).map(o => +o.value)) + 1
+        : 1;
       document.getElementById('addTestBtn').dataset.next = nextNum;
     }
 
-    // ── View tab: load subjects ──────────────────────────────────
+    // ==================== VIEW TAB: LOAD SUBJECTS ====================
     async function onViewCourseChange() {
-      const code = document.getElementById('viewCourse').value;
+      const code       = document.getElementById('viewCourse').value;
       const subjectSel = document.getElementById('viewSubject');
-      
       subjectSel.innerHTML = '<option value="">-- ทั้งหมด --</option>';
-      
       if (!code) return;
 
       const { data: subjects } = await db
@@ -1127,22 +857,20 @@
       });
     }
 
-    // ── View tab: Advanced search with filters ──────────────────────────────────
+    // ==================== VIEW TAB: SEARCH ====================
+    // Joins test_scores with score_settings to get full_score and topic for display.
     async function loadScoreTableView() {
-      const code = document.getElementById('viewCourse').value;
-      const subject = document.getElementById('viewSubject').value;
-      const testNumber = document.getElementById('viewTestNumber').value;
+      const code          = document.getElementById('viewCourse').value;
+      const subject       = document.getElementById('viewSubject').value;
+      const testNumber    = document.getElementById('viewTestNumber').value;
       const studentSearch = document.getElementById('studentSearch').value?.toLowerCase() || '';
 
-      if (!code) {
-        showToast('กรุณาเลือกคอร์สก่อน', 'error');
-        return;
-      }
+      if (!code) { showToast('กรุณาเลือกคอร์สก่อน', 'error'); return; }
 
       const container = document.getElementById('scoreTableView');
       container.innerHTML = '<p class="p-10 text-center loading-dots font-bold text-slate-400">กำลังโหลดข้อมูล...</p>';
 
-      // 1. ดึงข้อมูลนักเรียน (Enrollments) เพื่อใช้เป็นลำดับหลัก (Sort Order)
+      // Fetch enrollments
       const { data: enrollments } = await db
         .from('enrollments')
         .select('student_id, sort_order, students(id, nickname, full_name)')
@@ -1155,7 +883,7 @@
         return;
       }
 
-      // 2. ดึงลำดับวิชามาเก็บไว้ใน Map เพื่อใช้เรียงลำดับวิชาภายในตัวนักเรียน
+      // Fetch subject sort order
       const { data: subjectsData } = await db
         .from('subjects')
         .select('subject_name, sort_order')
@@ -1163,33 +891,50 @@
         .order('sort_order', { ascending: true });
 
       const subjectOrder = {};
-      (subjectsData || []).forEach(s => {
-        subjectOrder[s.subject_name] = s.sort_order;
+      (subjectsData || []).forEach(s => { subjectOrder[s.subject_name] = s.sort_order; });
+
+      // Fetch score_settings for full_score + topic lookup
+      let settingsQ = db
+        .from('score_settings')
+        .select('test_number, subject, full_score, topic')
+        .eq('course_code', code);
+      if (subject)    settingsQ = settingsQ.eq('subject', subject);
+      if (testNumber) settingsQ = settingsQ.eq('test_number', +testNumber);
+
+      const { data: settingsRows } = await settingsQ;
+
+      // Build a lookup: test_number + subject -> { full_score, topic }
+      const settingsLookup = {};
+      (settingsRows || []).forEach(r => {
+        const key = `${r.test_number}__${r.subject}`;
+        settingsLookup[key] = { full_score: r.full_score, topic: r.topic };
       });
 
-      // 3. ดึงคะแนน (Scores) ตามเงื่อนไข Filter
-      let q = db.from('test_scores')
-        .select('student_id, test_number, subject, score, full_score, topic')
+      // Fetch test_scores (score only — no full_score or topic)
+      let q = db
+        .from('test_scores')
+        .select('student_id, test_number, subject, score')
         .eq('course_code', code);
-      
-      if (subject) q = q.eq('subject', subject);
+      if (subject)    q = q.eq('subject', subject);
       if (testNumber) q = q.eq('test_number', +testNumber);
-      
+
       const { data: scoreData } = await q;
 
-      // 4. กรองข้อมูลตามชื่อนักเรียน (ถ้ามีการ Search) และจัดกลุ่มตาม student_id
       const scoreMap = {};
       (scoreData || []).forEach(row => {
-        const student = enrollments.find(e => e.student_id === row.student_id);
+        const student  = enrollments.find(e => e.student_id === row.student_id);
         if (!student) return;
-
         const nickname = student.students?.nickname?.toLowerCase() || '';
         const fullName = student.students?.full_name?.toLowerCase() || '';
-        
         if (studentSearch && !nickname.includes(studentSearch) && !fullName.includes(studentSearch)) return;
 
+        // Enrich with full_score and topic from score_settings
+        const settingsKey  = `${row.test_number}__${row.subject}`;
+        const meta         = settingsLookup[settingsKey] || {};
+        const enrichedRow  = { ...row, full_score: meta.full_score ?? '?', topic: meta.topic ?? null };
+
         if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
-        scoreMap[row.student_id].push(row);
+        scoreMap[row.student_id].push(enrichedRow);
       });
 
       if (Object.keys(scoreMap).length === 0) {
@@ -1197,49 +942,38 @@
         return;
       }
 
-      // 5. สร้าง HTML โดยวนลูปตามรายชื่อนักเรียน (enrollments) เพื่อให้ลำดับ 1 ขึ้นก่อนเสมอ
       let html = '<div class="flex flex-col border border-slate-200 rounded-xl overflow-hidden shadow-sm">';
 
       enrollments.forEach((enroll, idx) => {
         const studentScores = scoreMap[enroll.student_id];
-        
-        // ถ้าคนนี้มีคะแนน ให้ทำการเรียงคะแนน (ครั้งที่ > วิชา) แล้วแสดงผล
         if (studentScores && studentScores.length > 0) {
-          
           studentScores.sort((a, b) => {
             if (a.test_number !== b.test_number) return a.test_number - b.test_number;
             return (subjectOrder[a.subject] || 0) - (subjectOrder[b.subject] || 0);
           });
 
           studentScores.forEach(row => {
-            const nickname = enroll.students?.nickname || enroll.students?.full_name || 'ไม่ระบุชื่อ';
-            
+            const nickname   = enroll.students?.nickname || enroll.students?.full_name || 'ไม่ระบุชื่อ';
+            const scoreLabel = row.score != null
+              ? `<span class="font-black text-indigo-700">${row.score}</span>`
+              : `<span class="text-slate-300 font-normal italic">—</span>`;
+
             html += `
-              <div class="flex items-center gap-2 md:gap-4 p-3 bg-white border-b border-slate-100 hover:bg-indigo-50/30 transition-colors text-[13px] md:text-sm">
-                <div class="w-6 text-slate-400 font-bold text-center">${idx + 1}</div>
-                
-                <div class="w-24 md:w-32 font-bold text-slate-800 truncate">${nickname}</div>
-                
-                <div class="w-16 md:w-20 text-slate-500 whitespace-nowrap">ครั้งที่ ${row.test_number}</div>
-                
-                <div class="flex-grow min-w-[120px]">
-                  <div class="font-semibold text-indigo-600 truncate">${row.subject}</div>
+              <div class="flex items-center gap-2 md:gap-4 p-3 bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors text-[13px] md:text-sm">
+                <div class="w-6 text-slate-400 font-bold text-center flex-shrink-0">${idx + 1}</div>
+                <div class="w-24 md:w-32 font-bold text-slate-800 truncate flex-shrink-0">${nickname}</div>
+                <div class="w-16 md:w-20 text-slate-500 whitespace-nowrap flex-shrink-0">ครั้งที่ ${row.test_number}</div>
+                <div class="flex-grow min-w-0">
+                  <div class="font-semibold text-slate-700 truncate">${row.subject}</div>
                   ${row.topic ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">📚 ${row.topic}</div>` : ''}
                 </div>
-
-                <div class="flex items-center gap-1.5 no-print">
-                  <input type="number" 
-                    class="w-12 md:w-14 px-1 py-1 border border-slate-200 rounded text-center font-bold text-blue-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none" 
-                    value="${row.score ?? ''}" 
-                    placeholder="-"
-                    max="${row.full_score}"
-                    onblur="updateScoreInline(this, '${code}', ${row.student_id}, ${row.test_number}, '${row.subject}', ${row.full_score})"
-                  >
-                  <span class="text-slate-400 text-xs">/ ${row.full_score}</span>
+                <div class="flex items-center gap-1 flex-shrink-0 tabular-nums">
+                  ${scoreLabel}
+                  <span class="text-slate-300 mx-0.5">/</span>
+                  <span class="text-slate-500 font-semibold">${row.full_score}</span>
                 </div>
-
-                <button onclick="deleteScore('${code}', ${row.student_id}, ${row.test_number}, '${row.subject}')" 
-                  class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all no-print">
+                <button onclick="deleteScore('${code}', ${enroll.student_id}, ${row.test_number}, '${row.subject}')"
+                  class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex-shrink-0" title="ลบคะแนนนี้">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
               </div>
@@ -1252,171 +986,17 @@
       container.innerHTML = html;
     }
 
-    // ======== FIXED: updateScoreInline with proper validation & isolation ========
-    async function updateScoreInline(input, courseCode, studentId, testNumber, subject, fullScore) {
-      const newScoreStr = input.value.trim();
-      
-      // ========== VALIDATION 1: NULL/EMPTY CHECK (Stale Data Protection) ==========
-      if (!courseCode || !studentId || !testNumber || !subject) {
-        showToast('⚠️ ข้อมูลสูญหาย - กรุณารีเฟรชหน้า', 'error');
-        input.classList.add('bg-red-50', 'border-red-400');
-        return;
-      }
-
-      // ========== VALIDATION 2: EMPTY VALUE = DELETE SCORE ==========
-      if (newScoreStr === '') {
-        await performUpdate(null);
-        return;
-      }
-
-      const newScore = parseFloat(newScoreStr);
-
-      // ========== VALIDATION 3: NaN CHECK ==========
-      if (isNaN(newScore) || newScore < 0) {
-        showToast('กรุณากรอกคะแนนให้ถูกต้อง', 'error');
-        input.classList.add('bg-red-50', 'border-red-400');
-        input.focus();
-        return;
-      }
-
-      // ========== VALIDATION 4: MAX SCORE CHECK ==========
-      if (fullScore > 0 && newScore > fullScore) {
-        showToast(`⚠️ คะแนนเกิน! (คะแนนเต็ม ${fullScore})`, 'error');
-        input.classList.remove('bg-green-50', 'border-green-400');
-        input.classList.add('bg-red-50', 'border-red-400');
-        input.focus();
-        
-        // Shake animation effect
-        input.style.animation = 'none';
-        setTimeout(() => {
-          input.style.animation = 'shake 0.4s ease-in-out';
-        }, 10);
-        
-        return;
-      }
-
-      await performUpdate(newScore);
-
-      // ========== HELPER: Perform the actual database update ==========
-      async function performUpdate(scoreToSave) {
-        try {
-          // ========== ISOLATION: Only update the score column ==========
-          // This ensures full_score and topic are NOT touched
-          const { error } = await db
-            .from('test_scores')
-            .update({ score: scoreToSave })  // ONLY update score
-            .eq('course_code', courseCode)
-            .eq('student_id', studentId)
-            .eq('test_number', testNumber)
-            .eq('subject', subject);
-
-          if (error) throw error;
-          
-          // ========== SUCCESS FEEDBACK ==========
-          showToast('✅ บันทึกคะแนนเรียบร้อย', 'success');
-          
-          // Green highlight effect
-          input.classList.remove('bg-red-50', 'border-red-400');
-          input.classList.add('bg-green-50', 'border-green-400');
-          setTimeout(() => input.classList.remove('bg-green-50', 'border-green-400'), 1500);
-          
-          // Refresh rankings only (not full data)
-          await refreshRankings(courseCode);
-          
-        } catch (err) {
-          console.error('Database error:', err);
-          showToast('⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ Database', 'error');
-          input.classList.add('bg-red-50', 'border-red-400');
-        }
-      }
-    }
-
-    // Add CSS for shake animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Enable inline edit in View mode
-    function enableInlineEdit(scoreDiv, code, studentId, testNum, subject, fullScore) {
-      // Close any previous edit
-      if (editingCell) {
-        editingCell.input.classList.add('hidden');
-        editingCell.display.classList.remove('hidden');
-      }
-
-      const inputEl = scoreDiv.parentElement.querySelector('.score-row-edit-input');
-      scoreDiv.classList.add('hidden');
-      inputEl.classList.remove('hidden');
-      inputEl.focus();
-      inputEl.select();
-
-      editingCell = { input: inputEl, display: scoreDiv };
-
-      // Save on blur
-      inputEl.onblur = async () => {
-        const newScore = inputEl.value === '' ? null : parseFloat(inputEl.value);
-
-        if (newScore !== null && (newScore < 0 || newScore > fullScore)) {
-          showToast('คะแนนไม่ถูกต้อง', 'error');
-          inputEl.classList.add('hidden');
-          scoreDiv.classList.remove('hidden');
-          editingCell = null;
-          return;
-        }
-
-        // Update database - ISOLATED to score column only
-        const { error } = await db.from('test_scores')
-          .update({ score: newScore })
-          .eq('student_id', studentId)
-          .eq('course_code', code)
-          .eq('test_number', testNum)
-          .eq('subject', subject);
-
-        if (!error) {
-          showToast('✅ บันทึกสำเร็จ');
-          await refreshRankings(code);
-          
-          // Update local display
-          const displayScore = newScore === null 
-            ? '<span class="null-score">—</span>'
-            : `<span class="font-black text-indigo-600">${newScore}</span>`;
-          scoreDiv.innerHTML = `${displayScore} <span class="text-slate-400">/</span> <span class="max-score text-slate-500">${fullScore}</span>`;
-        } else {
-          showToast('เกิดข้อผิดพลาด', 'error');
-        }
-
-        inputEl.classList.add('hidden');
-        scoreDiv.classList.remove('hidden');
-        editingCell = null;
-      };
-
-      // Cancel on Escape
-      inputEl.onkeydown = (e) => {
-        if (e.key === 'Enter') inputEl.blur();
-        if (e.key === 'Escape') {
-          inputEl.classList.add('hidden');
-          scoreDiv.classList.remove('hidden');
-          editingCell = null;
-        }
-      };
-    }
-
-    // Delete score - ISOLATED update
+    // ==================== DELETE SCORE ====================
+    // Deletes ONLY from test_scores — score_settings entry is preserved
     async function deleteScore(code, studentId, testNum, subject) {
       if (!confirm('ลบคะแนนนี้?')) return;
-      
+
       const { error } = await db.from('test_scores')
         .delete()
-        .eq('student_id', studentId)
+        .eq('student_id',  studentId)
         .eq('course_code', code)
         .eq('test_number', testNum)
-        .eq('subject', subject);
+        .eq('subject',     subject);
 
       if (!error) {
         showToast('✅ ลบสำเร็จ');
@@ -1427,18 +1007,32 @@
       }
     }
 
-    // Refresh rankings
+    // ==================== REFRESH RANKINGS ====================
+    // Reads score and full_score from test_scores JOIN score_settings
     async function refreshRankings(courseCode) {
+      // Fetch scores from test_scores
       const { data: scores } = await db
         .from('test_scores')
-        .select('student_id, score, full_score')
+        .select('student_id, test_number, subject, score')
         .eq('course_code', courseCode);
 
+      // Fetch full_score from score_settings
+      const { data: settings } = await db
+        .from('score_settings')
+        .select('test_number, subject, full_score')
+        .eq('course_code', courseCode);
+
+      const settingsMap = {};
+      (settings || []).forEach(r => {
+        settingsMap[`${r.test_number}__${r.subject}`] = r.full_score;
+      });
+
       const map = {};
-      scores.forEach(s => {
+      (scores || []).forEach(s => {
+        const fullScore = settingsMap[`${s.test_number}__${s.subject}`] || 0;
         if (!map[s.student_id]) map[s.student_id] = { sum: 0, count: 0 };
-        if (s.score != null && s.full_score > 0) {
-          map[s.student_id].sum += (s.score / s.full_score) * 100;
+        if (s.score != null && fullScore > 0) {
+          map[s.student_id].sum   += (s.score / fullScore) * 100;
           map[s.student_id].count += 1;
         }
       });
@@ -1446,8 +1040,8 @@
       const rows = Object.entries(map)
         .filter(([_, d]) => d.count > 0)
         .map(([sid, d]) => ({
-          course_code: courseCode,
-          student_id: +sid,
+          course_code:   courseCode,
+          student_id:    +sid,
           total_percent: Math.round((d.sum / d.count) * 100) / 100
         }))
         .sort((a, b) => b.total_percent - a.total_percent)
@@ -1456,9 +1050,50 @@
       await db.from('class_rankings').upsert(rows, { onConflict: 'course_code,student_id' });
     }
 
-    // Init with active courses only
+    // ==================== VISIBILITY CHANGE ====================
+    document.addEventListener('visibilitychange', async () => {
+      if (!document.hidden && appStateValid && lastValidCourseCode && lastValidTestNumber) {
+        showToast('🔄 กำลังรีเฟรชข้อมูล', 'success');
+        setDataReady(false, 'กำลังรีเฟรชข้อมูล...');
+        await loadSettingsFromDB(lastValidCourseCode, lastValidTestNumber);
+        await loadStudentsAndScores(lastValidCourseCode, lastValidTestNumber);
+        setDataReady(true);
+      }
+    });
+
+    // ==================== RESTORE PERSISTENT STATE ====================
+    async function applyPersistentState() {
+      const state = loadAppState();
+
+      if (state.currentTab === 'view') {
+        const viewTab = document.querySelectorAll('.tab-btn')[1];
+        switchTab('view', viewTab);
+      }
+
+      const enterCourse = document.getElementById('enterCourse');
+      if (state.courseCode && enterCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+        enterCourse.value = state.courseCode;
+        await onEnterCourseChange();
+
+        if (state.testNumber) {
+          const enterTest = document.getElementById('enterTest');
+          if (enterTest.querySelector(`option[value="${state.testNumber}"]`)) {
+            enterTest.value = state.testNumber;
+            await onCourseTestChange();
+            appStateValid = true;
+          }
+        }
+      }
+
+      const viewCourse = document.getElementById('viewCourse');
+      if (state.courseCode && viewCourse.querySelector(`option[value="${state.courseCode}"]`)) {
+        viewCourse.value = state.courseCode;
+        await onViewCourseChange();
+      }
+    }
+
+    // ==================== INIT ====================
     async function init() {
-      // Load only active courses
       const { data: courses } = await db
         .from('courses')
         .select('course_code, course_name')
@@ -1468,19 +1103,19 @@
       const courseOptions = (courses || [])
         .map(c => `<option value="${c.course_code}">${c.course_name}</option>`)
         .join('');
-      
-      document.getElementById('enterCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
-      document.getElementById('viewCourse').innerHTML = '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
 
-      // Apply persistent state
-      applyPersistentState();
+      document.getElementById('enterCourse').innerHTML =
+        '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
+      document.getElementById('viewCourse').innerHTML =
+        '<option value="">-- เลือกคอร์ส --</option>' + courseOptions;
+
+      await applyPersistentState();
     }
 
     init();
-
   </script>
 
-  <a href="https://line.me/ti/p/1122082543" target="_blank" 
+  <a href="https://line.me/ti/p/1122082543" target="_blank"
     class="fixed bottom-6 right-6 z-[9999] group flex items-center shadow-2xl overflow-hidden max-w-[56px] hover:max-w-[200px] h-[56px] bg-[#06C755] text-white rounded-full transition-all duration-300 ease-in-out">
     <div class="flex-shrink-0 w-[56px] h-[56px] flex items-center justify-center">
       <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
