@@ -32,7 +32,8 @@
     </nav>
 
     <main id="reportContent" class="max-w-md mx-auto px-4 mt-6">
-        
+
+        <!-- Student Header Card -->
         <div class="bg-white rounded-[2rem] p-5 mb-4 shadow-sm border border-slate-100">
             <div class="flex items-center gap-4">
                 <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">
@@ -45,11 +46,13 @@
             </div>
         </div>
 
+        <!-- Course Cover -->
         <div class="mb-6 rounded-[2rem] overflow-hidden shadow-md border border-white">
-            <img id="courseCover" src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800" 
+            <img id="courseCover" src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800"
                  class="w-full h-48 object-cover bg-slate-200" alt="Course Cover">
         </div>
 
+        <!-- Chart Card -->
         <div id="chart-card" class="bg-white rounded-[2rem] p-6 mb-6 shadow-sm border border-slate-100">
             <div class="flex justify-between items-start mb-4">
                 <h3 class="text-sm font-black text-slate-800 flex items-center gap-2">
@@ -62,6 +65,7 @@
             </div>
         </div>
 
+        <!-- Score Sections -->
         <div id="scoreContainer" class="space-y-6"></div>
 
     </main>
@@ -72,98 +76,156 @@
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let myChart = null;
-        let subjectSortMap = {}; // เก็บ sort_order ของแต่ละวิชา
-        
+        let subjectSortMap = {};
+
         const colorPalette = {
             'คณิตศาสตร์': '#3b82f6', 'วิทยาศาสตร์': '#10b981', 'ภาษาอังกฤษ': '#a855f7',
             'ภาษาไทย': '#f59e0b', 'สังคมศึกษา': '#64748b', 'OVERALL': '#1e293b'
         };
 
-        async function init() {
-          const userData = JSON.parse(sessionStorage.getItem('student_user'));
-          if (!userData) return (location.href = 'index.html');
+        // =====================================================
+        // SETTINGS LOOKUP
+        // Returns the score_settings entry for a given
+        // test_number + subject, with safe fallbacks so the
+        // UI never crashes when an entry is missing.
+        // =====================================================
+        let settingsRows = []; // populated in init() from score_settings
 
-          document.getElementById('studentName').innerText = `น้อง${userData.nickname}`;
-          document.getElementById('initialName').innerText = userData.nickname.charAt(0);
-          document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
-
-          try {
-              console.log('🔍 userData.course_code:', userData.course_code);
-
-              const [courseRes, scoreRes, subjectsRes] = await Promise.all([
-                  db.from('courses').select('*').eq('course_code', userData.course_code).maybeSingle(),
-                  db.from('test_scores').select('*').eq('student_id', userData.id).eq('course_code', userData.course_code).order('test_number', { ascending: true }),
-                  db.from('subjects').select('subject_name, sort_order').eq('course_code', userData.course_code).order('sort_order', { ascending: true })
-              ]);
-
-              const courseInfo = courseRes.data;
-              const scores = scoreRes.data;
-              const subjects = subjectsRes.data || [];
-
-              // Debug
-              console.log('❌ subjectsRes.error:', subjectsRes.error);
-              console.log('✅ subjectsRes.data:', subjectsRes.data);
-              console.log('📊 scores:', scores);
-
-              // สร้าง map ของ sort_order สำหรับการเรียงลำดับวิชา
-              subjects.forEach(sub => {
-                  subjectSortMap[sub.subject_name] = sub.sort_order;
-                  console.log(`📚 ${sub.subject_name} -> sort_order: ${sub.sort_order}`);
-              });
-              console.log('🗺️ Final subjectSortMap:', subjectSortMap);
-
-              // --- ส่วนจัดการรูปภาพหน้าปก ---
-              const courseCover = document.getElementById('courseCover');
-              const defaultPlaceholder = 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800';
-
-              if (courseInfo?.thumbnail_url) {
-                  let finalUrl = courseInfo.thumbnail_url;
-
-                  // 🛠️ ตรวจสอบและแปลงลิงก์ Google Drive ให้เป็น Direct Link
-                  if (finalUrl.includes('drive.google.com')) {
-                      const fileId = finalUrl.split('/d/')[1]?.split('/')[0];
-                      if (fileId) {
-                          finalUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
-                      }
-                  }
-
-                  courseCover.src = finalUrl;
-                  
-                  courseCover.onerror = function() {
-                      this.src = defaultPlaceholder;
-                      this.onerror = null;
-                  };
-              } else {
-                  courseCover.src = defaultPlaceholder;
-              }
-              // --------------------------
-
-              if (!scores || scores.length === 0) {
-                  document.getElementById('scoreContainer').innerHTML = `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนน</p>`;
-                  return;
-              }
-
-              const threshold = 60; 
-              if (courseInfo?.score_display_mode === 'test_summary') {
-                  setupSummaryChart(scores, threshold);
-                  renderSummaryTable(scores, threshold);
-              } else {
-                  setupChart(scores, threshold);
-                  renderBySubject(scores, threshold);
-              }
-
-          } catch (err) { console.error('Error:', err); }
+        function getSettings(testNumber, subject) {
+            const row = settingsRows.find(
+                r => r.test_number === testNumber && r.subject === subject
+            );
+            return {
+                full_score: row?.full_score ?? 0,          // 0 signals "missing"
+                topic:      row?.topic      ?? null         // null → show placeholder
+            };
         }
 
-        // --- 📊 Core Chart Function (With Dynamic Axis Scaling) ---
+        // Enrich a raw test_scores row with full_score + topic from score_settings.
+        // Returns a NEW object — never mutates the original.
+        function enrichScore(sc) {
+            const meta = getSettings(sc.test_number, sc.subject);
+            return {
+                ...sc,
+                full_score: meta.full_score,  // always from score_settings
+                topic:      meta.topic        // always from score_settings
+            };
+        }
+
+        // =====================================================
+        // INIT
+        // =====================================================
+        async function init() {
+            const userData = JSON.parse(sessionStorage.getItem('student_user'));
+            if (!userData) return (location.href = 'index.html');
+
+            document.getElementById('studentName').innerText    = `น้อง${userData.nickname}`;
+            document.getElementById('initialName').innerText    = userData.nickname.charAt(0);
+            document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
+
+            try {
+                // ── Fetch all four data sources concurrently ──────────────
+                // 1. courses         → course display mode, thumbnail
+                // 2. test_scores     → student's raw scores (NO full_score/topic)
+                // 3. score_settings  → full_score + topic per (course, test, subject)
+                // 4. subjects        → sort_order for column ordering
+                const [courseRes, scoreRes, settingsRes, subjectsRes] = await Promise.all([
+                    db.from('courses')
+                        .select('*')
+                        .eq('course_code', userData.course_code)
+                        .maybeSingle(),
+
+                    // Only select columns that test_scores now owns.
+                    // full_score and topic have been removed from this table.
+                    db.from('test_scores')
+                        .select('student_id, course_code, test_number, subject, score')
+                        .eq('student_id',   userData.id)
+                        .eq('course_code',  userData.course_code)
+                        .order('test_number', { ascending: true }),
+
+                    // Single fetch for all settings rows for this course.
+                    // Covers every test_number so no per-row DB calls are needed.
+                    db.from('score_settings')
+                        .select('test_number, subject, full_score, topic')
+                        .eq('course_code', userData.course_code),
+
+                    db.from('subjects')
+                        .select('subject_name, sort_order')
+                        .eq('course_code', userData.course_code)
+                        .order('sort_order', { ascending: true })
+                ]);
+
+                const courseInfo = courseRes.data;
+                const rawScores  = scoreRes.data    || [];
+                settingsRows     = settingsRes.data  || [];   // stored in module-level var
+                const subjects   = subjectsRes.data  || [];
+
+                // Build sort_order map
+                subjectSortMap = {};
+                subjects.forEach(sub => {
+                    subjectSortMap[sub.subject_name] = sub.sort_order;
+                });
+
+                // ── Enrich every score row with full_score + topic ────────
+                // From this point forward, `scores` is the single source of truth.
+                // No downstream function should read from score_settings directly —
+                // everything needed is already on each row.
+                const scores = rawScores.map(enrichScore);
+
+                // ── Course cover image ────────────────────────────────────
+                const coverEl           = document.getElementById('courseCover');
+                const defaultPlaceholder = 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800';
+
+                if (courseInfo?.thumbnail_url) {
+                    let finalUrl = courseInfo.thumbnail_url;
+                    if (finalUrl.includes('drive.google.com')) {
+                        const fileId = finalUrl.split('/d/')[1]?.split('/')[0];
+                        if (fileId) finalUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                    }
+                    coverEl.src = finalUrl;
+                    coverEl.onerror = function() { this.src = defaultPlaceholder; this.onerror = null; };
+                } else {
+                    coverEl.src = defaultPlaceholder;
+                }
+
+                // ── Render ────────────────────────────────────────────────
+                if (!scores.length) {
+                    document.getElementById('scoreContainer').innerHTML =
+                        `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนน</p>`;
+                    return;
+                }
+
+                const threshold = 60;
+                if (courseInfo?.score_display_mode === 'test_summary') {
+                    setupSummaryChart(scores, threshold);
+                    renderSummaryTable(scores, threshold);
+                } else {
+                    setupChart(scores, threshold);
+                    renderBySubject(scores, threshold);
+                }
+
+            } catch (err) { console.error('Error in init():', err); }
+        }
+
+        // =====================================================
+        // SORT HELPER
+        // =====================================================
+        function sortedSubjects(scores) {
+            const subs = [...new Set(scores.map(s => s.subject))];
+            return subs.sort((a, b) =>
+                (subjectSortMap[a] ?? 999) - (subjectSortMap[b] ?? 999)
+            );
+        }
+
+        // =====================================================
+        // CHART FACTORY
+        // =====================================================
         function createChart(labels, datasets, threshold) {
             if (myChart) myChart.destroy();
 
-            // คำนวณจุดต่ำสุดของแกน Y แบบ Dynamic เพื่อย่อกราฟ (Axis Scaling)
-            const allValues = datasets.flatMap(d => d.data).filter(v => v !== null);
-            const minValue = Math.min(...allValues);
-            // ถ้าคะแนนต่ำสุดคือ 72% ให้เริ่มที่ 60% (ปัดลงทีละ 10) แต่ไม่ต่ำกว่า 0
-            const yMin = minValue > 20 ? Math.floor((minValue - 10) / 10) * 10 : 0;
+            const allValues = datasets.flatMap(d => d.data).filter(v => v !== null && v !== undefined);
+            const minValue  = allValues.length ? Math.min(...allValues) : 0;
+            const yMin      = minValue > 20 ? Math.floor((minValue - 10) / 10) * 10 : 0;
 
             const ctx = document.getElementById('scoreChart').getContext('2d');
             myChart = new Chart(ctx, {
@@ -173,32 +235,32 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { 
-                            min: yMin,
-                            max: 100, 
-                            ticks: { 
-                                font: { size: 10 }, 
-                                callback: v => v + '%' 
-                            },
+                        y: {
+                            min: yMin, max: 100,
+                            ticks: { font: { size: 10 }, callback: v => v + '%' },
                             grid: { color: 'rgba(0,0,0,0.03)' }
                         },
-                        x: { 
+                        x: {
                             ticks: { font: { size: 10 } },
                             grid: { display: false }
                         }
                     },
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9, weight: 'bold' }, padding: 15 } } 
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 8, font: { size: 9, weight: 'bold' }, padding: 15 }
+                        }
                     }
                 },
                 plugins: [{
                     id: 'threshold',
                     beforeDraw: (c) => {
-                        const {ctx, chartArea: {left, right}, scales: {y}} = c;
+                        const { ctx, chartArea: { left, right }, scales: { y } } = c;
                         const yPos = y.getPixelForValue(threshold);
                         ctx.save();
                         ctx.strokeStyle = '#ef4444';
                         ctx.setLineDash([5, 5]);
+                        ctx.lineWidth = 1.2;
                         ctx.beginPath(); ctx.moveTo(left, yPos); ctx.lineTo(right, yPos); ctx.stroke();
                         ctx.restore();
                     }
@@ -206,33 +268,34 @@
             });
         }
 
-        // --- 📈 Summary Mode: Multi-line Chart ---
+        // =====================================================
+        // SUMMARY MODE — CHART
+        // full_score comes from enriched rows (score_settings)
+        // =====================================================
         function setupSummaryChart(scores, threshold) {
-            const testNums = [...new Set(scores.map(s => s.test_number))];
-            let subjects = [...new Set(scores.map(s => s.subject))];
-            
-            // เรียงวิชาตาม sort_order
-            subjects.sort((a, b) => {
-                const orderA = subjectSortMap[a] ?? 999;
-                const orderB = subjectSortMap[b] ?? 999;
-                return orderA - orderB;
-            });
-            
-            // 1. เส้นรายวิชา
+            const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
+            const subjects = sortedSubjects(scores);
+
             const datasets = subjects.map((sub, idx) => ({
                 label: sub,
                 data: testNums.map(num => {
-                    const match = scores.find(s => s.test_number === num && s.subject === sub);
-                    return match ? (match.score / match.full_score * 100) : null;
+                    const r = scores.find(s => s.test_number === num && s.subject === sub);
+                    // Guard: skip if no score entered or full_score is missing/zero
+                    return (r && r.score != null && r.full_score > 0)
+                        ? +(r.score / r.full_score * 100).toFixed(1)
+                        : null;
                 }),
                 borderColor: colorPalette[sub] || `hsl(${idx * 137}, 60%, 65%)`,
                 borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true
             }));
 
-            // 2. เส้น Overall (หนาพิเศษ/เส้นประ)
+            // Overall line — uses full_score from score_settings (already on each row)
             const overallData = testNums.map(num => {
-                const tests = scores.filter(s => s.test_number === num);
-                return (tests.reduce((a, b) => a + b.score, 0) / tests.reduce((a, b) => a + b.full_score, 0) * 100);
+                const rows = scores.filter(s => s.test_number === num && s.score != null && s.full_score > 0);
+                if (!rows.length) return null;
+                const s = rows.reduce((a, b) => a + b.score,      0);
+                const f = rows.reduce((a, b) => a + b.full_score,  0);
+                return f > 0 ? +(s / f * 100).toFixed(1) : null;
             });
 
             datasets.push({
@@ -245,42 +308,61 @@
             createChart(testNums.map(n => `ครั้งที่ ${n}`), datasets, threshold);
         }
 
-        // --- 📑 Summary Mode: Matrix Table ---
+        // =====================================================
+        // SUMMARY MODE — TABLE
+        // Grouped by test_number; full_score from score_settings
+        // =====================================================
         function renderSummaryTable(scores, threshold) {
-            let subjects = [...new Set(scores.map(s => s.subject))];
-            const testNums = [...new Set(scores.map(s => s.test_number))];
-
-            // เรียงวิชาตาม sort_order
-            subjects.sort((a, b) => {
-                const orderA = subjectSortMap[a] ?? 999;
-                const orderB = subjectSortMap[b] ?? 999;
-                return orderA - orderB;
-            });
+            const subjects = sortedSubjects(scores);
+            const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
 
             const headerHtml = `<tr>
                 <th class="pb-3 w-10">No.</th>
-                ${subjects.map(sub => `<th class="pb-3 text-center text-[9px] font-black">${sub} (%)</th>`).join('')}
+                ${subjects.map(sub => {
+                    // Show the topic for this subject from score_settings (via enriched rows).
+                    // For summary mode, show the most recent non-null topic for each subject.
+                    const latestTopic = [...scores]
+                        .filter(s => s.subject === sub && s.topic)
+                        .sort((a,b) => b.test_number - a.test_number)[0]?.topic;
+                    const topicLine = latestTopic
+                        ? `<div class="text-[8px] font-normal text-indigo-400 normal-case">${latestTopic}</div>`
+                        : '';
+                    return `<th class="pb-3 text-center text-[9px] font-black">${sub}${topicLine}</th>`;
+                }).join('')}
                 <th class="pb-3 text-right text-indigo-600 font-black">รวม %</th>
             </tr>`;
 
             const rowsHtml = testNums.map(num => {
+                // Collect the topic for each subject in this specific test number
                 let rowScore = 0, rowFull = 0;
                 const cells = subjects.map(sub => {
-                    const match = scores.find(s => s.test_number === num && s.subject === sub);
-                    if (match) {
-                        const p = (match.score / match.full_score * 100);
-                        rowScore += match.score; rowFull += match.full_score;
-                        return `<td class="py-4 text-center text-[11px] font-bold ${p >= threshold ? 'text-emerald-600' : 'text-red-500'}">${p.toFixed(0)}%</td>`;
+                    const row = scores.find(s => s.test_number === num && s.subject === sub);
+                    if (row && row.score != null && row.full_score > 0) {
+                        const p = row.score / row.full_score * 100;
+                        rowScore += row.score;
+                        rowFull  += row.full_score;
+                        return `<td class="py-4 text-center">
+                            <span class="text-[11px] font-bold ${p >= threshold ? 'text-emerald-600' : 'text-red-500'}">${p.toFixed(0)}%</span>
+                            ${row.topic ? `<div class="text-[9px] text-slate-400 mt-0.5">${row.topic}</div>` : ''}
+                        </td>`;
                     }
-                    return `<td class="py-4 text-center text-slate-300">-</td>`;
+                    if (row && row.score != null && row.full_score === 0) {
+                        // Score exists but settings missing — show graceful placeholder
+                        return `<td class="py-4 text-center text-[10px] text-slate-400">—<br><span class="text-[8px]">ไม่มีข้อมูลเต็ม</span></td>`;
+                    }
+                    return `<td class="py-4 text-center text-slate-300 text-[11px]">-</td>`;
                 }).join('');
 
-                const totalP = rowFull > 0 ? ((rowScore / rowFull) * 100).toFixed(0) : 0;
+                const totalP = rowFull > 0 ? (rowScore / rowFull * 100).toFixed(0) : '—';
+                const pClass  = rowFull > 0 && +totalP >= threshold
+                    ? 'bg-indigo-100 text-indigo-600'
+                    : 'bg-red-100 text-red-600';
+
                 return `<tr class="border-b border-slate-50 last:border-0">
                     <td class="py-4 text-sm font-bold text-slate-700">T${num}</td>
                     ${cells}
                     <td class="py-4 text-right">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${totalP >= threshold ? 'bg-indigo-100 text-indigo-600' : 'bg-red-100 text-red-600'}">${totalP}%</span>
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${rowFull > 0 ? pClass : 'bg-slate-100 text-slate-400'}">${totalP}${rowFull > 0 ? '%' : ''}</span>
                     </td>
                 </tr>`;
             }).join('');
@@ -300,74 +382,111 @@
                 </div>`;
         }
 
-        // --- (Fallback Functions for Single Subject Mode) ---
+        // =====================================================
+        // BY-SUBJECT MODE — CHART
+        // full_score from score_settings (enriched rows)
+        // =====================================================
         function setupChart(scores, threshold) {
-            const labels = [...new Set(scores.map(s => `ครั้งที่ ${s.test_number}`))];
-            let subjects = [...new Set(scores.map(s => s.subject))];
-            
-            // เรียงวิชาตาม sort_order
-            subjects.sort((a, b) => {
-                const orderA = subjectSortMap[a] ?? 999;
-                const orderB = subjectSortMap[b] ?? 999;
-                return orderA - orderB;
-            });
-            
+            const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
+            const subjects = sortedSubjects(scores);
+            const labels   = testNums.map(n => `ครั้งที่ ${n}`);
+
             const datasets = subjects.map((sub, idx) => ({
                 label: sub,
-                data: labels.map((_, i) => {
-                    const match = scores.find(s => s.test_number === (i+1) && s.subject === sub);
-                    return match ? (match.score / match.full_score * 100) : null;
+                data: testNums.map(num => {
+                    const r = scores.find(s => s.test_number === num && s.subject === sub);
+                    return (r && r.score != null && r.full_score > 0)
+                        ? +(r.score / r.full_score * 100).toFixed(1)
+                        : null;
                 }),
                 borderColor: colorPalette[sub] || `hsl(${idx * 137}, 60%, 65%)`,
                 borderWidth: 3, tension: 0.3, spanGaps: true
             }));
+
             createChart(labels, datasets, threshold);
         }
 
+        // =====================================================
+        // BY-SUBJECT MODE — RENDER
+        // Grouped by subject; each row shows its own topic
+        // from score_settings (already on the enriched row).
+        // If score_settings entry is missing → graceful placeholder.
+        // =====================================================
         function renderBySubject(scores, threshold) {
-            let subjects = [...new Set(scores.map(s => s.subject))];
-            
-            // เรียงวิชาตาม sort_order
-            subjects.sort((a, b) => {
-                const orderA = subjectSortMap[a] ?? 999;
-                const orderB = subjectSortMap[b] ?? 999;
-                return orderA - orderB;
-            });
-            
+            const subjects = sortedSubjects(scores);
+
             document.getElementById('scoreContainer').innerHTML = subjects.map(sub => {
-                const subScores = scores.filter(s => s.subject === sub);
+                const subScores = scores
+                    .filter(s => s.subject === sub)
+                    .sort((a,b) => a.test_number - b.test_number);
+
                 const rows = subScores.map(s => {
-                    const p = ((s.score / s.full_score) * 100).toFixed(0);
+                    const hasFull    = s.full_score > 0;
+                    const pct        = hasFull ? (s.score / s.full_score * 100).toFixed(0) : null;
+                    const scoreDisp  = hasFull ? `${s.score}/${s.full_score}` : `${s.score}/—`;
+                    // topic from score_settings (via enrichScore); null → placeholder
+                    const topicDisp  = s.topic || '<span class="text-slate-300 italic">ไม่มีข้อมูลเนื้อหา</span>';
+                    const pctBadge   = pct !== null
+                        ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black ${+pct >= threshold ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">${pct}%</span>`
+                        : `<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-400">—</span>`;
+
                     return `<tr class="border-b border-slate-50 last:border-0">
                         <td class="py-4 text-sm font-bold text-slate-700">T${s.test_number}</td>
-                        <td class="py-4 text-[11px] text-slate-500">${s.topic || '-'}</td>
-                        <td class="py-4 text-right font-black text-slate-800 text-sm">${s.score}/${s.full_score}</td>
-                        <td class="py-4 text-right"><span class="px-2 py-0.5 rounded-md text-[10px] font-black ${p >= threshold ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">${p}%</span></td>
+                        <td class="py-4 text-[11px] text-slate-500">${topicDisp}</td>
+                        <td class="py-4 text-right font-black text-slate-800 text-sm">${scoreDisp}</td>
+                        <td class="py-4 text-right">${pctBadge}</td>
                     </tr>`;
                 }).join('');
-                return `<div id="card-${sub}" class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-50">
-                    <div class="flex justify-between items-center mb-4"><h4 class="text-md font-black italic">📚 ${sub}</h4>
-                    <button onclick="saveCard('card-${sub}', '${sub}')" class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full btn-save">บันทึกรูป</button></div>
-                    <table class="w-full text-left"><thead class="text-[10px] font-black uppercase text-slate-500 border-b border-slate-100">
-                    <tr><th class="pb-2 w-12">No.</th><th class="pb-2">Topic</th><th class="pb-2 text-right">Score</th><th class="pb-2 text-right">%</th></tr></thead>
-                    <tbody>${rows}</tbody></table></div>`;
+
+                const safeSubId = sub.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_ก-๙]/g, '');
+                return `<div id="card-${safeSubId}" class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-50">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-md font-black italic">📚 ${sub}</h4>
+                        <button onclick="saveCard('card-${safeSubId}', '${sub}')" class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full btn-save">บันทึกรูป</button>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="text-[10px] font-black uppercase text-slate-500 border-b border-slate-100">
+                            <tr><th class="pb-2 w-12">No.</th><th class="pb-2">เนื้อหา</th><th class="pb-2 text-right">คะแนน</th><th class="pb-2 text-right">%</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
             }).join('');
         }
 
-        // --- Image Export Logic ---
+        // =====================================================
+        // IMAGE EXPORT
+        // =====================================================
         function saveGraph() {
-            html2canvas(document.getElementById('chart-card'), { scale: 3, backgroundColor: '#f8fafc', borderRadius: 32 }).then(canvas => {
-                const link = document.createElement('a'); link.download = `Graph.png`; link.href = canvas.toDataURL(); link.click();
+            html2canvas(document.getElementById('chart-card'), {
+                scale: 3, backgroundColor: '#f8fafc'
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Graph.png';
+                link.href = canvas.toDataURL();
+                link.click();
             });
         }
+
         function saveCard(id, name) {
-            html2canvas(document.getElementById(id), { scale: 3, backgroundColor: '#f8fafc', borderRadius: 32 }).then(canvas => {
-                const link = document.createElement('a'); link.download = `Score_${name}.png`; link.href = canvas.toDataURL(); link.click();
+            html2canvas(document.getElementById(id), {
+                scale: 3, backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Score_${name}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
             });
         }
+
         function saveFullReport() {
-            html2canvas(document.getElementById('reportContent'), { scale: 2, backgroundColor: '#f8fafc' }).then(canvas => {
-                const link = document.createElement('a'); link.download = `Full_Report.png`; link.href = canvas.toDataURL(); link.click();
+            html2canvas(document.getElementById('reportContent'), {
+                scale: 2, backgroundColor: '#f8fafc'
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Full_Report.png';
+                link.href = canvas.toDataURL();
+                link.click();
             });
         }
 

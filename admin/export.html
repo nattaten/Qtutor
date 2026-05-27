@@ -391,8 +391,32 @@
 
     /* ===== STATE ===== */
     let allStudents = [], students = [], allScores = [], allCourses = [];
+    // allSettings: rows from score_settings for the active course.
+    // Keyed access via settingsKey(testNumber, subject) -> { full_score, topic }
+    let allSettings = [];
     let courseInfo = null, activeTest = 0, chart = null;
     let currentSubjects = [], currentView = 'ranking';
+
+    /* ===== SETTINGS LOOKUP HELPERS ===== */
+    // Build a fast lookup key from test_number + subject (same composite key as the DB constraint).
+    function settingsKey(testNum, subject) { return `${testNum}__${subject}`; }
+
+    // Returns { full_score, topic } from score_settings, with safe fallbacks so nothing crashes.
+    function getSettings(testNum, subject) {
+      const row = allSettings.find(r => r.test_number === testNum && r.subject === subject);
+      return { full_score: row?.full_score ?? 0, topic: row?.topic ?? null };
+    }
+
+    // Enrich a test_scores row with full_score and topic from score_settings.
+    // Returns a new object — never mutates the original.
+    function enrichScore(sc) {
+      const meta = getSettings(sc.test_number, sc.subject);
+      return {
+        ...sc,
+        full_score: meta.full_score,   // ← always from score_settings
+        topic:      meta.topic         // ← always from score_settings
+      };
+    }
 
     /* ===== SUBJECT ORDER: วิทย์ → คณิต → อังกฤษ → อื่นๆ ===== */
     const SUBJECT_ORDER = [
@@ -423,36 +447,40 @@
     /* ===== INIT ===== */
     async function init() {
       try {
-        const [cRes, sRes, scRes] = await Promise.all([
-          // แก้ไขบรรทัดนี้: เพิ่มการกรอง is_active และเรียงลำดับตาม sort_order
+        // Fetch courses, students, test_scores, AND score_settings in one parallel round-trip.
+        // score_settings is the source of truth for full_score and topic.
+        // test_scores contains only: student_id, course_code, test_number, subject, score.
+        const [cRes, sRes, scRes, stRes] = await Promise.all([
           db.from('courses')
             .select('*')
-            .eq('is_active', true) // ดึงเฉพาะคอร์สที่ยังเปิดสอน
-            .order('sort_order', { ascending: true }), 
-            
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true }),
           db.from('students').select('*'),
-          db.from('test_scores').select('*')
+          // Fetch only the columns that test_scores now owns — no full_score, no topic.
+          db.from('test_scores').select('student_id, course_code, test_number, subject, score'),
+          // Single fetch for ALL settings across ALL courses.
+          // onCourseChange will filter to the active course_code before using.
+          db.from('score_settings').select('course_code, test_number, subject, full_score, topic')
         ]);
 
-        allCourses = cRes.data || [];
-        allStudents = sRes.data || [];
-        allScores = scRes.data || [];
+        allCourses   = cRes.data  || [];
+        allStudents  = sRes.data  || [];
+        allScores    = scRes.data || [];   // raw rows — no full_score/topic yet
+        allSettings  = stRes.data || [];   // metadata from score_settings
 
         const sel = document.getElementById('courseSelect');
-        
-        // แสดงรายการคอร์สใน Dropdown
+
         if (allCourses.length > 0) {
-          sel.innerHTML = allCourses.map(c => 
+          sel.innerHTML = allCourses.map(c =>
             `<option value="${c.course_code}">${c.course_name}</option>`
           ).join('');
-          
           await onCourseChange();
         } else {
           sel.innerHTML = '<option value="">-- ไม่มีคอร์สที่เปิดสอน --</option>';
         }
 
-      } catch(e) { 
-        console.error('Init error:', e); 
+      } catch(e) {
+        console.error('Init error:', e);
       }
     }
 
@@ -461,7 +489,13 @@
       if (!code) return;
       courseInfo = allCourses.find(c => c.course_code === code) || null;
 
-      const cs = allScores.filter(s => s.course_code === code);
+      // Raw rows for this course (score only — no full_score/topic in test_scores).
+      const rawCourseScores = allScores.filter(s => s.course_code === code);
+
+      // Enrich every row with full_score + topic pulled from allSettings.
+      // allSettings was fetched once in init() — no extra DB call needed here.
+      const cs = rawCourseScores.map(enrichScore);
+
       currentSubjects = sortSubjects([...new Set(cs.map(s => s.subject))]);
 
       const ids = new Set(cs.map(s => s.student_id));
@@ -517,20 +551,26 @@
       const code = document.getElementById('courseSelect').value;
       if (!code) return;
 
-      const cs = allScores.filter(s => s.course_code === code);
+      // Enrich all scores for this course from score_settings (full_score + topic).
+      const cs       = allScores.filter(s => s.course_code === code).map(enrichScore);
       const filtered = activeTest === 0 ? cs : cs.filter(s => s.test_number === activeTest);
       const courseName = document.getElementById('courseSelect').selectedOptions[0]?.text || '';
 
       document.getElementById('rankTitle').textContent = activeTest === 0 ? 'สรุปภาพรวมสะสม' : `การสอบครั้งที่ ${activeTest}`;
       document.getElementById('rankCourse').textContent = courseName;
 
-      // Build per-student data
+      // Build per-student data using full_score from score_settings (via enrichScore).
       const map = {};
       filtered.forEach(sc => {
+        if (sc.score == null) return;            // skip rows with no score entered
         const sid = sc.student_id;
         if (!map[sid]) { map[sid] = { totalS:0, totalF:0, subs:{} }; currentSubjects.forEach(s => map[sid].subs[s] = {s:0,f:0}); }
-        if (map[sid].subs[sc.subject]) { map[sid].subs[sc.subject].s += +sc.score; map[sid].subs[sc.subject].f += +sc.full_score; }
-        map[sid].totalS += +sc.score; map[sid].totalF += +sc.full_score;
+        if (map[sid].subs[sc.subject]) {
+          map[sid].subs[sc.subject].s += +sc.score;
+          map[sid].subs[sc.subject].f += +sc.full_score;   // from score_settings
+        }
+        map[sid].totalS += +sc.score;
+        map[sid].totalF += +sc.full_score;                  // from score_settings
       });
 
       const rows = Object.entries(map).map(([sid, d]) => ({
@@ -575,43 +615,44 @@
 
     function renderTopics(filtered) {
       const card = document.getElementById('topicsCard');
-      // 1. เช็คโหมดการแสดงผล ถ้าเป็นสรุปผลอย่างเดียวให้ซ่อน
-      if (courseInfo?.score_display_mode === 'test_summary') { 
-        card.style.display = 'none'; 
-        return; 
+
+      if (courseInfo?.score_display_mode === 'test_summary') {
+        card.style.display = 'none';
+        return;
       }
 
-      // 2. ตรวจสอบว่ามีข้อมูล Topic ในวิชาปัจจุบันหรือไม่
+      // Topics now come from score_settings (via enrichScore), not test_scores.
+      // One canonical topic per (test_number, subject) pair — no per-student duplication.
       const hasTopics = currentSubjects.some(sub => filtered.some(f => f.subject === sub && f.topic));
-      if (!hasTopics) { 
-        card.style.display = 'none'; 
-        return; 
+      if (!hasTopics) {
+        card.style.display = 'none';
+        return;
       }
 
       card.style.display = 'block';
-      document.getElementById('topicsLbl').textContent = activeTest === 0 ? '📚 ภาพรวมเนื้อหาการสอบทั้งหมด' : '📖 เนื้อหาที่สอบครั้งนี้';
-      
-      // 3. Render กล่องเนื้อหาโดยอิงตามลำดับวิชาใน currentSubjects
-      document.getElementById('topicsGrid').innerHTML = currentSubjects.map(sub => {
-        
-        // ดึงเนื้อหาออกมา และจัดการเรียงลำดับ/ตัดตัวซ้ำ
-        const topics = filtered
-          .filter(f => f.subject === sub && f.topic)
-          // เพิ่มการ Sort เนื้อหาตามลำดับที่บันทึกมา (ถ้ามี id หรือ timestamp)
-          .sort((a, b) => (a.id || 0) - (b.id || 0)) 
-          .map(f => f.topic);
+      document.getElementById('topicsLbl').textContent =
+        activeTest === 0 ? '📚 ภาพรวมเนื้อหาการสอบทั้งหมด' : '📖 เนื้อหาที่สอบครั้งนี้';
 
-        // ใช้ Set เพื่อเอาชื่อหัวข้อที่ซ้ำกันออก (แต่ยังคงลำดับที่ Sort ไว้)
-        const uniqueTopics = [...new Set(topics)];
+      document.getElementById('topicsGrid').innerHTML = currentSubjects.map(sub => {
+        // De-duplicate topics per subject (multiple students share the same topic row).
+        // Sort by test_number so the list is chronological.
+        const topics = [
+          ...new Set(
+            filtered
+              .filter(f => f.subject === sub && f.topic)
+              .sort((a, b) => a.test_number - b.test_number)
+              .map(f => f.topic)
+          )
+        ];
 
         return `
           <div class="topic-box">
             <div class="topic-sub">${sub}</div>
             <div class="topic-nm">
-              ${uniqueTopics.length 
-                ? (activeTest === 0 
-                    ? uniqueTopics.map((t, i) => `<div class="mb-1">${i + 1}. ${t}</div>`).join('') 
-                    : uniqueTopics.join(', ')) 
+              ${topics.length
+                ? (activeTest === 0
+                    ? topics.map((t, i) => `<div class="mb-1">${i + 1}. ${t}</div>`).join('')
+                    : topics.join(', '))
                 : '<span style="color:#cbd5e1;font-style:italic;">ไม่มีข้อมูลเนื้อหา</span>'
               }
             </div>
@@ -624,13 +665,22 @@
     }
 
     function renderRankTable(rows) {
-      const subCols = currentSubjects.map(s => `<th style="text-align:center;min-width:70px;">${s}</th>`).join('');
+      // Show topic under subject name in the header (from score_settings via getSettings).
+      // For "all tests" view (activeTest === 0), topics may differ per test so we omit them.
+      const subCols = currentSubjects.map(sub => {
+        const meta  = activeTest !== 0 ? getSettings(activeTest, sub) : null;
+        const topic = meta?.topic ? `<div style="font-size:9px;font-weight:500;color:#a5b4fc;margin-top:2px;">${meta.topic}</div>` : '';
+        return `<th style="text-align:center;min-width:70px;">${sub}${topic}</th>`;
+      }).join('');
+
       document.getElementById('rankTableHead').innerHTML =
         `<tr><th style="width:52px;">อันดับ</th><th>ชื่อ</th>${subCols}<th style="text-align:right;">รวม</th></tr>`;
 
       document.getElementById('rankTableBody').innerHTML = rows.map((r, i) => {
-        const bClass = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
-        const subCells = r.subs.map(s => `<td style="text-align:center;font-weight:700;color:${rankColor(s)};">${s !== null ? s.toFixed(1)+'%' : '—'}</td>`).join('');
+        const bClass   = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+        const subCells = r.subs.map(s =>
+          `<td style="text-align:center;font-weight:700;color:${rankColor(s)};">${s !== null ? s.toFixed(1)+'%' : '—'}</td>`
+        ).join('');
         return `<tr>
           <td><div class="rank-badge ${bClass}">${i+1}</div></td>
           <td style="font-weight:700;color:#0f172a;">${r.nickname}</td>
@@ -668,14 +718,20 @@
       if (!s) return;
 
       const code = document.getElementById('courseSelect').value;
-      const mySc = allScores.filter(sc => sc.student_id == sid && sc.course_code === code)
-                            .sort((a,b) => a.test_number - b.test_number);
-      const tests = [...new Set(mySc.map(m => m.test_number))].sort((a,b) => a-b);
+
+      // Enrich this student's scores with full_score + topic from score_settings.
+      const mySc = allScores
+        .filter(sc => sc.student_id == sid && sc.course_code === code)
+        .map(enrichScore)
+        .sort((a,b) => a.test_number - b.test_number);
+
+      const tests    = [...new Set(mySc.map(m => m.test_number))].sort((a,b) => a-b);
       const subjects = sortSubjects([...new Set(mySc.map(m => m.subject))]);
       const courseName = document.getElementById('courseSelect').selectedOptions[0]?.text || '';
 
-      const totalS = mySc.reduce((a,b) => a + +b.score, 0);
-      const totalF = mySc.reduce((a,b) => a + +b.full_score, 0);
+      // Totals use full_score from score_settings (via enrichScore), not test_scores.
+      const totalS = mySc.filter(m => m.score != null).reduce((a,b) => a + +b.score, 0);
+      const totalF = mySc.filter(m => m.score != null).reduce((a,b) => a + +b.full_score, 0);
 
       document.getElementById('iName').textContent = `น้อง${s.nickname}`;
       document.getElementById('iCourse').textContent = courseName;
@@ -689,16 +745,24 @@
 
     function renderProgressChart(mySc, tests, subjects) {
       if (chart) chart.destroy();
-      const labels = tests.map(t => `ครั้งที่ ${t}`);
+      const labels   = tests.map(t => `ครั้งที่ ${t}`);
+      // full_score is already enriched from score_settings on every row in mySc.
       const datasets = subjects.map((sub, idx) => ({
         label: sub,
-        data: tests.map(t => { const r = mySc.find(m => m.test_number===t && m.subject===sub); return r ? +(r.score/r.full_score*100).toFixed(1) : null; }),
+        data: tests.map(t => {
+          const r = mySc.find(m => m.test_number===t && m.subject===sub);
+          // Guard: skip rows with no score or zero full_score (no crash if settings missing).
+          return (r && r.score != null && r.full_score > 0)
+            ? +(r.score / r.full_score * 100).toFixed(1)
+            : null;
+        }),
         borderColor: subjectColor(sub, idx), borderWidth: 2, tension: 0.35, pointRadius: 4, spanGaps: true, fill: false
       }));
 
       const overallData = tests.map(t => {
-        const rows = mySc.filter(m => m.test_number===t);
-        const s = rows.reduce((a,b) => a + +b.score, 0), f = rows.reduce((a,b) => a + +b.full_score, 0);
+        const rows = mySc.filter(m => m.test_number===t && m.score != null);
+        const s = rows.reduce((a,b) => a + +b.score, 0);
+        const f = rows.reduce((a,b) => a + +b.full_score, 0);   // from score_settings
         return f > 0 ? +(s/f*100).toFixed(1) : null;
       });
       datasets.push({ label: 'ภาพรวม', data: overallData, borderColor: '#0f172a', borderWidth: 3, pointRadius: 5, fill: false, tension: 0.35, borderDash: [6,4] });
@@ -732,18 +796,27 @@
 
     function renderBySubject(mySc, subjects, nickname) {
       document.getElementById('iScoreList').innerHTML = subjects.map((sub, idx) => {
-        const subRows = mySc.filter(m => m.subject === sub);
+        const subRows = mySc.filter(m => m.subject === sub && m.score != null);
         if (!subRows.length) return '';
         const color = subjectColor(sub, idx);
+
+        // full_score and topic already on each row via enrichScore — no fallback needed.
+        // Guard for missing score_settings entry: display 'N/A' / '-' gracefully.
         const rows = subRows.map(row => {
-          const pct = row.full_score > 0 ? row.score/row.full_score*100 : 0;
+          const fullScore = row.full_score > 0 ? row.full_score : null;
+          const pct       = fullScore ? row.score / fullScore * 100 : 0;
+          const scoreDisp = fullScore
+            ? `${row.score}/${fullScore}`
+            : `${row.score}/N/A`;
+          const topicDisp = row.topic || '-';
           return `<tr>
             <td style="color:#94a3b8;font-weight:700;width:46px;">T${row.test_number}</td>
-            <td style="color:#0f172a;">${row.topic || '-'}</td>
-            <td style="text-align:center;color:#475569;font-weight:700;">${row.score}/${row.full_score}</td>
-            <td style="text-align:right;"><span class="pct-text ${pct>=60?'pct-pass':'pct-fail'}">${pct.toFixed(0)}%</span></td>
+            <td style="color:#0f172a;">${topicDisp}</td>
+            <td style="text-align:center;color:#475569;font-weight:700;">${scoreDisp}</td>
+            <td style="text-align:right;"><span class="pct-text ${fullScore && pct>=60?'pct-pass':'pct-fail'}">${fullScore ? pct.toFixed(0)+'%' : '—'}</span></td>
           </tr>`;
         }).join('');
+
         const capId = `cap-${sub.replace(/\s/g,'_')}`;
         return `<div class="subj-section" id="${capId}">
           <div class="subj-head">
@@ -761,20 +834,38 @@
     }
 
     function renderSummaryTable(mySc, tests, subjects) {
+      // Show topic under each subject in the header.
+      // For summary mode every test may have a different topic, so we list all unique ones.
       const headerHtml = `<tr>
         <th style="width:60px;">ครั้งที่</th>
-        ${subjects.map(s => `<th style="text-align:center;">${s}</th>`).join('')}
+        ${subjects.map(s => {
+          const topics = [...new Set(
+            mySc
+              .filter(m => m.subject === s && m.topic)
+              .sort((a,b) => a.test_number - b.test_number)
+              .map(m => m.topic)
+          )];
+          const topicLine = topics.length
+            ? `<div style="font-size:9px;font-weight:500;color:#a5b4fc;margin-top:2px;">${topics.join(', ')}</div>`
+            : '';
+          return `<th style="text-align:center;">${s}${topicLine}</th>`;
+        }).join('')}
         <th style="text-align:right;">รวม</th>
       </tr>`;
 
       const rowsHtml = tests.map(t => {
         let rs=0, rf=0;
         const cells = subjects.map(sub => {
-          const row = mySc.find(m => m.test_number===t && m.subject===sub);
+          const row = mySc.find(m => m.test_number===t && m.subject===sub && m.score != null);
           if (row) {
-            const p = row.score/row.full_score*100;
-            rs += +row.score; rf += +row.full_score;
-            return `<td style="text-align:center;"><span class="pct-text ${p>=60?'pct-pass':'pct-fail'}">${p.toFixed(0)}%</span></td>`;
+            // full_score is from score_settings (via enrichScore).
+            const full = row.full_score > 0 ? row.full_score : null;
+            const p    = full ? row.score / full * 100 : 0;
+            rs += +row.score;
+            rf += full || 0;
+            return full
+              ? `<td style="text-align:center;"><span class="pct-text ${p>=60?'pct-pass':'pct-fail'}">${p.toFixed(0)}%</span></td>`
+              : `<td style="text-align:center;color:#94a3b8;">N/A</td>`;
           }
           return `<td style="text-align:center;color:#cbd5e1;">-</td>`;
         }).join('');
