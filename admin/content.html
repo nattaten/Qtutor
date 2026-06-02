@@ -135,12 +135,15 @@
       <input type="hidden" id="editId">
       <div class="space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label class="field-label">คอร์ส *</label><select id="modalCourse" class="input"></select></div>
-          <div><label id="labelStep" class="field-label">สัปดาห์ (Week) *</label><input type="number" id="modalStep" class="input"></div>
+          <div><label class="field-label">คอร์ส *</label><select id="modalCourse" onchange="autoFetchTopic()" class="input"></select></div>
+          <div><label id="labelStep" class="field-label">สัปดาห์ (Week) *</label><input type="number" id="modalStep" oninput="autoFetchTopic()" class="input"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label class="field-label">วิชา *</label><select id="modalSubject" class="input"><option value="วิทย์">วิทย์</option><option value="คณิต">คณิต</option><option value="อังกฤษ">อังกฤษ</option><option value="รวม">รวม</option></select></div>
-          <div><label class="field-label">ชื่อเรื่อง *</label><input type="text" id="modalTitleInput" class="input"></div>
+          <div><label class="field-label">วิชา *</label><select id="modalSubject" onchange="autoFetchTopic()" class="input"><option value="วิทย์">วิทย์</option><option value="คณิต">คณิต</option><option value="อังกฤษ">อังกฤษ</option></select></div>
+          <div>
+            <label class="field-label">ชื่อเรื่อง * <span id="autoFetchStatus" class="text-emerald-500 font-normal normal-case ml-1"></span></label>
+            <input type="text" id="modalTitleInput" class="input" placeholder="ระบบจะดึงชื่อเรื่องให้อัตโนมัติ">
+          </div>
         </div>
         <div id="areaAnswer"><label class="field-label">ลิงก์ไฟล์ PDF *</label><input type="url" id="modalFileUrl" class="input"></div>
         <div id="areaClip" class="hidden">
@@ -176,7 +179,6 @@
     }
 
     async function init() {
-      // 1. เปลี่ยนการเรียงลำดับเป็น sort_order จากน้อยไปมาก
       const { data: courses } = await db
         .from('courses')
         .select('course_code, course_name')
@@ -186,11 +188,9 @@
       const fCourse = document.getElementById('filterCourse');
       const mCourse = document.getElementById('modalCourse');
 
-      // 2. ล้างค่าเดิมและใส่ค่าเริ่มต้น
       fCourse.innerHTML = '<option value="">-- แสดงคอร์สทั้งหมด --</option>';
-      if (mCourse) mCourse.innerHTML = ''; // เคลียร์ค่าใน modalCourse ก่อนวนลูป
+      if (mCourse) mCourse.innerHTML = ''; 
 
-      // 3. วนลูปสร้างตัวเลือก
       courses?.forEach(c => {
         const opt = `<option value="${c.course_code}">${c.course_name}</option>`;
         fCourse.innerHTML += opt;
@@ -249,6 +249,53 @@
       }).join('');
     }
 
+    // ฟังก์ชันดึงข้อมูลหัวข้อเรื่อง (Topic) อัตโนมัติจากตาราง score_settings
+    async function autoFetchTopic() {
+      // ดึงข้อมูลเฉพาะโหมดสร้างเนื้อหาใหม่เท่านั้น (ถ้าเป็นการกดแก้ไขวัตถุเดิม จะไม่เปิดฟังก์ชันทับค่าที่ครูเซฟไว้)
+      const isEditMode = document.getElementById('editId').value !== '';
+      if (isEditMode) return;
+
+      const courseCode = document.getElementById('modalCourse').value;
+      const subject = document.getElementById('modalSubject').value;
+      const testNumber = document.getElementById('modalStep').value;
+      const statusEl = document.getElementById('autoFetchStatus');
+      const titleInput = document.getElementById('modalTitleInput');
+
+      // ตรวจสอบเงื่อนไขการส่ง Request ไปหา Supabase (ข้อมูลต้องกรอกครบ 3 ช่อง)
+      if (!courseCode || !subject || !testNumber) {
+        statusEl.textContent = "";
+        return;
+      }
+
+      statusEl.textContent = "⏳ กำลังดึงชื่อเรื่อง...";
+      statusEl.className = "text-amber-500 font-normal normal-case ml-1 text-[11px]";
+
+      try {
+        const { data, error } = await db
+          .from('score_settings')
+          .select('topic')
+          .eq('course_code', courseCode)
+          .eq('subject', subject)
+          .eq('test_number', parseInt(testNumber))
+          .maybeSingle(); // ป้องกันการพังกรณีไม่เจอบันทึก
+
+        if (error) throw error;
+
+        if (data && data.topic) {
+          titleInput.value = data.topic;
+          statusEl.textContent = "✨ ดึงอัตโนมัติสำเร็จ";
+          statusEl.className = "text-emerald-500 font-bold normal-case ml-1 text-[11px]";
+        } else {
+          statusEl.textContent = "❌ ไม่พบชื่อเรื่องในระบบคะแนน";
+          statusEl.className = "text-slate-400 font-normal normal-case ml-1 text-[11px]";
+        }
+      } catch (err) {
+        console.error("AutoFetch Topic Error: ", err);
+        statusEl.textContent = "⚠️ ดึงล้มเหลว";
+        statusEl.className = "text-rose-500 font-normal normal-case ml-1 text-[11px]";
+      }
+    }
+
     async function saveData() {
       const id = document.getElementById('editId').value;
       const btn = document.getElementById('saveBtn');
@@ -296,7 +343,6 @@
       }
     }
 
-    // [ส่วนอื่นๆ ของ JS ยังคงเหมือนเดิม]
     function togglePreview(id, url, btn) {
       const box = document.getElementById(`preview-${id}`);
       if (!box.classList.contains('hidden')) { box.classList.add('hidden'); btn.classList.remove('active'); box.innerHTML = ''; return; }
@@ -312,6 +358,7 @@
       }
       box.innerHTML = `<div class="bg-slate-50 p-2 text-[10px] font-bold text-slate-400 flex justify-between"><span>PREVIEW MODE</span><a href="${url}" target="_blank" class="text-indigo-600">เปิดต้นฉบับ ↗</a></div><iframe src="${finalUrl}" allowfullscreen></iframe>`;
     }
+
     function editItem(id) {
       const list = currentTab === 'answer' ? allData.solutions : allData.videos;
       const item = list.find(i => i.id == id);
@@ -324,24 +371,48 @@
       if(currentTab === 'answer') { document.getElementById('modalFileUrl').value = item.file_url; } 
       else { document.getElementById('modalVideoUrl').value = item.video_url; document.getElementById('modalPdfUrl').value = item.pdf_url || ''; }
       document.getElementById('modalTitle').textContent = '📝 แก้ไขเนื้อหา';
+      document.getElementById('autoFetchStatus').textContent = ""; // เคลียร์ข้อความสถานะตอนโหมดแก้ไข
       openModal(true);
     }
+
     function openModal(isEdit = false) {
       if(!isEdit) {
         document.getElementById('editId').value = ''; document.getElementById('modalTitleInput').value = '';
         document.getElementById('modalStep').value = ''; document.getElementById('modalFileUrl').value = '';
         document.getElementById('modalVideoUrl').value = ''; document.getElementById('modalPdfUrl').value = '';
         document.getElementById('modalTitle').textContent = '➕ เพิ่มเนื้อหา';
+        document.getElementById('autoFetchStatus').textContent = "";
       }
       document.getElementById('modal').classList.remove('hidden');
       document.getElementById('areaAnswer').classList.toggle('hidden', currentTab!=='answer');
       document.getElementById('areaClip').classList.toggle('hidden', currentTab!=='clip');
       document.getElementById('labelStep').textContent = currentTab === 'answer' ? 'สัปดาห์ (Week) *' : 'ลำดับคลิป (Order) *';
+      
+      // เรียกเช็กทันทีหลังจากเปิด Modal (เผื่อ Select คอร์ส/วิชาเริ่มต้นมีคู่ข้อมูลรออยู่แล้ว)
+      if (!isEdit) autoFetchTopic();
     }
+
     function closeModal() { document.getElementById('modal').classList.add('hidden'); }
     function switchTab(t) { currentTab = t; document.getElementById('tab-sol').classList.toggle('active', t==='answer'); document.getElementById('tab-vid').classList.toggle('active', t==='clip'); renderList(); }
     function pillClass(s) { const map = {'วิทย์':'pill-sci', 'คณิต':'pill-math', 'อังกฤษ':'pill-eng'}; return map[s] || 'pill-all'; }
-    function logout() { if(confirm('ต้องการออกจากระบบ?')) { location.href='index.html'; } }
+    
+    // ฟังก์ชันออกจากระบบแบบปลอดภัยและเคลียร์ Session
+    async function logout() { 
+      if(confirm('ต้องการออกจากระบบ?')) { 
+        try {
+          // สั่ง SignOut เพื่อเคลียร์ Token ออกจากเครื่องให้สะอาด
+          if(db && db.auth) {
+            await db.auth.signOut();
+          }
+        } catch(e) {
+          console.error("Logout Error:", e);
+        } finally {
+          // วิ่งกลับหน้า Login หลัก
+          location.href = 'index.html'; 
+        }
+      } 
+    }
+
     init();
   </script>
 </body>

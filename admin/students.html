@@ -230,7 +230,12 @@
     let coursesList = [], studentsData = [];
 
     async function init() {
-      const { data: courses } = await db.from('courses').select('course_code, course_name').eq('is_active', true).order('sort_order', { ascending: true });
+      // โค้ดที่ถูกต้องในฟังก์ชัน init():
+      const { data: courses } = await db
+        .from('courses')
+        .select('course_code, course_name, sort_order') // 🔥 ต้องเติม sort_order ตรงนี้ด้วย!
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
       coursesList = courses || [];
 
       const filterSel = document.getElementById('filterCourse');
@@ -249,13 +254,27 @@
     }
 
     async function loadStudents() {
-      const { data, error } = await db.from('students').select('*, enrollments(course_code)').order('nickname');
+      // 🔥 ปรับตรง .select() ให้ดึง sort_order ออกมาจาก enrollments ด้วย
+      const { data, error } = await db
+        .from('students')
+        .select('*, enrollments(course_code, sort_order)'); 
+        
       if (error) { console.error(error); return; }
 
       studentsData = data.map(s => {
         const myCodes = (s.enrollments || []).map(e => e.course_code);
         const myNames = coursesList.filter(c => myCodes.includes(c.course_code)).map(c => c.course_name);
-        return { ...s, myCodes, myNames };
+        
+        // 🔥 ดึง sort_order ออกมาจากตาราง enrollments โดยตรง แล้วแปลงเป็นตัวเลข
+        const mySortOrders = (s.enrollments || []).map(e => {
+          const order = Number(e.sort_order);
+          return isNaN(order) ? 999 : order; // ถ้าไม่มีลำดับ หรือเป็น null ให้เป็น 999
+        });
+          
+        // หาค่า sort_order ที่น้อยที่สุดของนักเรียนคนนี้
+        const minSortOrder = mySortOrders.length > 0 ? Math.min(...mySortOrders) : 999;
+
+        return { ...s, myCodes, myNames, minSortOrder };
       });
 
       renderList();
@@ -266,14 +285,34 @@
       const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
 
       let filtered = studentsData;
-      if (filterCode) filtered = filtered.filter(s => s.myCodes.includes(filterCode));
-      if (keyword) filtered = filtered.filter(s =>
-        (s.nickname || '').toLowerCase().includes(keyword) ||
-        (s.full_name || '').toLowerCase().includes(keyword)
-      );
 
+      // 1. กรองคอร์ส
+      if (filterCode) filtered = filtered.filter(s => s.myCodes.includes(filterCode));
+      
+      // 2. กรองคำค้นหา
+      if (keyword) {
+        filtered = filtered.filter(s =>
+          (s.nickname || '').toLowerCase().includes(keyword) ||
+          (s.full_name || '').toLowerCase().includes(keyword)
+        );
+      }
+
+      // 🔥 3. เรียงลำดับตาม sort_order ที่ดึงมาจาก enrollments
+      filtered.sort((a, b) => {
+        const orderA = a.minSortOrder !== undefined ? a.minSortOrder : 999;
+        const orderB = b.minSortOrder !== undefined ? b.minSortOrder : 999;
+
+        if (orderA !== orderB) {
+          return orderA - orderB; // ลำดับน้อยกว่า (เช่น 1, 2, 3) ขึ้นก่อน
+        }
+        // ถ้าลำดับเท่ากัน ให้เรียงตามชื่อเล่น ก-ฮ
+        return (a.nickname || '').localeCompare(b.nickname || '', 'th');
+      });
+
+      // 4. แสดงจำนวนคน
       document.getElementById('countBadge').textContent = `แสดง ${filtered.length} / ${studentsData.length} คน`;
 
+      // 5. วาดลงหน้าจอ
       renderCards(filtered);
       renderTable(filtered);
     }

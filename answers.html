@@ -105,7 +105,7 @@
             };
             
             const upperSub = (subject || '').toUpperCase();
-            if (upperSub.includes('MATH')) return colors.MATH; // รองรับ MATH-M1
+            if (upperSub.includes('MATH') || upperSub.includes('คณิต')) return colors.MATH; // รองรับ MATH-M1
             if (upperSub.includes('SCI') || upperSub.includes('วิท')) return colors.SCI;
             if (upperSub.includes('ENG') || upperSub.includes('อังก')) return colors.ENG;
             if (upperSub.includes('THAI') || upperSub.includes('ไทย')) return colors.THAI;
