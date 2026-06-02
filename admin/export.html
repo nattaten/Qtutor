@@ -399,22 +399,38 @@
 
     /* ===== SETTINGS LOOKUP HELPERS ===== */
     // Build a fast lookup key from test_number + subject (same composite key as the DB constraint).
-    function settingsKey(testNum, subject) { return `${testNum}__${subject}`; }
+    function settingsKey(courseCode, testNum, subject) {
+      return `${courseCode}__${testNum}__${subject}`;
+    } 
 
     // Returns { full_score, topic } from score_settings, with safe fallbacks so nothing crashes.
-    function getSettings(testNum, subject) {
-      const row = allSettings.find(r => r.test_number === testNum && r.subject === subject);
-      return { full_score: row?.full_score ?? 0, topic: row?.topic ?? null };
+    function getSettings(courseCode, testNum, subject) {
+      const row = allSettings.find(
+        r =>
+          r.course_code === courseCode &&
+          r.test_number === testNum &&
+          r.subject === subject
+      );
+
+      return {
+        full_score: Number(row?.full_score || 0),
+        topic: row?.topic || null
+      };
     }
 
     // Enrich a test_scores row with full_score and topic from score_settings.
     // Returns a new object — never mutates the original.
     function enrichScore(sc) {
-      const meta = getSettings(sc.test_number, sc.subject);
+      const meta = getSettings(
+        sc.course_code,
+        sc.test_number,
+        sc.subject
+      );
+
       return {
         ...sc,
-        full_score: meta.full_score,   // ← always from score_settings
-        topic:      meta.topic         // ← always from score_settings
+        full_score: meta.full_score,
+        topic: meta.topic
       };
     }
 
