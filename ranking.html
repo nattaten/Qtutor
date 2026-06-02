@@ -299,90 +299,114 @@
      * position numbers are accurate even when scores are masked.
      */
 
+    // ─── RANKING ───────────────────────────────────────────────────────────────
     function renderRanking(filtered, subjects) {
-      // ── 1. Pre-compute total possible full_score per subject ──────────────
+      // 1. ตรวจสอบรอบการสอบ (เก็บตัวแปรเพื่อใช้หาจำนวนเต็ม)
       const testNumbers = activeTest === 0
         ? [...new Set(scoreSettings.map(s => s.test_number))]
         : [activeTest];
 
+      // คำนวณคะแนนเต็มมาตรฐานรายวิชาของรอบนั้นๆ
       const subjectFullScores = {};
       subjects.forEach(sub => {
         subjectFullScores[sub] = testNumbers.reduce((sum, tn) => sum + getFullScore(tn, sub), 0);
       });
 
-      // ── 2. Accumulate earned scores per student per subject ───────────────
+      // 2. สร้างโครงข้อมูลดิบสำหรับนักเรียนทุกคนที่ "ลงทะเบียนเรียน" ไว้ก่อน
       const map = {};
-      filtered.forEach(row => {
-        // Skip absent rows — treat as 0 earned but still count denominator
-        if (row.is_absent) return;
+      students.forEach(st => {
+        map[st.id] = {
+          hasAnyScore: false, // flag เช็คว่ามีคะแนนอย่างน้อย 1 วิชาไหม
+          scores: {},         // เก็บยอดคะแนนที่ได้รายวิชา
+          fullScores: {}      // เก็บยอดคะแนนเต็มเฉพาะวิชาที่ "เข้าสอบ"
+        };
+        subjects.forEach(s => {
+          map[st.id].scores[s] = null;     // เริ่มต้นให้เป็น null (ไม่มีคะแนน)
+          map[st.id].fullScores[s] = 0;
+        });
+      });
 
+      // 3. นำคะแนนจากการสอบจริง (filtered) มาหยอดลง Map
+      filtered.forEach(row => {
         const sid = Number(row.student_id);
         const sub = row.subject;
-        if (!subjects.includes(sub)) return;
+        if (!map[sid] || !subjects.includes(sub)) return;
 
         const fs = getFullScore(row.test_number, sub);
-        if (fs === 0) return;  // no settings → exclude from calculation
+        if (fs === 0) return;
 
-        if (!map[sid]) {
-          map[sid] = { earnedBySubject: {}, fullBySubject: {} };
-          subjects.forEach(s => { map[sid].earnedBySubject[s] = 0; map[sid].fullBySubject[s] = 0; });
-        }
-        map[sid].earnedBySubject[sub] += Number(row.score);
-        map[sid].fullBySubject[sub]   += fs;
-      });
-
-      // Also include enrolled students who have no scores yet (so they appear in the list)
-      students.forEach(st => {
-        if (!map[st.id]) {
-          map[st.id] = { earnedBySubject: {}, fullBySubject: {} };
-          subjects.forEach(s => { map[st.id].earnedBySubject[s] = 0; map[st.id].fullBySubject[s] = 0; });
+        // ถ้ามีแถวบันทึกคะแนน และไม่ได้เซ็ตว่าขาดสอบ (is_absent)
+        if (!row.is_absent && row.score !== null && row.score !== undefined) {
+          map[sid].hasAnyScore = true;
+          map[sid].scores[sub] = (map[sid].scores[sub] || 0) + Number(row.score);
+          map[sid].fullScores[sub] = (map[sid].fullScores[sub] || 0) + fs;
+        } 
+        // กรณีมีแถวบันทึกแต่ระบุว่าขาดสอบ (is_absent) 
+        else if (row.is_absent) {
+          // หากต้องการให้ขาดสอบโชว์เป็น "-" ไม่ต้องทำอะไร (ปล่อยเป็น null)
+          // แต่ถ้าระบบระบุประวัติเข้ามาแล้ว ก็นับว่ามีตัวตนในประวัติรอบนี้
+          map[sid].hasAnyScore = true; 
         }
       });
 
-      // ── 3. Build sorted row objects ───────────────────────────────────────
-      const rows = Object.entries(map).map(([sid, d]) => {
-        const studentId = Number(sid);
-        let totalEarned = 0, totalPossible = 0;
+      // 4. แปลงข้อมูลใน Map ออกมาเป็นแถว และกรองเฉพาะคนที่มีคะแนนอย่างน้อย 1 วิชา
+      const rows = Object.entries(map)
+        .map(([sid, d]) => {
+          const studentId = Number(sid);
+          let totalEarned = 0;
+          let totalPossible = 0;
 
-        const subPcts = subjects.map(sub => {
-          const earned   = d.earnedBySubject[sub] || 0;
-          const possible = subjectFullScores[sub]  || 0;
-          if (possible === 0) return null;
-          totalEarned   += earned;
-          totalPossible += possible;
-          return (earned / possible * 100).toFixed(1);
-        });
+          // คำนวณเปอร์เซ็นต์แยกรายวิชา
+          const subPcts = subjects.map(sub => {
+            const earned = d.scores[sub];
+            const possible = d.fullScores[sub];
 
-        return {
-          student_id: studentId,
-          nickname:   students.find(s => s.id === studentId)?.nickname || 'นักเรียน',
-          subPcts,                                                        // real values
-          pct: totalPossible > 0 ? (totalEarned / totalPossible * 100) : 0
-        };
-      }).sort((a, b) => b.pct - a.pct);
+            if (earned === null || possible === 0) {
+              return null; // ไม่มีคะแนน หรือไม่ได้เข้าสอบวิชานี้เลย
+            }
 
-      // ── 4. Average cards (always visible, shows class averages) ──────────
+            // รวมคะแนนเฉพาะวิชาที่มีตัวตนจริงเพื่อคิดเปอร์เซ็นต์รวม
+            totalEarned += earned;
+            totalPossible += possible;
+            return (earned / possible * 100).toFixed(1);
+          });
+
+          return {
+            student_id: studentId,
+            nickname: students.find(s => s.id === studentId)?.nickname || 'นักเรียน',
+            subPcts,
+            hasAnyScore: d.hasAnyScore,
+            // คิด % รวม เฉพาะจากฐานคะแนนเต็มของวิชาที่สิทธิ์สอบจริงเท่านั้น
+            pct: totalPossible > 0 ? (totalEarned / totalPossible * 100) : 0
+          };
+        })
+        // 🔥 เงื่อนไขเด็ด: กรองเอาเฉพาะคนที่มีคะแนนอย่างน้อย 1 วิชาเท่านั้น (ไม่มีทั้ง 3 วิชาตัดออก)
+        .filter(r => r.hasAnyScore === true)
+        // จัดอันดับเรียงจากเปอร์เซ็นต์มากไปน้อย
+        .sort((a, b) => b.pct - a.pct);
+
+      // 5. แสดงการ์ดค่าเฉลี่ยของห้อง (คิดคะแนนเฉลี่ยจากข้อมูลที่กรองแล้ว)
       const avgGrid = document.getElementById('avgGrid');
       const overallAvg = rows.length
         ? (rows.reduce((a, b) => a + b.pct, 0) / rows.length).toFixed(1)
         : '—';
 
       avgGrid.innerHTML = `<div class="avg-card border-b-4 border-slate-800">
-        <p class="text-[9px] font-black text-slate-400 uppercase">เฉลี่ยรวม</p>
+        <p class="text-[9px] font-black text-slate-400 uppercase">เฉลี่ยรวมห้อง</p>
         <p class="text-xl font-black text-slate-800">${overallAvg}%</p>
       </div>`;
 
       subjects.forEach((sub, i) => {
-        const vals   = rows.map(r => r.subPcts[i]).filter(v => v !== null);
+        const vals = rows.map(r => r.subPcts[i]).filter(v => v !== null);
         const subAvg = vals.length ? (vals.reduce((a, b) => +a + +b, 0) / vals.length).toFixed(1) : '—';
-        const color  = colorMap[sub] || 'indigo';
+        const color = colorMap[sub] || 'indigo';
         avgGrid.innerHTML += `<div class="avg-card border-b-4 border-${color}-500">
           <p class="text-[9px] font-black text-${color}-600 uppercase">${sub}</p>
           <p class="text-xl font-black text-slate-800">${subAvg}%</p>
         </div>`;
       });
 
-      // ── 5. Desktop table ──────────────────────────────────────────────────
+      // 6. แสดงผลตาราง Desktop Table
       document.getElementById('tableHead').innerHTML = `<tr>
         <th class="px-5 py-3 w-16 text-center">Rank</th>
         <th class="px-5 py-3">Student</th>
@@ -391,14 +415,12 @@
       </tr>`;
 
       document.getElementById('rankingListDesktop').innerHTML = rows.map((r, i) => {
-        const isMe       = r.student_id === myId;
-        const rank       = i + 1;
-        // Privacy masking: real data only for the logged-in student
-        const displayName = isMe
-          ? `⭐ ${r.nickname}`
-          : `นักเรียน #${rank}`;
-        const displayPct  = `${r.pct.toFixed(1)}%`;
-        const subCells    = r.subPcts.map(v =>
+        const isMe = r.student_id === myId;
+        const rank = i + 1;
+        const displayName = isMe ? `⭐ ${r.nickname}` : `นักเรียน #${rank}`;
+        const displayPct = `${r.pct.toFixed(1)}%`;
+        
+        const subCells = r.subPcts.map(v =>
           `<td class="px-5 py-4 text-center font-bold text-slate-500">${v !== null ? v+'%' : '—'}</td>`
         ).join('');
 
@@ -412,20 +434,19 @@
         </tr>`;
       }).join('');
 
-      // ── 6. Mobile cards ───────────────────────────────────────────────────
+      // 7. แสดงผลการ์ด Mobile Cards
       document.getElementById('rankingListMobile').innerHTML = rows.map((r, i) => {
-        const isMe        = r.student_id === myId;
-        const rank        = i + 1;
+        const isMe = r.student_id === myId;
+        const rank = i + 1;
         const displayName = isMe ? `⭐ ${r.nickname}` : `นักเรียน #${rank}`;
-        const displayPct  = `${r.pct.toFixed(1)}%`;
-        const pctColor    = isMe ? '#4f46e5' : '#334155';
+        const displayPct = `${r.pct.toFixed(1)}%`;
+        const pctColor = isMe ? '#4f46e5' : '#334155';
 
         const subBoxes = subjects.map((sub, idx) => {
           const scoreDisplay = r.subPcts[idx] !== null ? `${r.subPcts[idx]}%` : '—';
-          const scoreColor = '#1e293b';
           return `<div class="subject-box">
             <div style="font-size:9px;color:#94a3b8;font-weight:700;margin-bottom:2px;text-transform:uppercase;">${sub}</div>
-            <div style="font-size:14px;font-weight:900;color:${scoreColor};">${scoreDisplay}</div>
+            <div style="font-size:14px;font-weight:900;color:#1e293b;">${scoreDisplay}</div>
           </div>`;
         }).join('');
 

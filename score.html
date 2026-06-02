@@ -85,9 +85,6 @@
 
         // =====================================================
         // SETTINGS LOOKUP
-        // Returns the score_settings entry for a given
-        // test_number + subject, with safe fallbacks so the
-        // UI never crashes when an entry is missing.
         // =====================================================
         let settingsRows = []; // populated in init() from score_settings
 
@@ -102,7 +99,6 @@
         }
 
         // Enrich a raw test_scores row with full_score + topic from score_settings.
-        // Returns a NEW object — never mutates the original.
         function enrichScore(sc) {
             const meta = getSettings(sc.test_number, sc.subject);
             return {
@@ -124,27 +120,18 @@
             document.getElementById('courseCodeDisplay').innerText = userData.course_name || 'ไม่ระบุชื่อคอร์ส';
 
             try {
-                // ── Fetch all four data sources concurrently ──────────────
-                // 1. courses         → course display mode, thumbnail
-                // 2. test_scores     → student's raw scores (NO full_score/topic)
-                // 3. score_settings  → full_score + topic per (course, test, subject)
-                // 4. subjects        → sort_order for column ordering
                 const [courseRes, scoreRes, settingsRes, subjectsRes] = await Promise.all([
                     db.from('courses')
                         .select('*')
                         .eq('course_code', userData.course_code)
                         .maybeSingle(),
 
-                    // Only select columns that test_scores now owns.
-                    // full_score and topic have been removed from this table.
                     db.from('test_scores')
                         .select('student_id, course_code, test_number, subject, score')
                         .eq('student_id',   userData.id)
                         .eq('course_code',  userData.course_code)
                         .order('test_number', { ascending: true }),
 
-                    // Single fetch for all settings rows for this course.
-                    // Covers every test_number so no per-row DB calls are needed.
                     db.from('score_settings')
                         .select('test_number, subject, full_score, topic')
                         .eq('course_code', userData.course_code),
@@ -157,7 +144,7 @@
 
                 const courseInfo = courseRes.data;
                 const rawScores  = scoreRes.data    || [];
-                settingsRows     = settingsRes.data  || [];   // stored in module-level var
+                settingsRows     = settingsRes.data  || [];   
                 const subjects   = subjectsRes.data  || [];
 
                 // Build sort_order map
@@ -166,11 +153,10 @@
                     subjectSortMap[sub.subject_name] = sub.sort_order;
                 });
 
-                // ── Enrich every score row with full_score + topic ────────
-                // From this point forward, `scores` is the single source of truth.
-                // No downstream function should read from score_settings directly —
-                // everything needed is already on each row.
-                const scores = rawScores.map(enrichScore);
+                // ตรวจสอบคัดกรองเฉพาะ "แถวที่มีคะแนนบันทึกอยู่จริง" (ไม่เอาค่า null/undefined)
+                const scores = rawScores
+                    .filter(s => s.score !== null && s.score !== undefined)
+                    .map(enrichScore);
 
                 // ── Course cover image ────────────────────────────────────
                 const coverEl           = document.getElementById('courseCover');
@@ -188,10 +174,11 @@
                     coverEl.src = defaultPlaceholder;
                 }
 
-                // ── Render ────────────────────────────────────────────────
+                // ── Render (ถ้าไม่มีคะแนนเหลืออยู่เลยหลังกรอง ให้ซ่อนกราฟและแสดงข้อความ) ────────────────
                 if (!scores.length) {
+                    document.getElementById('chart-card').style.display = 'none';
                     document.getElementById('scoreContainer').innerHTML =
-                        `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนน</p>`;
+                        `<p class="text-center text-slate-400 py-10 font-bold">ยังไม่มีข้อมูลคะแนนสอบในคอร์สนี้</p>`;
                     return;
                 }
 
@@ -270,9 +257,9 @@
 
         // =====================================================
         // SUMMARY MODE — CHART
-        // full_score comes from enriched rows (score_settings)
         // =====================================================
         function setupSummaryChart(scores, threshold) {
+            // ดึงเฉพาะครั้งที่สอบที่มีคะแนนบันทึกไว้จริงๆ เท่านั้น
             const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
             const subjects = sortedSubjects(scores);
 
@@ -280,7 +267,6 @@
                 label: sub,
                 data: testNums.map(num => {
                     const r = scores.find(s => s.test_number === num && s.subject === sub);
-                    // Guard: skip if no score entered or full_score is missing/zero
                     return (r && r.score != null && r.full_score > 0)
                         ? +(r.score / r.full_score * 100).toFixed(1)
                         : null;
@@ -289,7 +275,6 @@
                 borderWidth: 2, pointRadius: 3, tension: 0.3, spanGaps: true
             }));
 
-            // Overall line — uses full_score from score_settings (already on each row)
             const overallData = testNums.map(num => {
                 const rows = scores.filter(s => s.test_number === num && s.score != null && s.full_score > 0);
                 if (!rows.length) return null;
@@ -310,17 +295,15 @@
 
         // =====================================================
         // SUMMARY MODE — TABLE
-        // Grouped by test_number; full_score from score_settings
         // =====================================================
         function renderSummaryTable(scores, threshold) {
             const subjects = sortedSubjects(scores);
+            // ดึงเฉพาะครั้งที่สอบที่มีคะแนนบันทึกไว้จริง
             const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
 
             const headerHtml = `<tr>
                 <th class="pb-3 w-10">No.</th>
                 ${subjects.map(sub => {
-                    // Show the topic for this subject from score_settings (via enriched rows).
-                    // For summary mode, show the most recent non-null topic for each subject.
                     const latestTopic = [...scores]
                         .filter(s => s.subject === sub && s.topic)
                         .sort((a,b) => b.test_number - a.test_number)[0]?.topic;
@@ -333,7 +316,6 @@
             </tr>`;
 
             const rowsHtml = testNums.map(num => {
-                // Collect the topic for each subject in this specific test number
                 let rowScore = 0, rowFull = 0;
                 const cells = subjects.map(sub => {
                     const row = scores.find(s => s.test_number === num && s.subject === sub);
@@ -347,7 +329,6 @@
                         </td>`;
                     }
                     if (row && row.score != null && row.full_score === 0) {
-                        // Score exists but settings missing — show graceful placeholder
                         return `<td class="py-4 text-center text-[10px] text-slate-400">—<br><span class="text-[8px]">ไม่มีข้อมูลเต็ม</span></td>`;
                     }
                     return `<td class="py-4 text-center text-slate-300 text-[11px]">-</td>`;
@@ -384,9 +365,9 @@
 
         // =====================================================
         // BY-SUBJECT MODE — CHART
-        // full_score from score_settings (enriched rows)
         // =====================================================
         function setupChart(scores, threshold) {
+            // ดึงเฉพาะครั้งที่สอบที่มีคะแนนบันทึกไว้จริง
             const testNums = [...new Set(scores.map(s => s.test_number))].sort((a,b) => a - b);
             const subjects = sortedSubjects(scores);
             const labels   = testNums.map(n => `ครั้งที่ ${n}`);
@@ -408,23 +389,23 @@
 
         // =====================================================
         // BY-SUBJECT MODE — RENDER
-        // Grouped by subject; each row shows its own topic
-        // from score_settings (already on the enriched row).
-        // If score_settings entry is missing → graceful placeholder.
         // =====================================================
         function renderBySubject(scores, threshold) {
             const subjects = sortedSubjects(scores);
 
             document.getElementById('scoreContainer').innerHTML = subjects.map(sub => {
+                // ดึงคะแนนรายวิชานี้ ซึ่งกรองตัวที่มีค่า null ออกไปแล้วตั้งแต่ต้นในฟังก์ชัน init()
                 const subScores = scores
                     .filter(s => s.subject === sub)
                     .sort((a,b) => a.test_number - b.test_number);
+
+                // 🔥 เงื่อนไขเด็ด: ถ้าวิชานี้ยังไม่มีคะแนนบันทึกไว้เลยสักครั้งเดียว ไม่ต้องวาดตัวการ์ดวิชานี้ออกมาเลย
+                if (!subScores.length) return '';
 
                 const rows = subScores.map(s => {
                     const hasFull    = s.full_score > 0;
                     const pct        = hasFull ? (s.score / s.full_score * 100).toFixed(0) : null;
                     const scoreDisp  = hasFull ? `${s.score}/${s.full_score}` : `${s.score}/—`;
-                    // topic from score_settings (via enrichScore); null → placeholder
                     const topicDisp  = s.topic || '<span class="text-slate-300 italic">ไม่มีข้อมูลเนื้อหา</span>';
                     const pctBadge   = pct !== null
                         ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-black ${+pct >= threshold ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">${pct}%</span>`
@@ -492,5 +473,4 @@
 
         init();
     </script>
-</body>
 </html>
