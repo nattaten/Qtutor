@@ -86,16 +86,25 @@
         <h1 class="text-2xl font-black text-white">Qtutor</h1>
         <p class="text-slate-500 text-xs mt-0.5">Admin Panel</p>
       </div>
-      <button onclick="closeSidebar()" class="md:hidden text-slate-400 text-xl leading-none">✕</button>
+      <button onclick="closeSidebar()" class="md:hidden text-slate-400 hover:text-slate-300 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
     <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="dashboard.html" class="nav-item"><span>📊</span> ภาพรวม</a>
-      <a href="scores.html"    class="nav-item active"><span>📝</span> จัดการคะแนน</a>
-      <a href="students.html"  class="nav-item"><span>👥</span> นักเรียน</a>
-      <a href="courses.html"   class="nav-item"><span>📚</span> คอร์สเรียน</a>
-      <a href="content.html"   class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
-      <a href="export.html"    class="nav-item"><span>📤</span> Export รายงาน</a>
+      <a href="dashboard.html" class="nav-item "><span>📊</span> ภาพรวม</a>
+      <a href="scores.html" class="nav-item active"><span>📝</span> จัดการคะแนน</a>
+      <a href="students.html" class="nav-item"><span>👥</span> นักเรียน</a>
+      <a href="courses.html" class="nav-item"><span>📚</span> คอร์สเรียน</a>
+      <a href="content.html" class="nav-item"><span>🎬</span> เนื้อหา (เฉลย/คลิป)</a>
+      <a href="export.html" class="nav-item"><span>📤</span> Export รายงาน</a>
     </nav>
+    <div class="px-3 py-4 border-t border-slate-800">
+      <button onclick="logout()" class="nav-item w-full text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl">
+        <span>🚪</span> ออกจากระบบ
+      </button>
+    </div>
   </aside>
 
   <div class="flex-1 flex flex-col min-h-screen min-w-0">
@@ -1111,7 +1120,7 @@
 
       await applyPersistentState();
     }
-
+    function logout() { if (confirm('ออกจากระบบ?')) { sessionStorage.clear(); location.href = 'index.html'; } }
     init();
   </script>
 
