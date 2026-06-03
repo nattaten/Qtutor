@@ -9,8 +9,8 @@
       "purpose": "any"
     }
   ],
-  "start_url": "/qtutor/index.html",
-  "scope": "/qtutor/",
+  "start_url": "/Qtutor/index.html",
+  "scope": "/Qtutor/",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "display": "standalone",
