@@ -18,6 +18,12 @@
         .table-container::-webkit-scrollbar { height: 4px; }
         .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Qtutor"> <!-- 👈 เปลี่ยนตรงนี้เรียบร้อยแล้ว -->
+    <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body class="pb-10">
 
@@ -472,5 +478,12 @@
         }
 
         init();
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Ready!'))
+                    .catch(err => console.log('PWA Error', err));
+            });
+        }
     </script>
 </html>

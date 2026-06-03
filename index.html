@@ -12,6 +12,12 @@
     <style>
         body { font-family: 'Kanit', sans-serif; }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Qtutor"> <!-- 👈 เปลี่ยนตรงนี้เรียบร้อยแล้ว -->
+    <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-slate-100 min-h-screen flex items-center justify-center p-4">
 
@@ -62,6 +68,14 @@
         </p>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js">
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Ready!'))
+                    .catch(err => console.log('PWA Error', err));
+            });
+        }
+    </script>
 </body>
 </html>
