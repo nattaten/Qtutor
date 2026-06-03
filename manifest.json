@@ -1,0 +1,18 @@
+{
+  "short_name": "Qtutor",
+  "name": "ระบบแสดงคะแนนกวดวิชาคิวติวเตอร์",
+  "icons": [
+    {
+      "src": "logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/qtutor/index.html",
+  "scope": "/qtutor/",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait"
+}
