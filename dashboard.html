@@ -9,10 +9,95 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { font-family: 'Kanit', sans-serif; }
-        .hero-gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); }
-        .card-hover { transition: all 0.2s ease; }
-        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-        .card-hover:active { transform: scale(0.98); }
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 28rem),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        }
+        .app-shell { max-width: 430px; }
+        .top-nav {
+            background: rgba(248, 250, 252, 0.86);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+        }
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            object-fit: cover;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        }
+        #userName {
+            max-width: 112px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+        button[onclick="logout()"] {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+        }
+        button[onclick="logout()"] svg {
+            width: 20px;
+            height: 20px;
+        }
+        .hero-gradient {
+            background: #fff;
+            border: 1px solid rgba(226, 232, 240, 0.92);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+        }
+        .course-select {
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #64748b 50%),
+                linear-gradient(135deg, #64748b 50%, transparent 50%);
+            background-position:
+                calc(100% - 20px) calc(50% - 3px),
+                calc(100% - 14px) calc(50% - 3px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+        }
+        .card-hover {
+            min-height: 124px;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(14, 165, 233, 0.35);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.07);
+        }
+        .card-hover:active { transform: translateY(0) scale(0.99); }
+        .card-hover h3 {
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+        .card-hover p {
+            color: #64748b;
+            font-size: 11px;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        .card-hover > div:first-child {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
@@ -21,11 +106,17 @@
     <meta name="apple-mobile-web-app-title" content="Qtutor"> <!-- 👈 เปลี่ยนตรงนี้เรียบร้อยแล้ว -->
     <link rel="apple-touch-icon" href="logo.png">
 </head>
-<body class="bg-slate-50 min-h-screen pb-20">
+<body class="min-h-screen pb-20 text-slate-900">
 
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
-        <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-            <h1 class="text-2xl font-black text-indigo-600 tracking-tighter">Qtutor</h1>
+    <nav class="top-nav sticky top-0 z-50">
+        <div class="app-shell mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="logo.png" alt="Qtutor" class="brand-mark">
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">Qtutor</h1>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Student Hub</p>
+                </div>
+            </div>
             <div class="flex items-center gap-3">
                 <span id="userName" class="text-sm font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">👤 -</span>
                 <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
@@ -37,45 +128,51 @@
         </div>
     </nav>
 
-    <main class="max-w-md mx-auto px-4">
-        <div class="hero-gradient rounded-3xl mt-5 p-7 text-white shadow-xl shadow-indigo-100">
-            <p id="greetingLabel" class="text-indigo-100 text-sm font-semibold opacity-90"></p>
-            <h2 id="greetingName" class="text-3xl font-black mt-1 leading-tight">...</h2>
+    <main class="app-shell mx-auto px-4">
+        <div class="hero-gradient rounded-[24px] mt-5 p-5">
+            <div>
+                <div class="min-w-0">
+                    <p id="greetingLabel" class="text-sky-700 text-sm font-bold"></p>
+                    <h2 id="greetingName" class="text-3xl font-black mt-1 leading-tight tracking-tight text-slate-950">...</h2>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">เลือกคอร์สก่อนเข้าใช้งานเมนู</p>
+                </div>
+            </div>
             
             <div class="mt-6">
-                <label class="text-[10px] font-bold text-indigo-200 uppercase tracking-widest block mb-1">เลือกคอร์สเรียน</label>
-                <select id="courseSelect" onchange="selectCourse(this.value)" class="w-full bg-white/20 border border-white/30 text-white rounded-xl p-3 outline-none focus:bg-white focus:text-slate-800 transition-all font-bold">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">เลือกคอร์สเรียน</label>
+                <select id="courseSelect" onchange="selectCourse(this.value)" class="course-select w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3.5 pr-10 outline-none focus:bg-white focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition-all font-bold shadow-inner">
                     <option value="" class="text-slate-800">-- กำลังโหลดคอร์สของคุณ --</option>
                 </select>
             </div>
+
         </div>
 
         <div class="mt-8">
             <div class="flex items-center justify-between mb-4 px-1">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">เมนูการเรียน</p>
-                <span id="currentCourseLabel" class="text-[10px] text-indigo-500 font-bold hidden">กำลังเรียน: ...</span>
+                <span id="currentCourseLabel" class="text-[10px] text-sky-700 font-bold hidden bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full">กำลังเรียน: ...</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="goTo('score.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="goTo('score.html')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 card-hover text-left group">
                     <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📊</div>
                     <h3 class="font-bold text-slate-800 leading-tight">คะแนนรายบุคคล</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase">Personal Score</p>
                 </button>
 
-                <button onclick="goTo('ranking.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                <button onclick="goTo('ranking.html')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 card-hover text-left group">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl mb-4">🏆</div>
                     <h3 class="font-bold text-slate-800 leading-tight">อันดับห้อง</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase">Class Ranking</p>
                 </button>
 
-                <button onclick="goTo('answers.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                <button onclick="goTo('answers.html')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 card-hover text-left group">
                     <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📚</div>
                     <h3 class="font-bold text-slate-800 leading-tight">คลังเฉลย</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase">Solutions</p>
                 </button>
 
-                <button onclick="goTo('videos.html')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-hover text-left group">
+                <button onclick="goTo('videos.html')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 card-hover text-left group">
                     <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-2xl mb-4">📽️</div>
                     <h3 class="font-bold text-slate-800 leading-tight">บทเรียนวิดีโอ</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase">Video Lessons</p>
